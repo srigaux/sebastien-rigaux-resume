@@ -7,10 +7,10 @@ const Skills = props => {
   return (
     <Section id="skills" title="Skills">
       <div className="row">
-        <div className="col-5">
+        <div className="col-lg-5 mb-5">
           <LanguageSkills {...props.languageSkills} />
         </div>
-        <div className="col-6 offset-1">
+        <div className="col-lg-6 offset-lg-1">
           <CompetenceSkills competences={props.competenceSkills} />
         </div>
       </div>

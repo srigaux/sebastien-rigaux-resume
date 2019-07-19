@@ -12,7 +12,7 @@ const About = props => (
     <div className="w-100">
       <div className="row">
         <Fade delay={0}>
-          <div className="col-sm-3 d-lg-none">
+          <div className="col-sm-3 d-lg-none ">
             <Logo
               className="img img-fluid fluid"
               style={{ maxHeight: '11rem' }}
@@ -20,7 +20,7 @@ const About = props => (
           </div>
         </Fade>
         <Fade delay={200}>
-          <div className="col-sm-9 col-lg-8 col-xl-8">
+          <div className="col-sm-9 col-lg-8 col-xl-8 text-center text-sm-left">
             <h1 className="mb-0">
               {props.firstName}
               <br />
@@ -49,7 +49,7 @@ const About = props => (
             </Biography>
           </div>
 
-          <div className="col-lg-4 col-xl-3">
+          <div className="col-lg-4 col-xl-3 ml-5 ml-lg-0">
             <SocialLinks socialLinks={props.socialLinks} />
           </div>
         </div>

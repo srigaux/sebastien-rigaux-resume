@@ -70,15 +70,15 @@ export class Sidebar extends Component {
             {tabs.map((tab, i) => {
               const { href, content } = tab;
               return (
-                <Fade delay={100 + i * 100} key={href}>
-                  <li className="nav-item">
-                    <Scroll type="id" element={href}>
+                <li className="nav-item" key={href}>
+                  <Scroll type="id" element={href}>
+                    <Fade delay={100 + i * 100}>
                       <a className="nav-link" href={`#${href}`}>
                         {content}
                       </a>
-                    </Scroll>
-                  </li>
-                </Fade>
+                    </Fade>
+                  </Scroll>
+                </li>
               );
             })}
           </Scrollspy>
