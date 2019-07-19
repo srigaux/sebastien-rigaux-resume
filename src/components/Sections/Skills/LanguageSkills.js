@@ -13,16 +13,18 @@ const LanguageSkills = props => {
       <div className="propgressbars row">
         {languages.map((lang, idx) => (
           <Fade key={lang.id} bottom delay={100 + idx * 100}>
-            <div title={lang.title} className="col">
-              <CircularProgressbarWithChildren
-                value={lang.knowledgePercentage}
-                strokeWidth={2}
-              >
-                <div className="CircularProgressbar-content">
-                  {lang.shortTitle} <br />
-                  {lang.knowledgePercentage} %
-                </div>
-              </CircularProgressbarWithChildren>
+            <div title={lang.title} className="col text-center">
+              <div style={{ maxWidth: '8rem', margin: 'auto' }}>
+                <CircularProgressbarWithChildren
+                  value={lang.knowledgePercentage}
+                  strokeWidth={2}
+                >
+                  <div className="CircularProgressbar-content">
+                    {lang.shortTitle} <br />
+                    {lang.knowledgePercentage} %
+                  </div>
+                </CircularProgressbarWithChildren>
+              </div>
             </div>
           </Fade>
         ))}
