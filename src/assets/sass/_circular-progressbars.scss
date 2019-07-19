@@ -1,0 +1,21 @@
+.CircularProgressbar {
+  .CircularProgressbar-path {
+    stroke: $gray-600;
+  }
+  .CircularProgressbar-trail {
+    stroke: $white;
+  }
+  .CircularProgressbar-text {
+    fill: $gray-800;
+  }
+  .CircularProgressbar-background {
+    fill: white;
+  }
+
+  &-content {
+    text-transform: uppercase;
+    font-weight: 200;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+}

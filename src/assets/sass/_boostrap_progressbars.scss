@@ -1,0 +1,13 @@
+.progress {
+  $progress-color: $gray-600;
+
+  border: solid 2px $progress-color;
+  border-radius: 0;
+  background-color: initial;
+  height: 0.6rem;
+  margin: 0.45rem 0;
+
+  .progress-bar {
+    background-color: $progress-color;
+  }
+}
