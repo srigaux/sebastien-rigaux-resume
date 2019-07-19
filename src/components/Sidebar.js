@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import Scrollspy from 'react-scrollspy';
 import Scroll from './Scroll';
+import { Fade } from 'react-reveal';
 
-import avatar from '../assets/images/avatar.png';
+import Logo from '../assets/img/logo.inline.svg';
 import config from '../../config';
 
 export class Sidebar extends Component {
@@ -14,8 +15,8 @@ export class Sidebar extends Component {
         { content: 'Experience', href: 'experience' },
         { content: 'Education', href: 'education' },
         { content: 'Skills', href: 'skills' },
-        { content: 'Interests', href: 'interests' },
-        { content: 'Awards', href: 'awards' },
+        // { content: 'Interests', href: 'interests' },
+        // { content: 'Awards', href: 'awards' },
       ],
     };
   }
@@ -28,16 +29,25 @@ export class Sidebar extends Component {
         id="sideNav"
       >
         <a className="navbar-brand" href="#page-top">
-          <span className="d-block d-lg-none">
-            {config.firstName} {config.lastName}
-          </span>
-          <span className="d-none d-lg-block">
-            <img
-              className="img-fluid img-profile rounded-circle mx-auto mb-2"
-              src={avatar}
-              alt=""
-            />
-          </span>
+          <Fade delay={0}>
+            <span className="d-block d-lg-none">
+              <Logo
+                className="img-fluid mr-2"
+                alt=""
+                style={{ height: '32px', marginTop: '-6px' }}
+              />
+              {config.firstName} {config.lastName}
+            </span>
+          </Fade>
+          <Fade delay={0}>
+            <span className="d-none d-lg-block">
+              <Logo
+                className="img-fluid mx-auto mb-2"
+                alt=""
+                style={{ minWidth: '160px' }}
+              />
+            </span>
+          </Fade>
         </a>
         <button
           className="navbar-toggler"
@@ -60,13 +70,15 @@ export class Sidebar extends Component {
             {tabs.map((tab, i) => {
               const { href, content } = tab;
               return (
-                <li className="nav-item" key={href}>
-                  <Scroll type="id" element={href}>
-                    <a className="nav-link" href={`#${href}`}>
-                      {content}
-                    </a>
-                  </Scroll>
-                </li>
+                <Fade delay={100 + i * 100} key={href}>
+                  <li className="nav-item">
+                    <Scroll type="id" element={href}>
+                      <a className="nav-link" href={`#${href}`}>
+                        {content}
+                      </a>
+                    </Scroll>
+                  </li>
+                </Fade>
               );
             })}
           </Scrollspy>

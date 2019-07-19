@@ -2,12 +2,13 @@ import React from 'react';
 
 import Layout from '../components/Layout';
 
-import { Link } from 'gatsby';
+//import { Link } from 'gatsby';
 import Sidebar from '../components/Sidebar';
 import config from '../../config';
 import About from '../components/Sections/About/About';
 import Experience from '../components/Sections/Experience/Experience';
 import Education from '../components/Sections/Education/Education';
+import Skills from '../components/Sections/Skills/Skills';
 const IndexPage = () => (
   <Layout>
     <Sidebar />
@@ -23,6 +24,10 @@ const IndexPage = () => (
       <Education {...config} />
 
       <hr className="m-0" />
+
+      <Skills {...config} />
+
+      {/* <hr className="m-0" />
 
       <section
         className="resume-section p-3 p-lg-5 d-flex align-items-center"
@@ -93,9 +98,9 @@ const IndexPage = () => (
             </li>
           </ul>
         </div>
-      </section>
+      </section> */}
 
-      <hr className="m-0" />
+      {/* <hr className="m-0" />
 
       <section
         className="resume-section p-3 p-lg-5 d-flex align-items-center"
@@ -160,7 +165,7 @@ const IndexPage = () => (
             </li>
           </ul>
         </div>
-      </section>
+      </section> */}
     </div>
   </Layout>
 );

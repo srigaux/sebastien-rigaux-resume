@@ -1,5 +1,9 @@
 // Global styling for this template
 
+@import '~react-circular-progressbar/dist/styles.css';
+@import 'circular-progressbars';
+@import 'boostrap_progressbars';
+
 body {
   @include body-font;
   padding-top: 54px;
@@ -25,48 +29,120 @@ h6 {
 }
 
 h1 {
-  font-size: 6rem;
-  line-height: 5.5rem;
+  font-size: 4rem;
+  line-height: 4.5rem;
 }
 
 h2 {
-  font-size: 3.5rem;
-}
-
-h3 {
   font-size: 2rem;
 }
 
+h3 {
+  font-size: 1.25rem;
+  font-weight: 300;
+}
+
+p,
 p.lead {
-  font-size: 1.15rem;
-  font-weight: 400;
+  font-weight: 100;
+  font-size: 1rem;
+  line-height: 2rem;
+  text-align: justify;
+}
+
+.navbar-brand {
+  text-transform: uppercase;
 }
 
 .subheading {
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 2rem;
   @include heading-font;
-  font-size: 1.5rem;
 }
 
 .social-icons {
   a {
-    display: inline-block;
-    height: 3.5rem;
-    width: 3.5rem;
-    background-color: $gray-700;
-    color: $white !important;
-    border-radius: 100%;
-    text-align: center;
-    font-size: 1.5rem;
-    line-height: 3.5rem;
-    margin-right: 1rem;
-    &:last-child {
-      margin-right: 0;
-    }
+    //background-color: $gray-700;
+    color: $sr-grey !important;
+    //border-radius: 100%;
+
+    font-weight: 200;
+    //line-height: 3.5rem;
+    //margin-right: 1rem;
+    // &:last-child {
+    //   margin-right: 0;
+    // }
+
     &:hover {
-      background-color: $primary;
+      i {
+        color: $primary;
+      }
     }
+
+    i {
+      display: inline-block;
+
+      height: 2.5rem;
+      width: 3.5rem;
+
+      font-size: 1.5rem;
+      text-align: center;
+    }
+  }
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.fw-hearline {
+  font-weight: 100;
+}
+
+.fw-light {
+  font-weight: 200;
+}
+
+.fw-regular {
+  font-weight: 300;
+}
+
+.timeline {
+  padding-left: 1.5rem;
+  margin-left: 1.4rem;
+  border-left: solid 3px;
+
+  > *::before {
+    content: '';
+    display: block;
+    width: 1.2rem;
+    height: 1.2rem;
+    background-color: $secondary;
+    left: -2.25rem;
+    position: relative;
+    border-radius: 100% 100%;
+    border: solid 0.25rem white;
+    top: 1.4rem;
+  }
+}
+
+.resume-item {
+  line-height: 2rem;
+
+  &-subheading {
+    color: $gray-800;
+    font-weight: 200;
+  }
+
+  &-description {
+    font-weight: 100;
+  }
+
+  &-date {
+    color: $gray-800;
+    font-weight: 200;
   }
 }
 
@@ -76,5 +152,13 @@ p.lead {
     &:hover {
       color: $primary;
     }
+  }
+}
+
+.progressbar {
+  &-title {
+    text-transform: uppercase;
+    font-weight: 200;
+    font-size: 1rem;
   }
 }

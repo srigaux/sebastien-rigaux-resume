@@ -10,16 +10,27 @@ module.exports = {
   pathPrefix: `/gatsby-starter-resume/`, // This path is subpath of your hosting https://domain/portfolio
   firstName: 'Sébastien',
   lastName: 'Rigaux',
+  birthday: '1989-12-22',
+  firstExperienceDate: '2012-02-01',
+  label: 'Full stack web/mobile developer',
   // social
   socialLinks: [
     {
       icon: 'fa-github',
       name: 'Github',
+      identifier: '/srigaux',
       url: 'https://github.com/srigaux',
+    },
+    {
+      icon: 'fa-facebook-f',
+      name: 'Facebook',
+      identifier: '/srigaux',
+      url: 'https://facebook.com/srigaux',
     },
     {
       icon: 'fa-linkedin-in',
       name: 'Linkedin',
+      identifier: '/sebastien-rigaux',
       url: 'https://linkedin.com/in/sebastien-rigaux',
     },
     // {
@@ -27,17 +38,12 @@ module.exports = {
     //   name: 'Twitter',
     //   url: 'https://twitter.com/srigaux',
     // },
-    {
-      icon: 'fa-facebook-f',
-      name: 'Facebook',
-      url: 'https://facebook.com/srigaux',
-    },
   ],
   email: 'sebastien@rigaux.be',
   phone: '+32 476 42 08 48',
   address: '7 Rue Dossin, 4600 Visé (Belgium)',
   about: `
-    Jeune et dynamique, j’ai 29 ans et 7 ans d’expérience acquise au travers de différents postes 
+    Jeune et dynamique, j’ai {{age}} ans et {{experienceYears}} ans d’expérience acquise au travers de différents postes 
     d’une société de développement web et mobile. A la tête de l’équipe d’une quinzaine de personnes, 
     je suis le garant des choix technologiques et de l’architecture de tous nos projets. 
     Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés. 
@@ -83,7 +89,7 @@ module.exports = {
       gpa: 'Grade: distinction',
     },
     {
-      institution: 'Université de Liège – ULiège(BELGIUM)',
+      institution: 'Université de Liège – ULiège (BELGIUM)',
       studyType: 'Bachelier ',
       area: 'en sciences informatiques',
       date: 'sept. 2012 – juin 2013',
@@ -99,13 +105,61 @@ module.exports = {
       gpa: 'Grade: distinction',
     },
     {
-      institution: 'Université de Liège – ULiège(BELGIUM)',
+      institution: 'Université de Liège – ULiège (BELGIUM)',
       studyType: 'Bachelier ',
       area: 'en sciences informatiques',
       date: 'sept. 2007 - juin 2010',
       description:
         'Deux premières années de bachelier en sciences informatiques à l’Université de Liège (ULiège)',
       //gpa: 'Grade: distinction',
+    },
+  ],
+  languageSkills: {
+    description: `
+    Né en Belgique francophone.
+    Bonne compréhension de l’anglais.
+    Bases de néerlandais apprises à l’école.`,
+    languages: [
+      {
+        id: 'fr',
+        title: 'Français',
+        shortTitle: 'Français',
+        knowledgePercentage: 100,
+      },
+      {
+        id: 'en',
+        title: 'Anglais',
+        shortTitle: 'Anglais',
+        knowledgePercentage: 60,
+      },
+      {
+        id: 'nl',
+        title: 'Néerlandais',
+        shortTitle: 'Néérl.',
+        knowledgePercentage: 30,
+      },
+    ],
+  },
+  competenceSkills: [
+    {
+      title: 'Web .net/php',
+      knowledgePercentage: 95,
+    },
+    {
+      title: 'Web frontend',
+      knowledgePercentage: 90,
+    },
+    {
+      title: 'Database',
+      knowledgePercentage: 80,
+    },
+    {
+      title: 'Mobile',
+      knowledgePercentage: 95,
+    },
+    {
+      title: 'BI / IoT / IA',
+      knowledgePercentage: 65,
     },
   ],
 };
