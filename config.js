@@ -1,5 +1,18 @@
+function calculateAge(birthday) {
+  // birthday is a date
+  var ageDifMs = Date.now() - birthday.getTime();
+  var ageDate = new Date(ageDifMs); // miliseconds from epoch
+  return Math.abs(ageDate.getUTCFullYear() - 1970);
+}
+
+const birthday = '1989-12-22';
+const age = calculateAge(new Date(birthday));
+
+const firstExperienceDate = new Date('2012-02-01');
+const experienceYears = calculateAge(firstExperienceDate);
+
 module.exports = {
-  siteTitle: 'Sébastien Rigaux Resume', // <title>
+  siteTitle: 'Sébastien Rigaux', // <title>
   manifestName: 'Resume',
   manifestShortName: 'Landing', // max 12 characters
   manifestStartUrl: '/',
@@ -10,9 +23,9 @@ module.exports = {
   pathPrefix: `/gatsby-starter-resume/`, // This path is subpath of your hosting https://domain/portfolio
   firstName: 'Sébastien',
   lastName: 'Rigaux',
-  birthday: '1989-12-22',
-  firstExperienceDate: '2012-02-01',
   label: 'Full stack web/mobile developer',
+  jobTitle: 'CTO',
+  birthday,
   // social
   socialLinks: [
     {
@@ -39,22 +52,30 @@ module.exports = {
     //   identifier: 'sebastien.rigaux.be',
     //   url: 'https://sebastien.rigaux.be',
     // },
-    // {
-    //   icon: 'fa-twitter',
-    //   name: 'Twitter',
-    //   url: 'https://twitter.com/srigaux',
-    // },
+    {
+      icon: 'fa-twitter',
+      name: 'Twitter',
+      identifier: '@srigaux',
+      url: 'https://twitter.com/srigaux',
+    },
   ],
   email: 'sebastien@rigaux.be',
   phone: '+32 476 42 08 48',
-  address: '7 Rue Dossin, 4600 Visé (Belgium)',
+  address: {
+    zip: '4600',
+    locality: 'Visé',
+    country: 'Belgium',
+    formatted: '4600 Visé – Belgium',
+  },
   about: `
     Jeune et dynamique, j'ai {{age}} ans et {{experienceYears}} ans d'expérience acquise au travers de différents postes 
     d'une société de développement web et mobile. A la tête de l'équipe d'une quinzaine de personnes, 
     je suis le garant des choix technologiques et de l'architecture de tous nos projets. 
     Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés. 
     J'aime voyager, sortir, jouer au tennis, faire du golf et de la voile.
-    `,
+    `
+    .replace('{{age}}', age)
+    .replace('{{experienceYears}}', experienceYears),
   experience: [
     {
       title: 'Directeur de la technologie',
