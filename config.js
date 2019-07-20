@@ -26,6 +26,7 @@ module.exports = {
   label: 'Full stack web/mobile developer',
   jobTitle: 'CTO',
   birthday,
+  image: '/img/og-image.png',
   // social
   socialLinks: [
     {
@@ -57,6 +58,12 @@ module.exports = {
       name: 'Twitter',
       identifier: '@srigaux',
       url: 'https://twitter.com/srigaux',
+    },
+    {
+      icon: 'fa-instagram',
+      name: 'Instagram',
+      identifier: '/rigauxse',
+      url: 'https://www.instagram.com/rigauxse/',
     },
   ],
   email: 'sebastien@rigaux.be',

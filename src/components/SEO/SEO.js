@@ -20,6 +20,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
         },
       },
     }) => {
+      console.log(defaultImage);
       const seo = {
         title: title || defaultTitle,
         description: description || defaultDescription,
@@ -27,6 +28,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
         url: `${siteUrl}${pathname || '/'}`,
       };
       const jsonLD = createJsonLD(config);
+      const ogType = article ? 'article' : 'website';
       return (
         <>
           <Helmet title={seo.title} titleTemplate={titleTemplate}>
@@ -34,9 +36,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
             <meta name="description" content={seo.description} />
             <meta name="image" content={seo.image} />
             {seo.url && <meta property="og:url" content={seo.url} />}
-            {(article ? true : null) && (
-              <meta property="og:type" content="article" />
-            )}
+            {seo.url && <meta property="og:type" content={ogType} />}
             {seo.title && <meta property="og:title" content={seo.title} />}
             {seo.description && (
               <meta property="og:description" content={seo.description} />
