@@ -5,12 +5,15 @@ import Layout from '../components/Layout';
 //import { Link } from 'gatsby';
 import Sidebar from '../components/Sidebar';
 import config from '../../config';
-import About from '../components/Sections/About/About';
-import Experience from '../components/Sections/Experience/Experience';
-import Education from '../components/Sections/Education/Education';
-import Skills from '../components/Sections/Skills/Skills';
+import About from '../components/Sections/About';
+import Experience from '../components/Sections/Experience';
+import Education from '../components/Sections/Education';
+import Skills from '../components/Sections/Skills';
+import SEO from '../components/SEO';
+
 const IndexPage = () => (
   <Layout>
+    <SEO />
     <Sidebar />
     <div className="container-fluid p-0">
       <About {...config} />

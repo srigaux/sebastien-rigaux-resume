@@ -1,14 +1,30 @@
 const config = require('./config');
 
-var icons = config.socialLinks.map(l => l.icon);
+const icons = config.socialLinks.map(l => l.icon);
+
+const siteUrl = 'https://sebastien.rigaux.be';
 
 module.exports = {
   pathPrefix: config.pathPrefix,
   siteMetadata: {
     title: config.siteTitle,
+    titleTemplate: `%s | ${config.siteTitle}`,
+    description: config.about,
+    url: siteUrl,
+    siteUrl,
+    image: 'src/assets/img/logo.svg',
+    twitterUsername: 'rigauxse',
   },
   plugins: [
+    'gatsby-plugin-sitemap',
+    'gatsby-plugin-robots-txt',
     'gatsby-plugin-react-helmet',
+    {
+      resolve: `gatsby-plugin-react-helmet-canonical-urls`,
+      options: {
+        siteUrl,
+      },
+    },
     {
       resolve: `gatsby-plugin-manifest`,
       options: {

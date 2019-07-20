@@ -1,7 +1,6 @@
 import React from 'react';
 import Logo from '../../../assets/img/logo.inline.svg';
 import SocialLinks from './SocialLinks';
-import Biography from './Biography';
 import { Fade } from 'react-reveal';
 
 const About = props => (
@@ -30,7 +29,7 @@ const About = props => (
           </div>
           <div className="offset-sm-3 offset-lg-0 col-lg-4 col-xl-4">
             <div className="subheading mb-5">
-              {props.address} <br />
+              {props.address.formatted} <br />
               {props.phone} <br />
               <a href={`mailto:${props.email}`}>{props.email}</a>
             </div>
@@ -41,12 +40,7 @@ const About = props => (
       <Fade delay={400}>
         <div className="row mb-5">
           <div className="col-lg-8 col-xl-9">
-            <Biography
-              birthday={props.birthday}
-              firstExperienceDate={props.firstExperienceDate}
-            >
-              {props.about}
-            </Biography>
+            <p className="lead ">{props.about}</p>
           </div>
 
           <div className="col-lg-4 col-xl-3 ml-5 ml-lg-0">
