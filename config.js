@@ -27,6 +27,7 @@ module.exports = {
   jobTitle: 'CTO',
   birthday,
   image: '/img/og-image.png',
+  url: 'https://sebastien.rigaux.be',
   // social
   socialLinks: [
     {

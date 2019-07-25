@@ -2,7 +2,7 @@ const createJsonLD = config => {
   const data = {
     '@context': 'http://schema.org/',
     '@type': 'Person',
-    url: config.siteUrl,
+    url: config.url,
     address: {
       '@type': 'PostalAddress',
       addressCountry: config.address.country,
