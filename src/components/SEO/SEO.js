@@ -23,7 +23,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
       console.log(defaultImage);
       const seo = {
         title: title || defaultTitle,
-        description: (description || defaultDescription).substring(0, 300),
+        description: (description || defaultDescription).substring(0, 160),
         image: `${siteUrl}${image || defaultImage}`,
         url: `${siteUrl}${pathname || '/'}`,
       };
