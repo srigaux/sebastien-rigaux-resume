@@ -28,7 +28,11 @@ class Layout extends Component {
                 { name: 'keywords', content: 'site, web' },
               ]}
             >
-              <html lang="en" />
+              <html lang="fr" />
+              {/* <meta
+                http-equiv="Content-Security-Policy"
+                content="default-src 'self' ; script-src 'self' 'unsafe-inline' www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' *; media-src 'self'; frame-src 'self';"
+              ></meta> */}
             </Helmet>
             <div className={'main-body'}>{children}</div>
           </>

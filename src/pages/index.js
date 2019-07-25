@@ -1,5 +1,7 @@
 import React from 'react';
 
+//import 'boostrap';
+
 import Layout from '../components/Layout';
 
 //import { Link } from 'gatsby';

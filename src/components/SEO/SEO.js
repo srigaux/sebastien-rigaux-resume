@@ -23,7 +23,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
       console.log(defaultImage);
       const seo = {
         title: title || defaultTitle,
-        description: description || defaultDescription,
+        description: (description || defaultDescription).substring(0, 300),
         image: `${siteUrl}${image || defaultImage}`,
         url: `${siteUrl}${pathname || '/'}`,
       };
@@ -32,7 +32,6 @@ const SEO = ({ title, description, image, pathname, article }) => (
       return (
         <>
           <Helmet title={seo.title} titleTemplate={titleTemplate}>
-            <meta name="Ake" content="coucou" />
             <meta name="description" content={seo.description} />
             <meta name="image" content={seo.image} />
             {seo.url && <meta property="og:url" content={seo.url} />}
