@@ -9,7 +9,7 @@ const createJsonLD = config => {
       addressLocality: config.address.locality,
       postalCode: config.address.zip,
     },
-    birthDate: config.birthday,
+    //birthDate: config.birthday,
     email: config.email,
     familyName: config.lastName,
     givenName: config.firstName,

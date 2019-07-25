@@ -56,8 +56,8 @@ module.exports = {
     {
       icon: 'fa-twitter',
       name: 'Twitter',
-      identifier: '@srigaux',
-      url: 'https://twitter.com/srigaux',
+      identifier: 'rigauxse',
+      url: 'https://twitter.com/rigauxse',
     },
     {
       icon: 'fa-instagram',
