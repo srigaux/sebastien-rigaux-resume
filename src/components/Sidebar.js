@@ -33,7 +33,6 @@ export class Sidebar extends Component {
             <span className="d-block d-lg-none">
               <Logo
                 className="img-fluid mr-2"
-                alt=""
                 style={{ height: '32px', marginTop: '-6px' }}
               />
               {config.firstName} {config.lastName}
@@ -43,7 +42,6 @@ export class Sidebar extends Component {
             <span className="d-none d-lg-block">
               <Logo
                 className="img-fluid mx-auto mb-2"
-                alt=""
                 style={{ minWidth: '160px' }}
               />
             </span>
