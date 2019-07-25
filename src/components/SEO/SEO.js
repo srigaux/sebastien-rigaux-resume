@@ -26,6 +26,7 @@ const SEO = ({ title, description, image, pathname, article }) => (
         description: (description || defaultDescription).substring(0, 160),
         image: `${siteUrl}${image || defaultImage}`,
         url: `${siteUrl}${pathname || '/'}`,
+        ampUrl: `${siteUrl}/amp${pathname || '/'}`,
       };
       const jsonLD = createJsonLD(config);
       const ogType = article ? 'article' : 'website';
@@ -34,6 +35,9 @@ const SEO = ({ title, description, image, pathname, article }) => (
           <Helmet title={seo.title} titleTemplate={titleTemplate}>
             <meta name="description" content={seo.description} />
             <meta name="image" content={seo.image} />
+
+            <link rel="amphtml" href={seo.ampUrl} />
+
             {seo.url && <meta property="og:url" content={seo.url} />}
             {seo.url && <meta property="og:type" content={ogType} />}
             {seo.title && <meta property="og:title" content={seo.title} />}
