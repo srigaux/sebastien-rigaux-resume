@@ -13,7 +13,7 @@ const EducationItem = ({
     {description && (
       <>
         <br />
-        {description}
+        <div dangerouslySetInnerHTML={{ __html: description }} />
       </>
     )}
     {gpa && (

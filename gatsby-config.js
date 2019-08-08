@@ -9,13 +9,36 @@ module.exports = {
   siteMetadata: {
     title: config.siteTitle,
     titleTemplate: `%s | ${config.siteTitle}`,
-    description: config.about,
+    description: 'config.about',
     url: siteUrl,
     siteUrl,
     image: config.image,
     twitterUsername: 'rigauxse',
   },
   plugins: [
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `experiences`,
+        path: `${__dirname}/src/content/experiences`,
+      },
+    },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `educations`,
+        path: `${__dirname}/src/content/educations`,
+      },
+    },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `content`,
+        path: `${__dirname}/src/content/`,
+      },
+    },
+    `gatsby-transformer-remark`,
+    `gatsby-remark-source-name`,
     'gatsby-plugin-sitemap',
     'gatsby-plugin-robots-txt',
     'gatsby-plugin-react-helmet',
