@@ -7,6 +7,12 @@ fs.writeFile(
   function(err) {}
 );
 
+fs.writeFile(
+  'public/amp/CNAME',
+  'sebastien.rigaux.be\nwww.sebastien.rigaux.be\nsébastien.rigaux.be\nwww.sébastien.rigaux.be',
+  function(err) {}
+);
+
 ghpages.publish(
   'public',
   {

@@ -4,6 +4,7 @@ import Helmet from 'react-helmet';
 import { StaticQuery, graphql } from 'gatsby';
 
 import '../assets/sass/resume.scss';
+import { IntlContextConsumer } from 'gatsby-plugin-intl/intl-context';
 
 class Layout extends Component {
   render() {
@@ -21,19 +22,23 @@ class Layout extends Component {
         `}
         render={data => (
           <>
-            <Helmet
-              title={data.site.siteMetadata.title}
-              meta={[
-                { name: 'description', content: 'Resume' },
-                { name: 'keywords', content: 'site, web' },
-              ]}
-            >
-              <html lang="fr" />
-              {/* <meta
+            <IntlContextConsumer>
+              {({ language: currentLanguage }) => (
+                <Helmet
+                  title={data.site.siteMetadata.title}
+                  meta={[
+                    { name: 'description', content: 'Resume' },
+                    { name: 'keywords', content: 'site, web' },
+                  ]}
+                >
+                  <html lang={currentLanguage} />
+                  {/* <meta
                 http-equiv="Content-Security-Policy"
                 content="default-src 'self' ; script-src 'self' 'unsafe-inline' www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' *; media-src 'self'; frame-src 'self';"
               ></meta> */}
-            </Helmet>
+                </Helmet>
+              )}
+            </IntlContextConsumer>
             <div className={'main-body'}>{children}</div>
           </>
         )}

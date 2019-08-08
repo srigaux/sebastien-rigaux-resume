@@ -20,7 +20,6 @@ const SEO = ({ title, description, image, pathname, article }) => (
         },
       },
     }) => {
-      console.log(defaultImage);
       const seo = {
         title: title || defaultTitle,
         description: (description || defaultDescription).substring(0, 160),

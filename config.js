@@ -75,39 +75,74 @@ module.exports = {
     country: 'Belgium',
     formatted: '4600 Visé – Belgium',
   },
-  about: `
-    Jeune et dynamique, j'ai {{age}} ans et {{experienceYears}} ans d'expérience acquise au travers de différents postes 
-    d'une société de développement web et mobile. A la tête de l'équipe d'une quinzaine de personnes, 
-    je suis le garant des choix technologiques et de l'architecture de tous nos projets. 
-    Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés. 
-    J'aime voyager, sortir, jouer au tennis, faire du golf et de la voile.
-    `
-    .replace('{{age}}', age)
-    .replace('{{experienceYears}}', experienceYears),
+  about: {
+    fr: `
+      Jeune et dynamique, j'ai {{age}} ans et {{experienceYears}} ans d'expérience acquise au travers de différents postes 
+      d'une société de développement web et mobile. A la tête de l'équipe d'une quinzaine de personnes, 
+      je suis le garant des choix technologiques et de l'architecture de tous nos projets. 
+      Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés. 
+      J'aime voyager, sortir, jouer au tennis, faire du golf et de la voile.
+      `
+      .replace('{{age}}', age)
+      .replace('{{experienceYears}}', experienceYears),
+    en: `
+    Young and dynamic, I am {{age}} years old and have {{experienceYears}} of experience acquired through various positions 
+    of a web and mobile development company. At the head of the team of about fifteen people, 
+    I am the guarantor of the technological choices and architecture of all our projects. 
+    Self-taught and passionate about new technologies, I am constantly learning and kept informed of new developments. 
+    I like traveling, going out, playing tennis, golf, sailing, sailing.
+        `
+      .replace('{{age}}', age)
+      .replace('{{experienceYears}}', experienceYears),
+  },
   experience: [
     {
-      title: 'Directeur de la technologie',
+      title: {
+        fr: 'Directeur de la technologie',
+        en: 'Chief Technical Officer',
+      },
       company: 'djm digital S.A. (Liège - BELGIUM)',
       date: '2016 - Maintenant',
-      description: `Gestion des équipes de développement, de l'infrastructure, des serveurs. Conception de nouveaux produits.`,
+      description: {
+        fr: `Gestion des équipes de développement, de l'infrastructure, des serveurs. Conception de nouveaux produits.`,
+        en: `Management of development teams, infrastructure, servers. Design of new products.`,
+      },
     },
     {
-      title: 'Directeur de la technologie - Mobile',
+      title: {
+        fr: 'Directeur de la technologie - Mobile',
+        en: 'Chief Technical Officer - Mobile',
+      },
       company: 'djm digital S.A. (Liège - BELGIUM)',
       date: '2015 - 2016',
-      description: `Gestion de l'équipe de développement mobile iOS et Android. Développement mobile et APIs.`,
+      description: {
+        fr: `Gestion de l'équipe de développement mobile iOS et Android. Développement mobile et APIs.`,
+        en: `Management of the iOS and Android mobile development team. Mobile development and APIs.`,
+      },
     },
     {
-      title: 'Développeur iOS',
+      title: {
+        fr: 'Développeur iOS',
+        en: 'iOS Developer',
+      },
       company: 'djm digital S.A. (Liège - BELGIUM)',
       date: '2012 - 2015',
-      description: `Développement d'applications iOS ainsi que leurs APIs et d'applications web pour de grandes entreprises belges.`,
+      description: {
+        fr: `Développement d'applications iOS ainsi que leurs APIs et d'applications web pour de grandes entreprises belges.`,
+        en: `Development of iOS applications as well as their APIs and web applications for large Belgian companies.`,
+      },
     },
     {
-      title: 'Stage Développeur iOS',
+      title: {
+        fr: 'Stage Développeur iOS',
+        en: 'iOS Developer Internship',
+      },
       company: 'djm digital S.A. (Liège - BELGIUM)',
       date: '2012 - 2012',
-      description: `Développement d'une application iPhone, d'APIs et d'applications web en ASP.NET MVC.`,
+      description: {
+        fr: `Développement d'une application iPhone, d'APIs et d'applications web en ASP.NET MVC.`,
+        en: `Development of an iPhone application, APIs and web applications in ASP.NET MVC.`,
+      },
     },
   ],
   education: [

@@ -1,7 +1,10 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Logo from '../../../assets/img/logo.inline.svg';
 import SocialLinks from './SocialLinks';
 import { Fade } from 'react-reveal';
+import { LocalizablePropTypes } from '../../../helpers/proptypes-helper';
+import { injectIntl } from 'react-intl';
 
 const About = props => (
   <section
@@ -40,7 +43,7 @@ const About = props => (
       <Fade delay={400}>
         <div className="row mb-5">
           <div className="col-lg-8 col-xl-9">
-            <p className="lead ">{props.about}</p>
+            <p className="lead ">{props.about[props.intl.locale]}</p>
           </div>
 
           <div className="col-lg-4 col-xl-3 ml-5 ml-lg-0">
@@ -52,4 +55,17 @@ const About = props => (
   </section>
 );
 
-export default About;
+About.prototype = {
+  firstName: PropTypes.string.isRequired,
+  lastName: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  address: PropTypes.shape({
+    formatted: PropTypes.string.isRequired,
+  }),
+  phone: PropTypes.string.isRequired,
+  email: PropTypes.string.isRequired,
+  about: LocalizablePropTypes(PropTypes.string.isRequired),
+  socialLinks: PropTypes.arrayOf(PropTypes.any),
+};
+
+export default injectIntl(About);
