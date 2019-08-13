@@ -2,14 +2,26 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { CircularProgressbarWithChildren } from 'react-circular-progressbar';
 import { Fade } from 'react-reveal';
+import { useStaticQuery, graphql } from 'gatsby';
 
 const LanguageSkills = props => {
-  const { description, languages } = props;
+  const { languages } = props;
+
+  const { html } = useStaticQuery(graphql`
+    query {
+      markdownRemark(
+        fields: { sourceName: { eq: "content" } }
+        fileAbsolutePath: { regex: "//language-skills\\\\.md$/" }
+      ) {
+        html
+      }
+    }
+  `);
+
   return (
     <>
       <h3 className="mb-4">Niveau de langue</h3>
-      <p className="mb-5">{description}</p>
-
+      <div className="mb-5" dangerouslySetInnerHTML={{ __html: html }} />
       <div className="propgressbars row">
         {languages.map((lang, idx) => (
           <Fade key={lang.id} bottom delay={100 + idx * 100}>
