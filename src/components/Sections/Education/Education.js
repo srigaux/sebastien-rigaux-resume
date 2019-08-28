@@ -3,8 +3,9 @@ import { useStaticQuery, graphql } from 'gatsby';
 import EducationItem from './EducationItem';
 import Timeline from '../../Timeline';
 import Section from '../Section';
+import { injectIntl } from 'react-intl';
 
-const Education = () => {
+const Education = ({ intl: { locale } }) => {
   const data = useStaticQuery(graphql`
     query {
       allMarkdownRemark(
@@ -15,6 +16,7 @@ const Education = () => {
           node {
             id
             html
+            fileAbsolutePath
             frontmatter {
               institution
               studyType
@@ -31,28 +33,32 @@ const Education = () => {
   return (
     <Section id="education" title="Education">
       <Timeline>
-        {data.allMarkdownRemark.edges.map(
-          ({
-            node: {
-              id,
-              html,
-              frontmatter: { institution, studyType, area, gpa, date },
-            },
-          }) => (
-            <EducationItem
-              key={id}
-              institution={institution}
-              studyType={studyType}
-              area={area}
-              description={html}
-              gpa={gpa}
-              date={date}
-            />
+        {data.allMarkdownRemark.edges
+          .filter(({ node: { fileAbsolutePath } }) =>
+            fileAbsolutePath.endsWith(`.${locale}.md`)
           )
-        )}
+          .map(
+            ({
+              node: {
+                id,
+                html,
+                frontmatter: { institution, studyType, area, gpa, date },
+              },
+            }) => (
+              <EducationItem
+                key={id}
+                institution={institution}
+                studyType={studyType}
+                area={area}
+                description={html}
+                gpa={gpa}
+                date={date}
+              />
+            )
+          )}
       </Timeline>
     </Section>
   );
 };
 
-export default Education;
+export default injectIntl(Education);

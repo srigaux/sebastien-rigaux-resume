@@ -17,6 +17,19 @@ module.exports = {
   },
   plugins: [
     {
+      resolve: `gatsby-plugin-intl`,
+      options: {
+        // language JSON resource path
+        path: `${__dirname}/src/intl`,
+        // supported language
+        languages: ['fr', 'en'],
+        // language file path
+        defaultLanguage: 'fr',
+        // option to redirect to `/ko` when connecting `/`
+        redirect: true,
+      },
+    },
+    {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `experiences`,
