@@ -16,10 +16,12 @@
     "i18n"
   ],
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
     "cross-env": "^5.1.5",
-    "standard-version": "^4.3.0"
+    "standard-version": "^7.0.0"
   },
   "scripts": {
     "build": "cross-env BABEL_ENV=production babel src --out-dir .",

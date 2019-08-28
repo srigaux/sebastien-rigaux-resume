@@ -52,6 +52,7 @@ module.exports = {
     },
     `gatsby-transformer-remark`,
     `gatsby-remark-source-name`,
+    `gatsby-remark-intl`,
     'gatsby-plugin-sitemap',
     'gatsby-plugin-robots-txt',
     'gatsby-plugin-react-helmet',

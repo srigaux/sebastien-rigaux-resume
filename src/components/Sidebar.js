@@ -15,13 +15,14 @@ const LangSwitcher = () => {
         <span className="lang-switcher txt-primary">
           {languages.map(lang => (
             <React.Fragment key={lang}>
-              <a
-                href="javascript:void(0)"
+              <button
                 onClick={() => changeLocale(lang)}
-                className={lang === currentLanguage ? 'active' : null}
+                className={
+                  'btn btn-link ' + (lang === currentLanguage ? 'active' : '')
+                }
               >
                 {lang}
-              </a>
+              </button>
               {lang !== languages[languages.length - 1] && ' | '}
             </React.Fragment>
           ))}

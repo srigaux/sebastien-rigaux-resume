@@ -1,1 +1,13 @@
-{}
+{
+  "sections.experiences.title": "Expérience professionnelle",
+  "sections.experiences.menuTitle": "Expérience",
+
+  "sections.educations.title": "Education",
+  "sections.educations.menuTitle": "Education",
+
+  "sections.skills.title": "Compétences",
+  "sections.skills.menuTitle": "Compétences",
+
+  "sections.skills.languageLevel": "Niveau de langue",
+  "sections.skills.competences": "Compétences"
+}

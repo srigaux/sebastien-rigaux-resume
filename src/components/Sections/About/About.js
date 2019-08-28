@@ -1,5 +1,4 @@
 import React from 'react';
-import { graphql, useStaticQuery } from 'gatsby';
 import Logo from '../../../assets/img/logo.inline.svg';
 import SocialLinks from './SocialLinks';
 import { Fade } from 'react-reveal';
@@ -11,25 +10,10 @@ function calculateAge(from) {
   return Math.abs(ageDate.getUTCFullYear() - 1970);
 }
 
-const About = props => {
-  const data = useStaticQuery(graphql`
-    {
-      about: markdownRemark(
-        fields: { sourceName: { eq: "content" } }
-        fileAbsolutePath: { regex: "//about\\\\.md$/" }
-      ) {
-        html
-        frontmatter {
-          birthdate
-          firstExperienceDate
-        }
-      }
-    }
-  `);
-
-  const html = data.about.html;
-  const birthdate = data.about.frontmatter.birthdate;
-  const firstExperienceDate = data.about.frontmatter.firstExperienceDate;
+const About = ({ about, config }) => {
+  const html = about.html;
+  const birthdate = about.frontmatter.birthdate;
+  const firstExperienceDate = about.frontmatter.firstExperienceDate;
 
   const age = calculateAge(birthdate);
   const experienceYears = calculateAge(firstExperienceDate);
@@ -55,17 +39,17 @@ const About = props => {
           <Fade delay={200}>
             <div className="col-sm-9 col-lg-8 col-xl-8 text-center text-sm-left">
               <h1 className="mb-0">
-                {props.firstName}
+                {config.firstName}
                 <br />
-                {props.lastName}
+                {config.lastName}
               </h1>
-              <div className="subheading mb-5">{props.label}</div>
+              <div className="subheading mb-5">{config.label}</div>
             </div>
             <div className="offset-sm-3 offset-lg-0 col-lg-4 col-xl-4">
               <div className="subheading mb-5">
-                {props.address.formatted} <br />
-                {props.phone} <br />
-                <a href={`mailto:${props.email}`}>{props.email}</a>
+                {config.address.formatted} <br />
+                {config.phone} <br />
+                <a href={`mailto:${config.email}`}>{config.email}</a>
               </div>
             </div>
           </Fade>
@@ -81,7 +65,7 @@ const About = props => {
             </div>
 
             <div className="col-lg-4 col-xl-3 ml-5 ml-lg-0">
-              <SocialLinks socialLinks={props.socialLinks} />
+              <SocialLinks socialLinks={config.socialLinks} />
             </div>
           </div>
         </Fade>
