@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const ResumeItem = ({ title, subtitle, date, children }) => (
+const ResumeItem = ({ title, subtitle, date, html, children }) => (
   <div className="resume-item mb-5">
     <div className="d-flex flex-column flex-md-row justify-content-between">
       <div className="resume-content">
@@ -12,7 +12,14 @@ const ResumeItem = ({ title, subtitle, date, children }) => (
         <span className="text-primary">{date}</span>
       </div>
     </div>
-    <p className="resume-item-description">{children}</p>
+    {html ? (
+      <div
+        className="resume-item-description"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    ) : (
+      <div className="resume-item-description">{children}</div>
+    )}
   </div>
 );
 

@@ -6,15 +6,42 @@ import { Fade } from 'react-reveal';
 import Logo from '../assets/img/logo.inline.svg';
 import config from '../../config';
 
+import { IntlContextConsumer, changeLocale } from 'gatsby-plugin-intl';
+import { injectIntl } from 'react-intl';
+
+const LangSwitcher = () => {
+  return (
+    <IntlContextConsumer>
+      {({ languages, language: currentLanguage }) => (
+        <span className="lang-switcher txt-primary">
+          {languages.map(lang => (
+            <React.Fragment key={lang}>
+              <button
+                onClick={() => changeLocale(lang)}
+                className={
+                  'btn btn-link ' + (lang === currentLanguage ? 'active' : '')
+                }
+              >
+                {lang}
+              </button>
+              {lang !== languages[languages.length - 1] && ' | '}
+            </React.Fragment>
+          ))}
+        </span>
+      )}
+    </IntlContextConsumer>
+  );
+};
+
 export class Sidebar extends Component {
   constructor(props) {
     super(props);
     this.state = {
       tabs: [
-        { content: 'About', href: 'about' },
-        { content: 'Experience', href: 'experience' },
-        { content: 'Education', href: 'education' },
-        { content: 'Skills', href: 'skills' },
+        { content: 'sections_about_menuTitle', href: 'about' },
+        { content: 'sections_experience_menuTitle', href: 'experience' },
+        { content: 'sections_education_menuTitle', href: 'education' },
+        { content: 'sections_skills_menuTitle', href: 'skills' },
         // { content: 'Interests', href: 'interests' },
         // { content: 'Awards', href: 'awards' },
       ],
@@ -23,6 +50,7 @@ export class Sidebar extends Component {
 
   render() {
     const { tabs } = this.state;
+    const { intl } = this.props;
     return (
       <nav
         className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top"
@@ -47,17 +75,7 @@ export class Sidebar extends Component {
             </span>
           </Fade>
         </a>
-        {/* <button
-          className="navbar-toggler"
-          type="button"
-          data-toggle="collapse"
-          data-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button> */}
+
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
           <Scrollspy
             items={tabs.map(s => s.href)}
@@ -72,7 +90,7 @@ export class Sidebar extends Component {
                   <Scroll type="id" element={href}>
                     <Fade delay={100 + i * 100}>
                       <a className="nav-link" href={`#${href}`}>
-                        {content}
+                        {intl.formatMessage({ id: content })}
                       </a>
                     </Fade>
                   </Scroll>
@@ -81,9 +99,11 @@ export class Sidebar extends Component {
             })}
           </Scrollspy>
         </div>
+
+        <LangSwitcher />
       </nav>
     );
   }
 }
 
-export default Sidebar;
+export default injectIntl(Sidebar);

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Fade } from 'react-reveal';
+import { injectIntl } from 'react-intl';
 
 const ProgressBar = ({ percentage = 0, children }) => (
   <div className="progress">
@@ -21,10 +22,12 @@ ProgressBar.propTypes = {
   percentage: PropTypes.number,
 };
 
-const CompetenceSkills = ({ competences }) => (
+const CompetenceSkills = ({ competences, intl }) => (
   <>
     <Fade delay={0}>
-      <h3 className="mb-4">Compétences</h3>
+      <h3 className="mb-4">
+        {intl.formatMessage({ id: 'sections_skills_competences' })}
+      </h3>
     </Fade>
     {competences.map(({ title, knowledgePercentage }, idx) => (
       <Fade key={idx} bottom delay={100 + idx * 30}>
@@ -48,4 +51,4 @@ CompetenceSkills.propTypes = {
   ),
 };
 
-export default CompetenceSkills;
+export default injectIntl(CompetenceSkills);
