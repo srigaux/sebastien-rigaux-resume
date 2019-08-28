@@ -1,21 +1,30 @@
 import React from 'react';
 import ExperienceItem from './ExperienceItem';
 import Timeline from '../../Timeline';
+import Section from '../Section';
+import { injectIntl } from 'react-intl';
 
-const Experience = props => (
-  <section
-    className="resume-section p-3 p-lg-5 d-flex justify-content-center"
-    id="experience"
-  >
-    <div className="w-100">
-      <h2 className="mb-5">Experience Professionnelle</h2>
+const Experience = ({ experiences, intl }) => {
+  return (
+    <Section
+      id="experience"
+      title={intl.formatMessage({ id: 'sections_experience_title' })}
+    >
       <Timeline>
-        {props.experience.map((experience, idx) => (
-          <ExperienceItem key={idx} {...experience} />
-        ))}
+        {experiences.nodes.map(
+          ({ id, html, frontmatter: { title, date, company } }) => (
+            <ExperienceItem
+              key={id}
+              company={company}
+              date={date}
+              title={title}
+              description={html}
+            />
+          )
+        )}
       </Timeline>
-    </div>
-  </section>
-);
+    </Section>
+  );
+};
 
-export default Experience;
+export default injectIntl(Experience);

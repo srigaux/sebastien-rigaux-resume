@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { graphql } from 'gatsby';
+
 //import 'boostrap';
 
 import Layout from '../components/Layout';
@@ -13,20 +15,20 @@ import Education from '../components/Sections/Education';
 import Skills from '../components/Sections/Skills';
 import SEO from '../components/SEO';
 
-const IndexPage = () => (
+const IndexPage = ({ data }) => (
   <Layout>
     <SEO />
     <Sidebar />
     <div className="container-fluid p-0">
-      <About {...config} />
+      <About about={data.about} config={config} />
 
       <hr className="m-0" />
 
-      <Experience {...config} />
+      <Experience experiences={data.experiences} />
 
       <hr className="m-0" />
 
-      <Education {...config} />
+      <Education educations={data.educations} />
 
       <hr className="m-0" />
 
@@ -174,5 +176,55 @@ const IndexPage = () => (
     </div>
   </Layout>
 );
+
+export const pageQuery = graphql`
+  query educations($language: String) {
+    about: markdownRemark(
+      fields: { sourceName: { eq: "content" }, locale: { eq: $language } }
+      fileAbsolutePath: { regex: "//about.+\\\\.md$/" }
+    ) {
+      html
+      frontmatter {
+        birthdate
+        firstExperienceDate
+      }
+    }
+
+    educations: allMarkdownRemark(
+      filter: {
+        fields: { sourceName: { eq: "educations" }, locale: { eq: $language } }
+      }
+      sort: { fields: frontmatter___date, order: DESC }
+    ) {
+      nodes {
+        id
+        html
+        frontmatter {
+          institution
+          studyType
+          area
+          gpa
+          date
+        }
+      }
+    }
+    experiences: allMarkdownRemark(
+      filter: {
+        fields: { sourceName: { eq: "experiences" }, locale: { eq: $language } }
+      }
+      sort: { fields: frontmatter___date, order: DESC }
+    ) {
+      nodes {
+        id
+        html
+        frontmatter {
+          title
+          date
+          company
+        }
+      }
+    }
+  }
+`;
 
 export default IndexPage;

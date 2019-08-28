@@ -1,0 +1,31 @@
+{
+  "name": "gatsby-remark-intl",
+  "version": "1.0.1",
+  "description": "Add a custom locale field to remark nodes",
+  "main": "index.js",
+  "repository": "https://www.github.com/srigaux/gatsby-remark-intl",
+  "author": "Sébastien Rigaux",
+  "license": "MIT",
+  "private": false,
+  "keywords": [
+    "gatsby",
+    "gatsby-plugin",
+    "remark",
+    "intl",
+    "locale",
+    "i18n"
+  ],
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "cross-env": "^5.1.5",
+    "standard-version": "^7.0.0"
+  },
+  "scripts": {
+    "build": "cross-env BABEL_ENV=production babel src --out-dir .",
+    "prepublishOnly": "yarn build",
+    "release": "standard-version"
+  }
+}

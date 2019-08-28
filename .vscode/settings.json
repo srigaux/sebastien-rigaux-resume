@@ -1,8 +1,8 @@
 {
   "files.exclude": {
-    "**.cache": false,
+    "**.cache": true,
     "**.vscode": false,
-    "**node_modules": false,
+    "**node_modules": true,
     "**public": false,
     "**.gitignore": false,
     "**.prettierrc": false,

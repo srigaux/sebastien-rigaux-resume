@@ -9,6 +9,24 @@
       outline-color: lighten($primary, 15%);
     }
   }
+
+  .lang-switcher {
+    color: $gray-600;
+    cursor: default;
+
+    a,
+    button {
+      color: $gray-600;
+      cursor: pointer;
+
+      text-transform: uppercase;
+      text-decoration: none;
+
+      &.active {
+        color: white;
+      }
+    }
+  }
 }
 
 @media (min-width: 992px) {
