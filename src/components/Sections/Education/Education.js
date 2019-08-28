@@ -2,10 +2,14 @@ import React from 'react';
 import EducationItem from './EducationItem';
 import Timeline from '../../Timeline';
 import Section from '../Section';
+import { injectIntl } from 'react-intl';
 
-const Education = ({ educations }) => {
+const Education = ({ educations, intl }) => {
   return (
-    <Section id="education" title="Education">
+    <Section
+      id="education"
+      title={intl.formatMessage({ id: 'sections_education_title' })}
+    >
       <Timeline>
         {educations.nodes.map(
           ({
@@ -29,4 +33,4 @@ const Education = ({ educations }) => {
   );
 };
 
-export default Education;
+export default injectIntl(Education);

@@ -7,6 +7,7 @@ import Logo from '../assets/img/logo.inline.svg';
 import config from '../../config';
 
 import { IntlContextConsumer, changeLocale } from 'gatsby-plugin-intl';
+import { injectIntl } from 'react-intl';
 
 const LangSwitcher = () => {
   return (
@@ -37,10 +38,10 @@ export class Sidebar extends Component {
     super(props);
     this.state = {
       tabs: [
-        { content: 'About', href: 'about' },
-        { content: 'Experience', href: 'experience' },
-        { content: 'Education', href: 'education' },
-        { content: 'Skills', href: 'skills' },
+        { content: 'sections_about_menuTitle', href: 'about' },
+        { content: 'sections_experience_menuTitle', href: 'experience' },
+        { content: 'sections_education_menuTitle', href: 'education' },
+        { content: 'sections_skills_menuTitle', href: 'skills' },
         // { content: 'Interests', href: 'interests' },
         // { content: 'Awards', href: 'awards' },
       ],
@@ -49,6 +50,7 @@ export class Sidebar extends Component {
 
   render() {
     const { tabs } = this.state;
+    const { intl } = this.props;
     return (
       <nav
         className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top"
@@ -88,7 +90,7 @@ export class Sidebar extends Component {
                   <Scroll type="id" element={href}>
                     <Fade delay={100 + i * 100}>
                       <a className="nav-link" href={`#${href}`}>
-                        {content}
+                        {intl.formatMessage({ id: content })}
                       </a>
                     </Fade>
                   </Scroll>
@@ -104,4 +106,4 @@ export class Sidebar extends Component {
   }
 }
 
-export default Sidebar;
+export default injectIntl(Sidebar);

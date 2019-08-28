@@ -3,9 +3,10 @@ import PropTypes from 'prop-types';
 import { CircularProgressbarWithChildren } from 'react-circular-progressbar';
 import { Fade } from 'react-reveal';
 import { useStaticQuery, graphql } from 'gatsby';
+import { injectIntl } from 'react-intl';
 
 const LanguageSkills = props => {
-  const { languages } = props;
+  const { languages, intl } = props;
 
   const { html } = useStaticQuery(graphql`
     query {
@@ -20,7 +21,9 @@ const LanguageSkills = props => {
 
   return (
     <>
-      <h3 className="mb-4">Niveau de langue</h3>
+      <h3 className="mb-4">
+        {intl.formatMessage({ id: 'sections_skills_languageLevel' })}
+      </h3>
       <div className="mb-5" dangerouslySetInnerHTML={{ __html: html }} />
       <div className="propgressbars row">
         {languages.map((lang, idx) => (
@@ -57,4 +60,4 @@ LanguageSkills.propTypes = {
   ),
 };
 
-export default LanguageSkills;
+export default injectIntl(LanguageSkills);

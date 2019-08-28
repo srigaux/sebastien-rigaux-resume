@@ -1,13 +1,14 @@
 {
-  "sections.experiences.title": "Expérience professionnelle",
-  "sections.experiences.menuTitle": "Expérience",
+  "sections_about_menuTitle": "A propos",
 
-  "sections.educations.title": "Education",
-  "sections.educations.menuTitle": "Education",
+  "sections_experience_title": "Expérience professionnelle",
+  "sections_experience_menuTitle": "Expérience",
 
-  "sections.skills.title": "Compétences",
-  "sections.skills.menuTitle": "Compétences",
+  "sections_education_title": "Etudes",
+  "sections_education_menuTitle": "Etudes",
 
-  "sections.skills.languageLevel": "Niveau de langue",
-  "sections.skills.competences": "Compétences"
+  "sections_skills_title": "Compétences",
+  "sections_skills_menuTitle": "Compétences",
+  "sections_skills_languageLevel": "Niveau de langue",
+  "sections_skills_competences": "Compétences"
 }
