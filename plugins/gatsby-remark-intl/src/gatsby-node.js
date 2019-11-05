@@ -1,7 +1,6 @@
 const localeRegex = /\.(\w{2})\.md$/i;
 
-exports.onCreateNode = ({ node, actions }) => {
-  const { createNodeField } = actions;
+async function onCreateNode({ node, actions: { createNodeField } }) {
 
   // We only care about MarkdownRemark content.
   if (node.internal.type !== 'MarkdownRemark') {
@@ -21,7 +20,7 @@ exports.onCreateNode = ({ node, actions }) => {
   }
 };
 
-exports.onCreatePage = ({ page, actions: { createPage, deletePage } }) => {
+async function onCreatePage({ page, actions: { createPage, deletePage } }) {
   if (!page.context.intl || page.context.language) {
     return;
   }
@@ -35,3 +34,6 @@ exports.onCreatePage = ({ page, actions: { createPage, deletePage } }) => {
     },
   });
 };
+
+exports.onCreateNode = onCreateNode;
+exports.onCreatePage = onCreatePage;

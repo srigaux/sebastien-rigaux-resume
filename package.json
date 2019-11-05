@@ -1,14 +1,14 @@
 {
-  "name": "gatsby-starter-resume",
+  "name": "sebastien-rigaux-resume",
   "version": "0.0.1",
   "description": "Gatsby.js V2 starter template based on Resume by startbootstrap",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anubhavsrivastava/gatsby-starter-resume.git"
+    "url": "git+https://github.com/srigaux/sebastien-rigaux-resume.git"
   },
   "author": {
-    "name": "Anubhav Srivastava",
-    "email": "anubhav.srivastava00@gmail.com"
+    "name": "Sébastien Rigaux",
+    "email": "sebastien@rigaux.be"
   },
   "dependencies": {
     "bootstrap": "4.3.1",
@@ -16,9 +16,9 @@
     "gatsby-plugin-csp": "^1.1.3",
     "gatsby-plugin-google-analytics": "^2.1.4",
     "gatsby-plugin-html2amp": "^1.0.0",
-    "gatsby-plugin-intl": "^0.2.8",
+    "gatsby-plugin-intl": "^0.3.1",
     "gatsby-plugin-manifest": "^2.1.1",
-    "gatsby-plugin-offline": "^2.1.0",
+    "gatsby-plugin-offline": "^3.0.18",
     "gatsby-plugin-prefetch-google-fonts": "^1.4.2",
     "gatsby-plugin-purgecss": "^4.0.0",
     "gatsby-plugin-react-helmet": "^3.1.2",
@@ -58,12 +58,13 @@
   },
   "keywords": [
     "gatsby",
-    "gatsby-starter",
-    "gatsby-starter-resume"
+    "resume",
+    "sebastien",
+    "rigaux"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/anubhavsrivastava/gatsby-starter-resume/issues"
+    "url": "https://github.com/srigaux/sebastien-rigaux-resume/issues"
   },
-  "homepage": "https://github.com/anubhavsrivastava/gatsby-starter-resume#readme"
+  "homepage": "https://github.com/srigaux/sebastien-rigaux-resume#readme"
 }
