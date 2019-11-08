@@ -3,13 +3,11 @@
     stroke: $gray-600;
   }
   .CircularProgressbar-trail {
-    stroke: $white;
+    stroke: $gray-300;
+    fill: $light-gray;
   }
   .CircularProgressbar-text {
     fill: $gray-800;
-  }
-  .CircularProgressbar-background {
-    fill: white;
   }
 
   &-content {

@@ -32,7 +32,10 @@ const IndexPage = ({ data }) => (
 
       <hr className="m-0" />
 
-      <Skills {...config} />
+      <Skills
+        competenceSkills={config.competenceSkills}
+        languageSkills={data.languageSkills}
+      />
 
       {/* <hr className="m-0" />
 
@@ -221,6 +224,21 @@ export const pageQuery = graphql`
           title
           date
           company
+        }
+      }
+    }
+    languageSkills: markdownRemark(
+      fields: { sourceName: { eq: "content" }, locale: { eq: $language } }
+      fileAbsolutePath: { regex: "//language-skills/" }
+    ) {
+      html
+      frontmatter {
+        languages {
+          level {
+            title
+            value
+          }
+          lang
         }
       }
     }

@@ -9,16 +9,15 @@ const EducationItem = ({
   gpa,
   date,
 }) => (
-  <ResumeItem title={institution} subtitle={`${studyType} ${area}`} date={date}>
+  <ResumeItem title={institution} subtitle={`${studyType} ${area} `} date={date}>
     {description && (
       <>
-        <br />
         <div dangerouslySetInnerHTML={{ __html: description }} />
       </>
     )}
     {gpa && (
       <>
-        <br />
+        {description && <br />}
         {gpa}
       </>
     )}
