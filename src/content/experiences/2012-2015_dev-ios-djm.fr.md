@@ -1,5 +1,5 @@
 ---
-title: 'Développeur iOS'
+title: 'Développeur iOS & Web'
 company: 'djm digital S.A. (Liège - BELGIQUE)'
 date: 2012 – 2015
 ---
