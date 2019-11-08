@@ -20,19 +20,19 @@ module.exports = {
     {
       icon: 'fa-github',
       name: 'Github',
-      identifier: '/srigaux',
+      identifier: '/ srigaux',
       url: 'https://github.com/srigaux',
     },
     {
       icon: 'fa-facebook-f',
       name: 'Facebook',
-      identifier: '/srigaux',
+      identifier: '/ srigaux',
       url: 'https://facebook.com/srigaux',
     },
     {
       icon: 'fa-linkedin-in',
       name: 'Linkedin',
-      identifier: '/sebastien-rigaux',
+      identifier: '/ sebastien-rigaux',
       url: 'https://linkedin.com/in/sebastien-rigaux',
     },
     // {
@@ -44,58 +44,39 @@ module.exports = {
     {
       icon: 'fa-twitter',
       name: 'Twitter',
-      identifier: 'rigauxse',
+      identifier: '/ rigauxse',
       url: 'https://twitter.com/rigauxse',
     },
     {
       icon: 'fa-instagram',
       name: 'Instagram',
-      identifier: '/rigauxse',
+      identifier: '/ rigauxse',
       url: 'https://www.instagram.com/rigauxse/',
     },
   ],
   email: 'sebastien@rigaux.be',
-  phone: '+32 476 42 08 48',
+  // phone: '+32 476 42 08 48',
+  phone: '+1 (236) 858-8811',
+  // address: {
+  //   zip: '4600',
+  //   locality: 'Visé',
+  //   country: 'Belgium',
+  //   formatted: '4600 Visé – Canada',
+  // },
   address: {
-    zip: '4600',
-    locality: 'Visé',
-    country: 'Belgium',
-    formatted: '4600 Visé – Belgium',
-  },
-  languageSkills: {
-    description: `
-    Né en Belgique francophone.
-    Bonne compréhension de l'anglais.
-    Bases de néerlandais apprises à l'école.`,
-    languages: [
-      {
-        id: 'fr',
-        title: 'Français',
-        shortTitle: 'Français',
-        knowledgePercentage: 100,
-      },
-      {
-        id: 'en',
-        title: 'Anglais',
-        shortTitle: 'Anglais',
-        knowledgePercentage: 60,
-      },
-      {
-        id: 'nl',
-        title: 'Néerlandais',
-        shortTitle: 'Néérl.',
-        knowledgePercentage: 30,
-      },
-    ],
+    zip: 'BC V6J 1A6',
+    locality: 'Vancouver',
+    country: 'Canada',
+    formatted: 'Vancouver, BC V6J 1A6',
   },
   competenceSkills: [
     {
-      title: 'Web .net/php',
+      title: 'Web – Backend',
       knowledgePercentage: 95,
     },
     {
-      title: 'Web frontend',
-      knowledgePercentage: 90,
+      title: 'Web – Frontend',
+      knowledgePercentage: 85,
     },
     {
       title: 'Database',

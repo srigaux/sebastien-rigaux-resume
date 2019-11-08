@@ -4,5 +4,7 @@ company: 'djm digital S.A. (Liège - BELGIUM)'
 date: 2012 – 2015
 ---
 
-Development of iOS applications as well as their APIs
-and web applications for large Belgian companies.
+Participated in the entire lifecycle of iOS applications including, but not limited to, research and planning through app launch and client support.\
+Developed mobile applications tailored to client requirements utilizing native technologies.\
+Created and distributed progress report to executives to keep necessary personnel informed of project milestones on weekly basis.
+

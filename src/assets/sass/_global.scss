@@ -157,7 +157,8 @@ p.lead {
 
 .progressbar {
   &-title {
-    text-transform: uppercase;
+    //text-transform: uppercase;
+    font-variant: small-caps;
     font-weight: 200;
     font-size: 1rem;
   }
