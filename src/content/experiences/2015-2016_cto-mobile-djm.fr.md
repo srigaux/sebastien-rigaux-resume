@@ -5,4 +5,4 @@ date: 2015 – 2016
 ---
 
 Gestion des équipes de développement mobile iOS et Android. 
-Développement mobile et backend.
+Développement mobile et APIs.
