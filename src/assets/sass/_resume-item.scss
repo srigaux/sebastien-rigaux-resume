@@ -3,9 +3,26 @@ section.resume-section {
   padding-bottom: 5rem !important;
   max-width: 75rem;
   .resume-item {
-    .resume-content {}
     .resume-date {
       min-width: none;
+    }
+
+    .resume-item-description {
+      & > ul {
+        list-style: none;
+        margin-left: 0;
+        padding-left: 0;
+
+        & > li {
+          padding-left: 1em;
+          text-indent: -1em;
+        }
+
+        & > li:before {
+          content: '–';
+          padding-right: 8px;
+        }
+      }
     }
   }
 }

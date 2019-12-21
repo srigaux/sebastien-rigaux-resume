@@ -4,6 +4,7 @@ company: 'djm digital S.A. (Liège - BELGIQUE)'
 date: '2016 – Maintenant'
 ---
 
-Gestion les équipes de développement, de projets multiples, des infrastructures serveurs et conception de nouveaux produits.
-Maintien d'une vaste base de connaissances des les technologies, plateformes et tendances clés actuelles.
-Information de l'équipe de direction des risques technologiques et des méthodes recommandées pour remédier aux problèmes.
+- Gestion d'équipes de développement et de projets multiples, responsable de l'infrastructure des serveurs et de la conception de nouveaux produits.
+- Maintenance une vaste base de connaissances de toutes les technologies, plateformes et tendances clés et actuelles.
+- Diriger la conception, l'architecture et la programmation de tous les logiciels.
+- Créer des applications prototypes de preuve de concept à des fins de démonstration et d'évaluation.
