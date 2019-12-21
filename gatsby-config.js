@@ -24,7 +24,7 @@ module.exports = {
         // supported language
         languages: ['fr', 'en'],
         // language file path
-        defaultLanguage: 'fr',
+        defaultLanguage: 'en',
         // option to redirect to `/ko` when connecting `/`
         redirect: true,
       },
@@ -47,7 +47,7 @@ module.exports = {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `content`,
-        path: `${__dirname}/src/content/`,
+        path: `${__dirname}/src/content/others`,
       },
     },
     'gatsby-transformer-remark',
