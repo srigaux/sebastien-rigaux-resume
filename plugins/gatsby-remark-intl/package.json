@@ -21,7 +21,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "cross-env": "^5.1.5",
-    "standard-version": "^7.0.0"
+    "standard-version": "^8.0.1"
   },
   "scripts": {
     "build": "cross-env BABEL_ENV=production babel src --out-dir .",
