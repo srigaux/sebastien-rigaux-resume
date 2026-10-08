@@ -43,11 +43,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
     <a
       data-header-brand
       href="#about"
-      class="group flex shrink-0 items-center gap-3 rounded-sm py-3 text-ink no-underline"
+      class="group flex min-w-0 shrink-0 items-center gap-2 rounded-sm py-3 text-ink no-underline sm:gap-3"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
-      <Logo data-header-brand-logo class="size-10 text-accent" aria-hidden="true" />
-      <span class="hidden font-display text-sm font-bold tracking-[-0.03em] sm:inline">
+      <Logo data-header-brand-logo class="hidden size-8 text-accent min-[360px]:block sm:size-10" aria-hidden="true" />
+      <span class="whitespace-nowrap font-display text-[clamp(1rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
         {firstName} <span class="text-accent">{lastName}</span>
       </span>
     </a>
@@ -66,7 +66,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
     </nav>
 
     <div class="flex items-center gap-2 py-3 sm:gap-4">
-      <nav aria-label={languageLabel} class="flex items-center gap-1 text-sm font-semibold">
+      <nav aria-label={languageLabel} class="hidden items-center gap-1 text-sm font-semibold lg:flex">
         <a
           data-locale-link
           href={getRelativeLocaleUrl("fr")}
@@ -108,6 +108,27 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
               {label}
             </a>
           ))}
+          <div role="group" aria-label={languageLabel} class="mt-2 border-t border-rule pt-2">
+            <p class="px-3 py-1 text-xs font-semibold text-muted">{languageLabel}</p>
+            <div class="grid grid-cols-2 gap-1">
+              <a
+                data-locale-link
+                href={getRelativeLocaleUrl("fr")}
+                lang="fr"
+                hreflang="fr"
+                aria-current={locale === "fr" ? "page" : undefined}
+                class:list={["rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10", locale === "fr" ? "text-accent" : "text-ink"]}
+              >Français</a>
+              <a
+                data-locale-link
+                href={getRelativeLocaleUrl("en")}
+                lang="en"
+                hreflang="en"
+                aria-current={locale === "en" ? "page" : undefined}
+                class:list={["rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10", locale === "en" ? "text-accent" : "text-ink"]}
+              >English</a>
+            </div>
+          </div>
         </nav>
       </details>
     </div>
@@ -181,13 +202,6 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   window.addEventListener("hashchange", updateLanguageLinks);
 
   const menu = document.querySelector<HTMLDetailsElement>("#mobile-menu");
-  const themeSwitcher = document.querySelector<HTMLDetailsElement>("[data-theme-switcher]");
-  menu?.addEventListener("toggle", () => {
-    if (menu.open && themeSwitcher) themeSwitcher.open = false;
-  });
-  themeSwitcher?.addEventListener("toggle", () => {
-    if (themeSwitcher.open && menu) menu.open = false;
-  });
   menu?.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", () => {
       menu.open = false;

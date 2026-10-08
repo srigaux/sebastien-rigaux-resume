@@ -73,9 +73,21 @@
   }
 }
 
-[data-theme-switcher],
-[data-theme-option] {
+[data-theme-toggle],
+[data-theme-icon-dark] {
   display: none;
+}
+
+:root:is(.light, .dark) [data-theme-toggle] {
+  display: flex;
+}
+
+:root.dark [data-theme-icon-light] {
+  display: none;
+}
+
+:root.dark [data-theme-icon-dark] {
+  display: block;
 }
 
 .brand-ready:not(.brand-visible) [data-header-brand] {
@@ -148,16 +160,6 @@
     transform: translateY(20px);
   }
 
-}
-
-:root[data-theme-preference] [data-theme-switcher] {
-  display: block;
-}
-
-:root[data-theme-preference="light"] [data-theme-option="light"],
-:root[data-theme-preference="dark"] [data-theme-option="dark"],
-:root[data-theme-preference="system"] [data-theme-option="system"] {
-  display: inline-flex;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -49,7 +49,6 @@ const structuredData = person && JSON.stringify({
       (() => {
         const root = document.documentElement;
         const system = window.matchMedia("(prefers-color-scheme: dark)");
-        const modes = ["light", "dark", "system"];
         let preference = "system";
 
         try {
@@ -61,21 +60,16 @@ const structuredData = person && JSON.stringify({
 
         const apply = () => {
           const dark = preference === "dark" || (preference === "system" && system.matches);
-          root.dataset.themePreference = preference;
           root.classList.toggle("dark", dark);
           root.classList.toggle("light", !dark);
           document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#111c1a" : "#f6f8f7");
 
-          const switcher = document.querySelector("[data-theme-switcher]");
-          const summary = switcher?.querySelector("summary");
-          const label = switcher?.getAttribute(`data-label-${preference}`);
-          if (summary && label) {
-            summary.setAttribute("aria-label", label);
-            summary.setAttribute("title", label);
+          const toggle = document.querySelector("[data-theme-toggle]");
+          const label = toggle?.getAttribute(dark ? "data-label-to-light" : "data-label-to-dark");
+          if (toggle && label) {
+            toggle.setAttribute("aria-label", label);
+            toggle.setAttribute("title", label);
           }
-          switcher?.querySelectorAll("[data-theme-choice]").forEach((input) => {
-            input.checked = input.value === preference;
-          });
         };
 
         apply();
@@ -84,33 +78,14 @@ const structuredData = person && JSON.stringify({
           if (preference === "system") apply();
         });
         document.addEventListener("click", (event) => {
-          if (!(event.target instanceof Element)) return;
-          const switcher = document.querySelector("[data-theme-switcher]");
-          if (switcher?.open && !event.target.closest("[data-theme-switcher]")) switcher.open = false;
-        });
-        document.addEventListener("change", (event) => {
-          const choice = event.target;
-          if (!(choice instanceof HTMLInputElement) || !choice.matches("[data-theme-choice]")) return;
-          const next = choice.value;
-          if (!modes.includes(next)) return;
-          preference = next;
+          if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+          preference = root.classList.contains("dark") ? "light" : "dark";
           try {
-            if (preference === "system") localStorage.removeItem("theme");
-            else localStorage.setItem("theme", preference);
+            localStorage.setItem("theme", preference);
           } catch {
             // The preference still applies to the current page.
           }
           apply();
-          const switcher = choice.closest("[data-theme-switcher]");
-          if (switcher) switcher.open = false;
-        });
-        document.addEventListener("keydown", (event) => {
-          if (event.key !== "Escape") return;
-          const switcher = document.querySelector("[data-theme-switcher]");
-          if (switcher?.open) {
-            switcher.open = false;
-            switcher.querySelector("summary")?.focus();
-          }
         });
       })();
     </script>
