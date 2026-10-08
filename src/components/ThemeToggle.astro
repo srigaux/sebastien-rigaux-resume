@@ -1,4 +1,5 @@
 ---
+import { Check, Monitor, Moon, Sun } from "@lucide/astro";
 import type { Locale } from "@/types";
 
 interface Props {
@@ -8,50 +9,72 @@ interface Props {
 const { locale } = Astro.props;
 const copy = {
   fr: {
+    label: "Choisir le thème",
     light: "Clair",
     dark: "Sombre",
     system: "Système",
-    lightAction: "Mode clair. Activer le mode sombre.",
-    darkAction: "Mode sombre. Suivre le système.",
-    systemAction: "Mode système. Activer le mode clair.",
+    lightAction: "Thème clair. Choisir un autre thème.",
+    darkAction: "Thème sombre. Choisir un autre thème.",
+    systemAction: "Thème système. Choisir un autre thème.",
   },
   en: {
+    label: "Choose theme",
     light: "Light",
     dark: "Dark",
     system: "System",
-    lightAction: "Light mode. Switch to dark mode.",
-    darkAction: "Dark mode. Follow the system setting.",
-    systemAction: "System mode. Switch to light mode.",
+    lightAction: "Light theme. Choose another theme.",
+    darkAction: "Dark theme. Choose another theme.",
+    systemAction: "System theme. Choose another theme.",
   },
 }[locale];
 ---
 
-<button
-  type="button"
-  data-theme-toggle
+<details
+  data-theme-switcher
   data-label-light={copy.lightAction}
   data-label-dark={copy.darkAction}
   data-label-system={copy.systemAction}
-  aria-label={copy.systemAction}
-  title={copy.systemAction}
-  class="min-h-11 min-w-11 items-center justify-center rounded-sm border border-rule px-2 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10 xl:px-3"
+  class="relative"
 >
-  <span data-theme-option="light" class="items-center gap-2" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" class="size-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
-    </svg>
-    <span class="hidden xl:inline">{copy.light}</span>
-  </span>
-  <span data-theme-option="dark" class="items-center gap-2" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" class="size-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20.2 15.5A8.5 8.5 0 0 1 8.5 3.8 8.5 8.5 0 1 0 20.2 15.5Z" />
-    </svg>
-    <span class="hidden xl:inline">{copy.dark}</span>
-  </span>
-  <span data-theme-option="system" class="items-center gap-2" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" class="size-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" />
-    </svg>
-    <span class="hidden xl:inline">{copy.system}</span>
-  </span>
-</button>
+  <summary
+    data-theme-summary
+    aria-label={copy.systemAction}
+    title={copy.systemAction}
+    class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-sm border border-rule px-2 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10 marker:hidden xl:gap-2 xl:px-3"
+  >
+    <span data-theme-option="light" class="items-center gap-2" aria-hidden="true">
+      <Sun class="size-5" />
+      <span class="hidden xl:inline">{copy.light}</span>
+    </span>
+    <span data-theme-option="dark" class="items-center gap-2" aria-hidden="true">
+      <Moon class="size-5" />
+      <span class="hidden xl:inline">{copy.dark}</span>
+    </span>
+    <span data-theme-option="system" class="items-center gap-2" aria-hidden="true">
+      <Monitor class="size-5" />
+      <span class="hidden xl:inline">{copy.system}</span>
+    </span>
+  </summary>
+
+  <fieldset class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-44 border border-rule bg-paper p-1.5 shadow-lg shadow-ink/10 dark:shadow-black/30">
+    <legend class="sr-only">{copy.label}</legend>
+    <label class="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-sm px-3 text-sm font-medium text-ink hover:bg-ink/5 focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-accent has-checked:bg-accent/10 has-checked:text-accent dark:hover:bg-ink/10">
+      <input type="radio" name="theme" value="light" data-theme-choice class="peer sr-only" />
+      <Sun class="size-4" aria-hidden="true" />
+      <span>{copy.light}</span>
+      <Check class="ml-auto size-4 opacity-0 peer-checked:opacity-100" aria-hidden="true" />
+    </label>
+    <label class="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-sm px-3 text-sm font-medium text-ink hover:bg-ink/5 focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-accent has-checked:bg-accent/10 has-checked:text-accent dark:hover:bg-ink/10">
+      <input type="radio" name="theme" value="dark" data-theme-choice class="peer sr-only" />
+      <Moon class="size-4" aria-hidden="true" />
+      <span>{copy.dark}</span>
+      <Check class="ml-auto size-4 opacity-0 peer-checked:opacity-100" aria-hidden="true" />
+    </label>
+    <label class="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-sm px-3 text-sm font-medium text-ink hover:bg-ink/5 focus-within:outline-2 focus-within:outline-offset-[-2px] focus-within:outline-accent has-checked:bg-accent/10 has-checked:text-accent dark:hover:bg-ink/10">
+      <input type="radio" name="theme" value="system" data-theme-choice class="peer sr-only" />
+      <Monitor class="size-4" aria-hidden="true" />
+      <span>{copy.system}</span>
+      <Check class="ml-auto size-4 opacity-0 peer-checked:opacity-100" aria-hidden="true" />
+    </label>
+  </fieldset>
+</details>

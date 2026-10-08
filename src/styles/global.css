@@ -73,12 +73,15 @@
   }
 }
 
-[data-theme-toggle],
+[data-theme-switcher],
 [data-theme-option] {
   display: none;
 }
 
-:root[data-theme-preference] [data-theme-toggle],
+:root[data-theme-preference] [data-theme-switcher] {
+  display: block;
+}
+
 :root[data-theme-preference="light"] [data-theme-option="light"],
 :root[data-theme-preference="dark"] [data-theme-option="dark"],
 :root[data-theme-preference="system"] [data-theme-option="system"] {
