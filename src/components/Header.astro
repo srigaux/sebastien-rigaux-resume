@@ -54,7 +54,10 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 
     <nav aria-label={navigationLabel} class="hidden items-center gap-6 lg:flex">
       {sections.map(({ id, label }) => (
-        <a href={`#${id}`} class="text-sm font-medium text-muted transition-colors hover:text-accent">
+        <a
+          href={`#${id}`}
+          class="relative text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] hover:before:origin-left hover:before:scale-x-100 focus-visible:before:origin-left focus-visible:before:scale-x-100 motion-reduce:before:transition-none"
+        >
           {label}
         </a>
       ))}
