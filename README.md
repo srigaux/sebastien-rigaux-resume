@@ -1,74 +1,43 @@
-# gatsby-starter-resume
-
-Gatsby.js V2 starter template based on Resume by startbootstrap
-
-For an overview of the project structure please refer to the [Gatsby documentation - Building with Components](https://www.gatsbyjs.org/docs/building-with-components/).
-
-Check online preview [here](https://anubhavsrivastava.github.io/gatsby-starter-resume/)
-
-## Screenshot
-
-![Screenshot](./src/assets/img/demo.png)
-
-## Install
-
-Make sure that you have the Gatsby CLI program installed:
+# Astro Starter Kit: Minimal
 
 ```sh
-npm install --global gatsby-cli
+pnpm create astro@latest -- --template minimal
 ```
 
-And run from your CLI:
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-```sh
-gatsby new <site-name> https://github.com/anubhavsrivastava/gatsby-starter-resume
+## 🚀 Project Structure
+
+Inside of your Astro project, you'll see the following folders and files:
+
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
 ```
 
-Then you can run it by:
+Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
 
-```sh
-cd gatsby-example-site
-npm install
-gatsby develop
-```
+There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
 
-### Personalization
+Any static assets, like images, can be placed in the `public/` directory.
 
-Edit `config.js` to put up your details
+## 🧞 Commands
 
-```javascript
-module.exports = {
-  siteTitle: 'Gatsby Starter Resume', // <title>
-  ...
-  firstName: 'Anubhav',
-  lastName: 'Srivastava',
-  // social
-  socialLinks: [
-    {
-      icon: 'fa-github',
-      name: 'Github',
-      url: 'https://github.com/anubhavsrivastava',
-    }
-    ...
-  ],
-};
+All commands are run from the root of the project, from a terminal:
 
-```
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `pnpm install`             | Installs dependencies                            |
+| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
+| `pnpm build`           | Build your production site to `./dist/`          |
+| `pnpm preview`         | Preview your build locally, before deploying     |
+| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `pnpm astro -- --help` | Get help using the Astro CLI                     |
 
-### Deploying using Github page
+## 👀 Want to learn more?
 
-`package.json` has a default script that uses `gh-pages` module to publish on Github pages. Simply running `npm run deploy` would publish the site on github pages.
-
-Additionally, it also has [path-prefix](https://www.gatsbyjs.org/docs/path-prefix/) value set for gatsby config in `config.js`. Change `pathPrefix` to relevant path if your gatsby site is hosted on subpath of a domain, `https://theanubhav.com/somePath/`. If you are hosting it as root site, i.e, `https://theanubhav.com/` , remove the pathPrefix configuration.
-
-### Contribution
-
-Suggestions and PRs are welcome!
-
-Please create issue or open PR request for contribution.
-
-### License
-
-[![Open Source Love](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](LICENSE)
-
-refer `LICENSE` file in this repository.
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
