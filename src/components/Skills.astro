@@ -1,0 +1,84 @@
+---
+import SkillBar from "@/components/SkillBar.astro";
+import type { Locale, Skill } from "@/types";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const competences: readonly Skill[] = [
+  { label: "Web – Backend", value: 95 },
+  { label: "Web – Frontend", value: 85 },
+  { label: "Database", value: 80 },
+  { label: "Mobile", value: 95 },
+  { label: "BI / IoT / IA", value: 65 },
+];
+const content: Record<Locale, {
+  title: string;
+  languagesTitle: string;
+  competencesTitle: string;
+  notes: readonly string[];
+  languages: readonly Skill[];
+}> = {
+  fr: {
+    title: "Compétences",
+    languagesTitle: "Niveau de langue",
+    competencesTitle: "Compétences",
+    notes: [
+      "Né en Belgique francophone.",
+      "Bonne compréhension de l'anglais.",
+      "Bases de néerlandais apprises à l'école.",
+    ],
+    languages: [
+      { label: "Français", level: "Natif", value: 100 },
+      { label: "Anglais", level: "Bon", value: 70 },
+      { label: "Néerlandais", level: "Bases", value: 30 },
+    ],
+  },
+  en: {
+    title: "Skills",
+    languagesTitle: "Language level",
+    competencesTitle: "Competences",
+    notes: [],
+    languages: [
+      { label: "French", level: "Native", value: 100 },
+      { label: "English", level: "Fluent", value: 70 },
+      { label: "Dutch", level: "Basics", value: 30 },
+    ],
+  },
+};
+const copy = content[locale];
+---
+
+<section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
+  <div class="grid gap-10 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-14">
+    <div class="h-fit lg:sticky lg:top-28">
+      <h2 id="skills-title" class="font-serif text-3xl leading-tight font-medium tracking-tight text-ink sm:text-4xl">
+        {copy.title}
+      </h2>
+      <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
+    </div>
+
+    <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
+      <div>
+        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
+        {copy.notes.length > 0 && (
+          <div class="mb-8 space-y-1 text-sm leading-relaxed text-muted">
+            {copy.notes.map((note) => <p>{note}</p>)}
+          </div>
+        )}
+        <ul class="space-y-7">
+          {copy.languages.map((skill) => <li><SkillBar skill={skill} /></li>)}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="mb-8 text-xl font-semibold tracking-tight text-ink">{copy.competencesTitle}</h3>
+        <ul class="space-y-7">
+          {competences.map((skill) => <li><SkillBar skill={skill} /></li>)}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

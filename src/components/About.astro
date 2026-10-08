@@ -1,0 +1,103 @@
+---
+import { yearsSince } from "@/lib/years";
+import type { Locale, Person } from "@/types";
+
+interface Props {
+  locale: Locale;
+  person: Person;
+}
+
+const { locale, person } = Astro.props;
+const about = {
+  fr: {
+    intro:
+      "Jeune et dynamique, j'ai {{age}} ans et {{experienceYears}} ans d'expérience acquise au travers de différents postes d'une société de développement web et mobile. A la tête des équipes de développement, je suis le garant des choix technologiques et de l'architecture de tous nos projets.",
+    paragraphs: [
+      "Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés.",
+      "J'aime voyager, sortir, jouer au tennis, faire du golf et de la voile.",
+    ],
+    socialTitle: "Retrouvez-moi",
+    contactTitle: "Contact",
+  },
+  en: {
+    intro:
+      "Young and dynamic, I'm {{age}} years old and have {{experienceYears}} years of experience acquired through various positions at a web and mobile development company. As the head of the development teams, I'm the guarantor of the technological choices and architecture of all our projects.",
+    paragraphs: [
+      "Self-taught and passionate about new technologies, I'm constantly learning and keeping myself informed of new developments.",
+      "I like traveling, going out, playing tennis, golf and sailing.",
+    ],
+    socialTitle: "Find me online",
+    contactTitle: "Contact",
+  },
+}[locale];
+const introParts = about.intro.split(/(\{\{age\}\}|\{\{experienceYears\}\})/g);
+const age = yearsSince(person.birthday);
+const experienceYears = yearsSince(person.firstExperienceDate);
+---
+
+<section id="about" aria-labelledby="name" class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
+  <div class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end lg:gap-20">
+    <div>
+      <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
+      <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle}</p>
+      <h1 id="name" class="font-serif text-[clamp(3.75rem,9vw,8rem)] leading-[0.93] font-medium tracking-[-0.055em] text-ink">
+        {person.firstName}<br /><span class="text-accent">{person.lastName}</span>
+      </h1>
+      <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role}</p>
+    </div>
+
+    <div class="border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pb-2 lg:pl-7 lg:pt-0">
+      <h2 class="mb-5 text-sm font-semibold text-ink">{about.contactTitle}</h2>
+      <address class="space-y-3 text-sm leading-relaxed not-italic text-muted">
+        <p>{person.address.formatted}</p>
+        <p><a class="break-all decoration-rule hover:text-accent hover:decoration-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</a></p>
+        <p><a class="break-all decoration-rule hover:text-accent hover:decoration-accent" href={`mailto:${person.email}`}>{person.email}</a></p>
+      </address>
+    </div>
+  </div>
+
+  <div class="mt-16 grid gap-12 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
+    <div class="max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
+      <p class="font-serif text-xl leading-[1.65] text-ink sm:text-2xl">
+        {introParts.map((part) =>
+          part === "{{age}}" ? (
+            <span data-years-since={person.birthday}>{age}</span>
+          ) : part === "{{experienceYears}}" ? (
+            <span data-years-since={person.firstExperienceDate}>{experienceYears}</span>
+          ) : (
+            part
+          ),
+        )}
+      </p>
+      {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+
+    <aside>
+      <h2 class="mb-5 text-sm font-semibold text-ink">{about.socialTitle}</h2>
+      <ul class="space-y-3">
+        {person.socialLinks.map((link) => (
+          <li>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent"
+            >
+              <span class="font-semibold text-ink group-hover:text-accent">{link.label}</span>
+              <span>{link.identifier}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<script>
+  import { yearsSince } from "@/lib/years";
+
+  document.querySelectorAll<HTMLElement>("[data-years-since]").forEach((element) => {
+    const date = element.dataset.yearsSince;
+    if (date) element.textContent = String(yearsSince(date));
+  });
+</script>

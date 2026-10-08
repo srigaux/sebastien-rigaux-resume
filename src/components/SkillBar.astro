@@ -1,0 +1,29 @@
+---
+import type { Skill } from "@/types";
+
+interface Props {
+  skill: Skill;
+}
+
+const { skill } = Astro.props;
+const accessibleLabel = `${skill.label}: ${skill.level ? `${skill.level}, ` : ""}${skill.value}%`;
+---
+
+<div class="space-y-2.5">
+  <div class="flex items-baseline justify-between gap-4">
+    <span class="font-medium text-ink">{skill.label}</span>
+    <span class="shrink-0 text-sm text-muted">
+      {skill.level && <span>{skill.level} · </span>}{skill.value}%
+    </span>
+  </div>
+  <div
+    role="meter"
+    aria-label={accessibleLabel}
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow={skill.value}
+    class="h-1.5 overflow-hidden bg-rule/65"
+  >
+    <div class="h-full bg-accent" style={`width: ${skill.value}%`}></div>
+  </div>
+</div>

@@ -1,0 +1,110 @@
+---
+import Timeline from "@/components/Timeline.astro";
+import type { Locale, TimelineItem } from "@/types";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const content: Record<Locale, { title: string; items: readonly TimelineItem[] }> = {
+  fr: {
+    title: "Expérience professionnelle",
+    items: [
+      {
+        id: "cto-djm",
+        title: "Directeur de la technologie",
+        subtitle: "djm digital S.A. (Liège - BELGIQUE)",
+        period: "2016 – Maintenant",
+        bullets: [
+          "Gestion d'équipes de développement et de projets multiples, responsable de l'infrastructure des serveurs et de la conception de nouveaux produits.",
+          "Maintenance une vaste base de connaissances de toutes les technologies, plateformes et tendances clés et actuelles.",
+          "Diriger la conception, l'architecture et la programmation de tous les logiciels.",
+          "Créer des applications prototypes de preuve de concept à des fins de démonstration et d'évaluation.",
+        ],
+      },
+      {
+        id: "mobile-djm",
+        title: "Directeur de la technologie - Mobile",
+        subtitle: "djm digital S.A. (Liège - BELGIQUE)",
+        period: "2015 – 2016",
+        bullets: [
+          "Revoir les exigences du projet afin de déterminer les attentes des clients et les ressources nécessaires pour atteindre les objectifs.",
+          "Traduire les exigences opérationnelles en spécifications fonctionnelles.",
+          "Élaboration d'un cahier des charges technique et d'une stratégie prennant toutes les étapes du projet en compte: du concept au lancement.",
+          "Supervision d'une équipe de développeurs dans l'analyse et la création d'applications mobiles et d'API.",
+        ],
+      },
+      {
+        id: "ios-djm",
+        title: "Développeur iOS & Web",
+        subtitle: "djm digital S.A. (Liège - BELGIQUE)",
+        period: "2012 – 2015",
+        bullets: [
+          "Participer à l'ensemble du cycle de vie de développement des applications iOS, y compris, à la recherche et la planification du projet, au lancement de l'application et au support du client.",
+          "Développer des applications mobiles adaptées aux besoins des clients en utilisant des technologies natives.",
+          "Créer et distribuer un rapport aux cadres supérieurs pour les tenir informés des avancements hebdomadaire du projet.",
+        ],
+      },
+      {
+        id: "internship-djm",
+        title: "Stage Développeur iOS",
+        subtitle: "djm digital S.A. (Liège - BELGIQUE)",
+        period: "2012 – 2012",
+        bullets: [
+          "Développement d'une application iPhone, d'APIs et d'applications web en ASP.NET MVC.",
+        ],
+      },
+    ],
+  },
+  en: {
+    title: "Professional experience",
+    items: [
+      {
+        id: "cto-djm",
+        title: "Chief Technology Officer",
+        subtitle: "djm digital S.A. (Liège - BELGIUM)",
+        period: "2016 – Today",
+        bullets: [
+          "Manage of development teams and multiple projects, responsible for the server infrastructure and new product design.",
+          "Maintain vast knowledgebase of all key and current technologies, platforms and trends.",
+          "Direct all software design, architecture and programming.",
+          "Create proof-of-concept prototype applications for demonstration and evaluation purposes.",
+        ],
+      },
+      {
+        id: "mobile-djm",
+        title: "Mobile & Web - Full stack developer",
+        subtitle: "djm digital S.A. (Liège - BELGIUM)",
+        period: "2015 – 2016",
+        bullets: [
+          "Reviewed project requirements to identify customer expectations and resources needed to meet goals.",
+          "Translated business requirements into functional specifications.",
+          "Developed product and technology roadmap and strategy from concept to launch.",
+          "Supervised team of developers in analysis and creation of mobile applications and API.",
+        ],
+      },
+      {
+        id: "ios-djm",
+        title: "iOS & .NET Backend developer",
+        subtitle: "djm digital S.A. (Liège - BELGIUM)",
+        period: "2012 – 2015",
+        bullets: [
+          "Participated in the entire lifecycle of iOS applications including, but not limited to, research and planning through app launch and client support.",
+          "Developed mobile applications tailored to client requirements utilizing native technologies.",
+          "Created and distributed progress report to executives to keep necessary personnel informed of project milestones on a weekly basis.",
+        ],
+      },
+      {
+        id: "internship-djm",
+        title: "iOS & .NET Backend developer – Internship",
+        subtitle: "djm digital S.A. (Liège - BELGIUM)",
+        period: "2012 – 2012",
+        bullets: ["Development of an iPhone application, APIs and web applications in ASP.NET MVC."],
+      },
+    ],
+  },
+};
+---
+
+<Timeline id="experience" title={content[locale].title} items={content[locale].items} />

@@ -1,1 +1,92 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-paper: var(--theme-paper);
+  --color-ink: var(--theme-ink);
+  --color-accent: var(--theme-accent);
+  --color-muted: var(--theme-muted);
+  --color-rule: var(--theme-rule);
+  --font-sans: var(--font-plex-sans);
+  --font-serif: var(--font-plex-serif);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --theme-paper: #f6f8f7;
+    --theme-ink: #1d2b2a;
+    --theme-accent: #0e625a;
+    --theme-muted: #536361;
+    --theme-rule: #c7d3d1;
+    --theme-selection: #c5e1db;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+    --theme-paper: #111c1a;
+    --theme-ink: #e8f1ee;
+    --theme-accent: #83d5c5;
+    --theme-muted: #b0c1bc;
+    --theme-rule: #38504a;
+    --theme-selection: #315d55;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-plex-sans), sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--theme-selection);
+    color: var(--color-ink);
+  }
+
+  a {
+    text-underline-offset: 0.25em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    color-scheme: dark;
+    --theme-paper: #111c1a;
+    --theme-ink: #e8f1ee;
+    --theme-accent: #83d5c5;
+    --theme-muted: #b0c1bc;
+    --theme-rule: #38504a;
+    --theme-selection: #315d55;
+  }
+}
+
+[data-theme-toggle],
+[data-theme-option] {
+  display: none;
+}
+
+:root[data-theme-preference] [data-theme-toggle],
+:root[data-theme-preference="light"] [data-theme-option="light"],
+:root[data-theme-preference="dark"] [data-theme-option="dark"],
+:root[data-theme-preference="system"] [data-theme-option="system"] {
+  display: inline-flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

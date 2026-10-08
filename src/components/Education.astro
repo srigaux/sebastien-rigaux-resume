@@ -1,0 +1,82 @@
+---
+import Timeline from "@/components/Timeline.astro";
+import type { Locale, TimelineItem } from "@/types";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const content: Record<Locale, { title: string; items: readonly TimelineItem[] }> = {
+  fr: {
+    title: "Etudes",
+    items: [
+      {
+        id: "master-uliege",
+        title: "HEC & Université de Liège – ULiège (BELGIQUE)",
+        subtitle: "Master en sciences informatiques à finalité Gestion",
+        period: "sept. 2013 – juin 2015",
+        distinction: "Grade: distinction",
+      },
+      {
+        id: "bachelor-uliege-2013",
+        title: "Université de Liège – ULiège (BELGIQUE)",
+        subtitle: "Bachelier en sciences informatiques",
+        period: "sept. 2012 – juin 2013",
+        distinction: "Grade: distinction",
+      },
+      {
+        id: "inpres",
+        title: "Haute Ecole de la province de Liège – INPRES (BELGIUM)",
+        subtitle: "Bachelier en informatique de gestion",
+        period: "sept. 2010 – juin 2012",
+        distinction: "Grade: distinction",
+      },
+      {
+        id: "bachelor-uliege-2010",
+        title: "Université de Liège – ULiège (BELGIQUE)",
+        subtitle: "Bachelier en sciences informatiques",
+        period: "sept. 2007 – juin 2010",
+        description:
+          "Deux premières années de bachelier en sciences informatiques à l'Université de Liège (ULiège)",
+      },
+    ],
+  },
+  en: {
+    title: "Education",
+    items: [
+      {
+        id: "master-uliege",
+        title: "HEC & University of Liège – ULiège (BELGIUM)",
+        subtitle: "Master of Science in Computer Science",
+        period: "Sept. 2013 – Jun. 2015",
+        distinction: "Graduated with Honors",
+      },
+      {
+        id: "bachelor-uliege-2013",
+        title: "University of Liège – ULiège (BELGIUM)",
+        subtitle: "Bachelor of Science in Computer Science",
+        period: "Sept. 2012 – Jun. 2013",
+        distinction: "Graduated with Honors",
+      },
+      {
+        id: "inpres",
+        title: "The HEI of the Province of Liège – INPRES (BELGIUM)",
+        subtitle: "Bachelor in Management Computing",
+        period: "Sept. 2010 – Jun. 2012",
+        distinction: "Gratuated with Honors",
+      },
+      {
+        id: "bachelor-uliege-2010",
+        title: "University of Liège – ULiège (BELGIUM)",
+        subtitle: "Bachelor of Science in Computer Science",
+        period: "Sept. 2007 – Jun. 2010",
+        description:
+          "First two years of bachelor's degree in computer science at the University of Liège (ULiège)",
+      },
+    ],
+  },
+};
+---
+
+<Timeline id="education" title={content[locale].title} items={content[locale].items} />

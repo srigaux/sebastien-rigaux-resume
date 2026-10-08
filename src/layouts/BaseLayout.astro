@@ -1,0 +1,127 @@
+---
+import { Font } from "astro:assets";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import type { Locale, Person } from "@/types";
+import "@/styles/global.css";
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  noindex?: boolean;
+  person?: Person;
+}
+
+const { locale, title, description, noindex = false, person } = Astro.props;
+const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
+const canonical = new URL(getRelativeLocaleUrl(locale), site).href;
+const frenchUrl = new URL(getRelativeLocaleUrl("fr"), site).href;
+const englishUrl = new URL(getRelativeLocaleUrl("en"), site).href;
+const imageUrl = new URL("/og-image.png", site).href;
+const fullTitle = `${title} | Sébastien Rigaux`;
+const structuredData = person && JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: `${person.firstName} ${person.lastName}`,
+  givenName: person.firstName,
+  familyName: person.lastName,
+  jobTitle: person.jobTitle,
+  url: canonical,
+  email: person.email,
+  telephone: person.phone,
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: person.address.country,
+    addressLocality: person.address.locality,
+    postalCode: person.address.zip,
+  },
+  sameAs: person.socialLinks.map((link) => link.url),
+}).replaceAll("<", "\\u003c");
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f8f7" />
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const system = window.matchMedia("(prefers-color-scheme: dark)");
+        const modes = ["light", "dark", "system"];
+        let preference = "system";
+
+        try {
+          const saved = localStorage.getItem("theme");
+          if (saved === "light" || saved === "dark") preference = saved;
+        } catch {
+          // The system setting remains available when storage is blocked.
+        }
+
+        const apply = () => {
+          const dark = preference === "dark" || (preference === "system" && system.matches);
+          root.dataset.themePreference = preference;
+          root.classList.toggle("dark", dark);
+          root.classList.toggle("light", !dark);
+          document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#111c1a" : "#f6f8f7");
+
+          const button = document.querySelector("[data-theme-toggle]");
+          const label = button?.getAttribute(`data-label-${preference}`);
+          if (button && label) {
+            button.setAttribute("aria-label", label);
+            button.setAttribute("title", label);
+          }
+        };
+
+        apply();
+        document.addEventListener("DOMContentLoaded", apply, { once: true });
+        system.addEventListener("change", () => {
+          if (preference === "system") apply();
+        });
+        document.addEventListener("click", (event) => {
+          if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+          preference = modes[(modes.indexOf(preference) + 1) % modes.length];
+          try {
+            if (preference === "system") localStorage.removeItem("theme");
+            else localStorage.setItem("theme", preference);
+          } catch {
+            // The preference still applies to the current page.
+          }
+          apply();
+        });
+      })();
+    </script>
+    <meta name="description" content={description} />
+    <title>{fullTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <Font cssVariable="--font-plex-sans" preload />
+    <Font cssVariable="--font-plex-serif" />
+    {noindex ? (
+      <meta name="robots" content="noindex, follow" />
+    ) : (
+      <>
+        <link rel="canonical" href={canonical} />
+        <link rel="alternate" hreflang="fr" href={frenchUrl} />
+        <link rel="alternate" hreflang="en" href={englishUrl} />
+        <link rel="alternate" hreflang="x-default" href={new URL("/", site).href} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:locale" content={locale === "fr" ? "fr_BE" : "en_US"} />
+        <meta property="og:title" content={fullTitle} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:image:alt" content="Monogramme SR de Sébastien Rigaux" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:creator" content="@rigauxse" />
+        <meta name="twitter:title" content={fullTitle} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={imageUrl} />
+        {structuredData && <script type="application/ld+json" set:html={structuredData} />}
+      </>
+    )}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
