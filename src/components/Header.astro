@@ -39,11 +39,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 ---
 
 <header class="sticky top-0 z-50 border-b border-transparent bg-paper/95 backdrop-blur-md data-[scrolled]:border-rule motion-safe:transition-colors">
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
     <a
       data-header-brand
       href="#about"
-      class="group flex shrink-0 items-center gap-3 rounded-sm text-ink no-underline"
+      class="group flex shrink-0 items-center gap-3 rounded-sm py-3 text-ink no-underline"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
       <Logo data-header-brand-logo class="size-10 text-accent" aria-hidden="true" />
@@ -52,18 +52,20 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       </span>
     </a>
 
-    <nav aria-label={navigationLabel} class="hidden items-center gap-6 lg:flex">
+    <nav aria-label={navigationLabel} class="hidden items-stretch self-stretch lg:flex">
       {sections.map(({ id, label }) => (
         <a
           href={`#${id}`}
-          class="relative text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] hover:before:origin-left hover:before:scale-x-100 focus-visible:before:origin-left focus-visible:before:scale-x-100 motion-reduce:before:transition-none"
+          class="group flex items-center px-3 text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent"
         >
-          {label}
+          <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
+            {label}
+          </span>
         </a>
       ))}
     </nav>
 
-    <div class="flex items-center gap-2 sm:gap-4">
+    <div class="flex items-center gap-2 py-3 sm:gap-4">
       <nav aria-label={languageLabel} class="flex items-center gap-1 text-sm font-semibold">
         <a
           data-locale-link
