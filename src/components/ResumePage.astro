@@ -87,17 +87,20 @@ const name = `${person.firstName} ${person.lastName}`;
     (() => {
       const root = document.documentElement;
       root.classList.add("motion-ready");
+      root.classList.add("brand-ready");
       window.addEventListener(
         "load",
         () => {
           if (!root.hasAttribute("data-reveal-observing"))
             root.classList.remove("motion-ready");
+          if (!root.hasAttribute("data-brand-observing"))
+            root.classList.remove("brand-ready");
         },
         { once: true },
       );
     })();
   </script>
-  <Header locale={locale} name={name} />
+  <Header locale={locale} firstName={person.firstName} lastName={person.lastName} />
   <main class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
     <About locale={locale} person={person} />
     <Experience locale={locale} />

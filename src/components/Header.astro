@@ -7,10 +7,11 @@ import type { Locale } from "@/types";
 
 interface Props {
   locale: Locale;
-  name: string;
+  firstName: string;
+  lastName: string;
 }
 
-const { locale, name } = Astro.props;
+const { locale, firstName, lastName } = Astro.props;
 const nav = {
   fr: {
     about: "À propos",
@@ -37,15 +38,18 @@ const navigationLabel = locale === "fr" ? "Navigation principale" : "Main naviga
 const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 ---
 
-<header class="sticky top-0 z-50 border-b border-rule bg-paper/95 backdrop-blur-md">
+<header class="sticky top-0 z-50 border-b border-transparent bg-paper/95 backdrop-blur-md data-[scrolled]:border-rule motion-safe:transition-colors">
   <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
     <a
+      data-header-brand
       href="#about"
       class="group flex shrink-0 items-center gap-3 rounded-sm text-ink no-underline"
-      aria-label={`${name} — ${nav.about}`}
+      aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
-      <Logo class="size-10 text-ink transition-colors group-hover:text-accent" aria-hidden="true" />
-      <span class="hidden text-sm font-semibold tracking-tight sm:inline">{name}</span>
+      <Logo data-header-brand-logo class="size-10 text-accent" aria-hidden="true" />
+      <span class="hidden font-display text-sm font-bold tracking-[-0.03em] sm:inline">
+        {firstName} <span class="text-accent">{lastName}</span>
+      </span>
     </a>
 
     <nav aria-label={navigationLabel} class="hidden items-center gap-6 lg:flex">
@@ -106,6 +110,60 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 </header>
 
 <script>
+  const root = document.documentElement;
+  const header = document.querySelector<HTMLElement>("header");
+  const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
+  const heroTitle = document.querySelector<HTMLElement>("#name");
+  const desktop = window.matchMedia("(min-width: 64rem)");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  if (header && heroLogo && heroTitle) {
+    let brandVisible = false;
+    let transition: ViewTransition | undefined;
+    let frame = 0;
+    const apply = () => root.classList.toggle("brand-visible", brandVisible);
+
+    const syncBrand = (animate = true) => {
+      header.toggleAttribute("data-scrolled", window.scrollY > 0);
+      const reference = desktop.matches ? heroLogo : heroTitle;
+      const rect = reference.getBoundingClientRect();
+      const headerBottom = header.getBoundingClientRect().bottom;
+      const nextVisible = rect.top <= headerBottom;
+      if (nextVisible === brandVisible) return;
+
+      brandVisible = nextVisible;
+      if (transition) {
+        transition.skipTransition();
+        apply();
+        return;
+      }
+
+      const logoIsVisible = rect.bottom > headerBottom && rect.top < window.innerHeight;
+      if (animate && desktop.matches && !reducedMotion.matches && logoIsVisible && document.startViewTransition) {
+        transition = document.startViewTransition(apply);
+        transition.finished.then(() => {
+          transition = undefined;
+          apply();
+        });
+      } else {
+        apply();
+      }
+    };
+
+    const scheduleBrandSync = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        syncBrand();
+      });
+    };
+
+    syncBrand(false);
+    root.dataset.brandObserving = "";
+    window.addEventListener("scroll", scheduleBrandSync, { passive: true });
+    window.addEventListener("resize", scheduleBrandSync);
+  }
+
   const updateLanguageLinks = () => {
     document.querySelectorAll<HTMLAnchorElement>("[data-locale-link]").forEach((link) => {
       const url = new URL(link.href);
