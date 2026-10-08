@@ -19,9 +19,8 @@ export type Skill = {
 export type Person = {
   firstName: string;
   lastName: string;
-  role: string;
-  jobTitle: string;
-  birthday: string;
+  role: Record<Locale, string>;
+  jobTitle: Record<Locale, string>;
   firstExperienceDate: string;
   email: string;
   phone: string;

@@ -25,7 +25,7 @@ const structuredData = person && JSON.stringify({
   name: `${person.firstName} ${person.lastName}`,
   givenName: person.firstName,
   familyName: person.lastName,
-  jobTitle: person.jobTitle,
+  jobTitle: person.jobTitle[locale],
   url: canonical,
   email: person.email,
   telephone: person.phone,
@@ -133,7 +133,7 @@ const structuredData = person && JSON.stringify({
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <meta property="og:image" content={imageUrl} />
-        <meta property="og:image:alt" content="Monogramme SR de Sébastien Rigaux" />
+        <meta property="og:image:alt" content={locale === "fr" ? "Monogramme SR de Sébastien Rigaux" : "Sébastien Rigaux’s SR monogram"} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:creator" content="@rigauxse" />
         <meta name="twitter:title" content={fullTitle} />

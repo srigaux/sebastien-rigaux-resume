@@ -15,9 +15,14 @@ const { locale } = Astro.props;
 const person: Person = {
   firstName: "Sébastien",
   lastName: "Rigaux",
-  role: "Full stack web/mobile developer",
-  jobTitle: "CTO",
-  birthday: "1989-12-22",
+  role: {
+    fr: "Architecture logicielle · Leadership technique · Produits web et mobiles",
+    en: "Software architecture · Engineering leadership · Web and mobile products",
+  },
+  jobTitle: {
+    fr: "Directeur technique (CTO) · Tech Lead",
+    en: "CTO · Tech Lead",
+  },
   firstExperienceDate: "2012-02-01",
   email: "sebastien@rigaux.be",
   phone: "+32 476 42 08 48",
@@ -57,15 +62,15 @@ const person: Person = {
 };
 const copy = {
   fr: {
-    title: "CTO et développeur web et mobile",
+    title: "Directeur technique (CTO) et Tech Lead",
     description:
-      "Sébastien Rigaux, directeur de la technologie et développeur web et mobile full stack. Parcours, études et compétences.",
+      "Sébastien Rigaux, directeur technique (CTO) et Tech Lead à Visé. Architecture web et mobile, transition IA et accompagnement CTO as a Service.",
     backToTop: "Retour en haut",
   },
   en: {
-    title: "CTO and full stack web and mobile developer",
+    title: "CTO and Tech Lead",
     description:
-      "Sébastien Rigaux, Chief Technology Officer and full stack web and mobile developer. Experience, education and skills.",
+      "Sébastien Rigaux is a CTO and Tech Lead based in Belgium. Software architecture, AI transition and CTO as a Service for web and mobile products.",
     backToTop: "Back to top",
   },
 }[locale];

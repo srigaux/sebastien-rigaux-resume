@@ -7,45 +7,52 @@ interface Props {
 }
 
 const { locale } = Astro.props;
-const competences: readonly Skill[] = [
-  { label: "Web – Backend", value: 95 },
-  { label: "Web – Frontend", value: 85 },
-  { label: "Database", value: 80 },
-  { label: "Mobile", value: 95 },
-  { label: "BI / IoT / IA", value: 65 },
-];
 const content: Record<Locale, {
   title: string;
   languagesTitle: string;
-  competencesTitle: string;
-  notes: readonly string[];
+  expertiseTitle: string;
+  watchTitle: string;
   languages: readonly Skill[];
+  expertise: readonly { title: string; description: string }[];
+  watch: readonly string[];
 }> = {
   fr: {
     title: "Compétences",
-    languagesTitle: "Niveau de langue",
-    competencesTitle: "Compétences",
-    notes: [
-      "Né en Belgique francophone.",
-      "Bonne compréhension de l'anglais.",
-      "Bases de néerlandais apprises à l'école.",
-    ],
+    languagesTitle: "Langues",
+    expertiseTitle: "Expertise technique",
+    watchTitle: "Veille technologique",
     languages: [
       { label: "Français", level: "Natif", value: 100 },
       { label: "Anglais", level: "Bon", value: 70 },
       { label: "Néerlandais", level: "Bases", value: 30 },
     ],
+    expertise: [
+      { title: "Leadership technique & CTO as a Service", description: "Architecture, audits, analyse des risques, conseil et accompagnement d’équipes." },
+      { title: "Développement web & mobile", description: "Frontend, backend, API et applications iOS natives." },
+      { title: "Transition IA & automatisation", description: "Cadrage des usages, choix d’outils, formation, intégration produit et agents conversationnels téléphoniques." },
+      { title: "Communication à grande échelle", description: "Messagerie vocale de Microsoft Teams et Skype for Business, à plusieurs millions de messages par jour." },
+      { title: "Technologies vocales & IA appliquée", description: "TTS à voix neuronales, STT, IVR et traduction automatique." },
+    ],
+    watch: ["Évolutions de l’IA", "React", "Développement frontend", "C#", "Pratiques de tech lead", "Kubernetes"],
   },
   en: {
     title: "Skills",
-    languagesTitle: "Language level",
-    competencesTitle: "Competences",
-    notes: [],
+    languagesTitle: "Languages",
+    expertiseTitle: "Technical expertise",
+    watchTitle: "Topics I follow",
     languages: [
       { label: "French", level: "Native", value: 100 },
-      { label: "English", level: "Fluent", value: 70 },
-      { label: "Dutch", level: "Basics", value: 30 },
+      { label: "English", level: "Good working level", value: 70 },
+      { label: "Dutch", level: "Basic", value: 30 },
     ],
+    expertise: [
+      { title: "Technical leadership & CTO as a Service", description: "Architecture, audits, risk assessment, technical advice and team support." },
+      { title: "Web & mobile engineering", description: "Frontend, backend, APIs and native iOS applications." },
+      { title: "AI transition & automation", description: "Use-case discovery, tool selection, training, product integration and AI-powered telephone agents." },
+      { title: "Communication at scale", description: "Microsoft Teams and Skype for Business voicemail services processing millions of messages a day." },
+      { title: "Speech technology & applied AI", description: "Neural-voice TTS, STT, IVR and automatic translation." },
+    ],
+    watch: ["AI developments", "React", "Frontend development", "C#", "Engineering leadership", "Kubernetes"],
   },
 };
 const copy = content[locale];
@@ -63,20 +70,24 @@ const copy = content[locale];
     <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
       <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
-        {copy.notes.length > 0 && (
-          <div class="mb-8 space-y-1 text-sm leading-relaxed text-muted">
-            {copy.notes.map((note) => <p>{note}</p>)}
-          </div>
-        )}
         <ul class="space-y-7">
           {copy.languages.map((skill, index) => <li><SkillBar skill={skill} index={index} /></li>)}
         </ul>
       </div>
 
       <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
-        <h3 class="mb-8 text-xl font-semibold tracking-tight text-ink">{copy.competencesTitle}</h3>
-        <ul class="space-y-7">
-          {competences.map((skill, index) => <li><SkillBar skill={skill} index={index} /></li>)}
+        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.expertiseTitle}</h3>
+        <ul class="divide-y divide-rule">
+          {copy.expertise.map((area) => (
+            <li class="py-4 first:pt-0">
+              <h4 class="font-semibold text-ink">{area.title}</h4>
+              <p class="mt-1 text-sm leading-relaxed text-muted">{area.description}</p>
+            </li>
+          ))}
+        </ul>
+        <h3 class="mb-4 mt-10 text-base font-semibold text-ink">{copy.watchTitle}</h3>
+        <ul class="flex flex-wrap gap-2">
+          {copy.watch.map((topic) => <li class="border border-rule px-3 py-1.5 text-sm text-muted">{topic}</li>)}
         </ul>
       </div>
     </div>

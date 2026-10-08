@@ -12,27 +12,28 @@ const { locale, person } = Astro.props;
 const about = {
   fr: {
     intro:
-      "Jeune et dynamique, j'ai {{age}} ans et {{experienceYears}} ans d'expérience acquise au travers de différents postes d'une société de développement web et mobile. A la tête des équipes de développement, je suis le garant des choix technologiques et de l'architecture de tous nos projets.",
+      "Avec {{experienceYears}} ans d’expérience dans le web et le mobile, je relie vision technique, architecture et exécution. Directeur de la technologie (CTO) et Tech Lead, j’accompagne les équipes de l’idée à la mise en production.",
     paragraphs: [
-      "Autodidacte et passionné de nouvelles technologies, je me forme continuellement et reste informé des nouveautés.",
-      "J'aime voyager, sortir, jouer au tennis, faire du golf et de la voile.",
+      "Aujourd’hui, je pilote la transition vers l’IA, accompagne les équipes et aide les clients à prendre leurs décisions techniques en CTO as a Service.",
+      "Chez Microsoft à Vancouver, j’ai dirigé l’équipe Voicemail de Teams et Skype for Business sur une plateforme traitant des millions de messages vocaux par jour. Autodidacte et proche du code, je fais aussi de la veille sur React, le frontend, C# et Kubernetes.",
+      "En dehors du travail, je passe du temps avec ma famille, j’aime voyager et sortir avec mes amis, et je pratique le hockey sur gazon, le kitesurf et le padel.",
     ],
     socialTitle: "Retrouvez-moi",
     contactTitle: "Contact",
   },
   en: {
     intro:
-      "Young and dynamic, I'm {{age}} years old and have {{experienceYears}} years of experience acquired through various positions at a web and mobile development company. As the head of the development teams, I'm the guarantor of the technological choices and architecture of all our projects.",
+      "With {{experienceYears}} years of experience in web and mobile, I connect technical vision, architecture and hands-on delivery. As a CTO and Tech Lead, I help teams take products from idea to launch.",
     paragraphs: [
-      "Self-taught and passionate about new technologies, I'm constantly learning and keeping myself informed of new developments.",
-      "I like traveling, going out, playing tennis, golf and sailing.",
+      "Today, I drive the transition to AI, support engineering teams and help clients make technology decisions through CTO as a Service engagements.",
+      "At Microsoft in Vancouver, I led the Voicemail team for Teams and Skype for Business on a platform handling millions of messages a day. Self-taught and close to the code, I also keep up with React, frontend development, C# and Kubernetes.",
+      "Outside work, I spend time with my family, travel, go out with friends, and enjoy field hockey, kitesurfing and padel.",
     ],
     socialTitle: "Find me online",
     contactTitle: "Contact",
   },
 }[locale];
-const introParts = about.intro.split(/(\{\{age\}\}|\{\{experienceYears\}\})/g);
-const age = yearsSince(person.birthday);
+const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
 const experienceYears = yearsSince(person.firstExperienceDate);
 ---
 
@@ -40,11 +41,11 @@ const experienceYears = yearsSince(person.firstExperienceDate);
   <div class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end lg:gap-20">
     <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
-      <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle}</p>
+      <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle[locale]}</p>
       <h1 id="name" class="font-serif text-[clamp(3.75rem,9vw,8rem)] leading-[0.93] font-medium tracking-[-0.055em] text-ink">
         {person.firstName}<br /><span class="text-accent">{person.lastName}</span>
       </h1>
-      <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role}</p>
+      <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role[locale]}</p>
     </div>
 
     <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pb-2 lg:pl-7 lg:pt-0">
@@ -61,9 +62,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
     <div data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
       <p class="font-serif text-xl leading-[1.65] text-ink sm:text-2xl">
         {introParts.map((part) =>
-          part === "{{age}}" ? (
-            <span data-years-since={person.birthday}>{age}</span>
-          ) : part === "{{experienceYears}}" ? (
+          part === "{{experienceYears}}" ? (
             <span data-years-since={person.firstExperienceDate}>{experienceYears}</span>
           ) : (
             part
