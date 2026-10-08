@@ -1,6 +1,5 @@
 ---
-import SkillBar from "@/components/SkillBar.astro";
-import type { Locale, Skill } from "@/types";
+import type { Locale } from "@/types";
 
 interface Props {
   locale: Locale;
@@ -12,7 +11,7 @@ const content: Record<Locale, {
   languagesTitle: string;
   expertiseTitle: string;
   watchTitle: string;
-  languages: readonly Skill[];
+  languages: readonly { label: string; level: string }[];
   expertise: readonly { title: string; description: string }[];
   watch: readonly string[];
 }> = {
@@ -22,9 +21,9 @@ const content: Record<Locale, {
     expertiseTitle: "Expertise technique",
     watchTitle: "Veille technologique",
     languages: [
-      { label: "Français", level: "Natif", value: 100 },
-      { label: "Anglais", level: "Bon", value: 70 },
-      { label: "Néerlandais", level: "Bases", value: 30 },
+      { label: "Français", level: "Natif" },
+      { label: "Anglais", level: "Bon" },
+      { label: "Néerlandais", level: "Bases" },
     ],
     expertise: [
       { title: "Leadership technique & CTO as a Service", description: "Architecture, audits, analyse des risques, conseil et accompagnement d’équipes." },
@@ -41,9 +40,9 @@ const content: Record<Locale, {
     expertiseTitle: "Technical expertise",
     watchTitle: "Topics I follow",
     languages: [
-      { label: "French", level: "Native", value: 100 },
-      { label: "English", level: "Good working level", value: 70 },
-      { label: "Dutch", level: "Basic", value: 30 },
+      { label: "French", level: "Native" },
+      { label: "English", level: "Good working level" },
+      { label: "Dutch", level: "Basic" },
     ],
     expertise: [
       { title: "Technical leadership & CTO as a Service", description: "Architecture, audits, risk assessment, technical advice and team support." },
@@ -59,9 +58,9 @@ const copy = content[locale];
 ---
 
 <section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
-  <div class="grid gap-10 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-14">
+  <div class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14">
     <div class="h-fit lg:sticky lg:top-28">
-      <h2 id="skills-title" data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half font-serif text-3xl leading-tight font-medium tracking-tight text-ink sm:text-4xl">
+      <h2 id="skills-title" data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl">
         {copy.title}
       </h2>
       <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
@@ -70,8 +69,13 @@ const copy = content[locale];
     <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
       <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
-        <ul class="space-y-7">
-          {copy.languages.map((skill, index) => <li><SkillBar skill={skill} index={index} /></li>)}
+        <ul class="divide-y divide-rule">
+          {copy.languages.map((language) => (
+            <li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 first:pt-0">
+              <span class="font-medium text-ink">{language.label}</span>
+              <span class="text-sm text-muted">{language.level}</span>
+            </li>
+          ))}
         </ul>
       </div>
 

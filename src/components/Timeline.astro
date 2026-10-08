@@ -13,7 +13,7 @@ const { id, title, items } = Astro.props;
 <section id={id} aria-labelledby={`${id}-title`} class="border-t border-rule py-16 sm:py-20 lg:py-24">
   <div class="grid gap-10 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[21rem_minmax(0,1fr)]">
     <div class="h-fit lg:sticky lg:top-28">
-      <h2 id={`${id}-title`} data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half max-w-[18ch] font-serif text-3xl leading-tight font-medium tracking-tight text-ink sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)]">
+      <h2 id={`${id}-title`} data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half max-w-[18ch] font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)]">
         {title}
       </h2>
       <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>

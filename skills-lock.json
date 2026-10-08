@@ -43,6 +43,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "2bcdf54921341e745d5213f0291fbe457e0e98ac7e4e2b347300fcf331cac81b"
+    },
     "improve-animations": {
       "source": "emilkowalski/skills",
       "sourceType": "github",

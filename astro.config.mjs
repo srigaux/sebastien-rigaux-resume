@@ -29,9 +29,9 @@ export default defineConfig({
     },
     {
       provider: fontProviders.fontsource(),
-      name: "IBM Plex Serif",
-      cssVariable: "--font-plex-serif",
-      weights: [400, 500, 600],
+      name: "Sora",
+      cssVariable: "--font-sora",
+      weights: [500, 600, 700],
       styles: ["normal"],
       subsets: ["latin"],
     },

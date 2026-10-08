@@ -10,12 +10,6 @@ export type TimelineItem = {
   distinction?: string;
 };
 
-export type Skill = {
-  label: string;
-  value: number;
-  level?: string;
-};
-
 export type Person = {
   firstName: string;
   lastName: string;

@@ -38,29 +38,20 @@ const experienceYears = yearsSince(person.firstExperienceDate);
 ---
 
 <section id="about" aria-labelledby="name" class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
-  <div class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end lg:gap-20">
+  <div>
     <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle[locale]}</p>
-      <h1 id="name" class="font-serif text-[clamp(3.75rem,9vw,8rem)] leading-[0.93] font-medium tracking-[-0.055em] text-ink">
+      <h1 id="name" class="font-display text-[clamp(2.75rem,8vw,6rem)] leading-[0.98] font-bold tracking-[-0.04em] text-ink">
         {person.firstName}<br /><span class="text-accent">{person.lastName}</span>
       </h1>
       <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role[locale]}</p>
     </div>
-
-    <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pb-2 lg:pl-7 lg:pt-0">
-      <h2 class="mb-5 text-sm font-semibold text-ink">{about.contactTitle}</h2>
-      <address class="space-y-3 text-sm leading-relaxed not-italic text-muted">
-        <p>{person.address.formatted}</p>
-        <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</ExternalLink></p>
-        <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`mailto:${person.email}`}>{person.email}</ExternalLink></p>
-      </address>
-    </div>
   </div>
 
-  <div class="mt-16 grid gap-12 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
+  <div class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
     <div data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
-      <p class="font-serif text-xl leading-[1.65] text-ink sm:text-2xl">
+      <p class="font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl">
         {introParts.map((part) =>
           part === "{{experienceYears}}" ? (
             <span data-years-since={person.firstExperienceDate}>{experienceYears}</span>
@@ -72,22 +63,32 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
     </div>
 
-    <aside data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
-      <h2 class="mb-5 text-sm font-semibold text-ink">{about.socialTitle}</h2>
-      <ul class="space-y-3">
-        {person.socialLinks.map((link) => (
-          <li>
-            <ExternalLink
-              href={link.url}
-              newTab
-              class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
-            >
-              <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">{link.label}</span>
-              <span>{link.identifier}</span>
-            </ExternalLink>
-          </li>
-        ))}
-      </ul>
+    <aside data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0">
+      <div>
+        <h2 class="mb-4 text-sm font-semibold text-ink">{about.contactTitle}</h2>
+        <address class="space-y-2 text-sm leading-relaxed not-italic text-muted">
+          <p>{person.address.formatted}</p>
+          <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</ExternalLink></p>
+          <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`mailto:${person.email}`}>{person.email}</ExternalLink></p>
+        </address>
+      </div>
+      <div class="lg:mt-10">
+        <h2 class="mb-4 text-sm font-semibold text-ink">{about.socialTitle}</h2>
+        <ul class="space-y-2">
+          {person.socialLinks.map((link) => (
+            <li>
+              <ExternalLink
+                href={link.url}
+                newTab
+                class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
+              >
+                <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">{link.label}</span>
+                <span>{link.identifier}</span>
+              </ExternalLink>
+            </li>
+          ))}
+        </ul>
+      </div>
     </aside>
   </div>
 </section>
