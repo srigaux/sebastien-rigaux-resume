@@ -37,7 +37,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
 
 <section id="about" aria-labelledby="name" class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
   <div class="grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-end lg:gap-20">
-    <div>
+    <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle}</p>
       <h1 id="name" class="font-serif text-[clamp(3.75rem,9vw,8rem)] leading-[0.93] font-medium tracking-[-0.055em] text-ink">
@@ -46,7 +46,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role}</p>
     </div>
 
-    <div class="border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pb-2 lg:pl-7 lg:pt-0">
+    <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pb-2 lg:pl-7 lg:pt-0">
       <h2 class="mb-5 text-sm font-semibold text-ink">{about.contactTitle}</h2>
       <address class="space-y-3 text-sm leading-relaxed not-italic text-muted">
         <p>{person.address.formatted}</p>
@@ -57,7 +57,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
   </div>
 
   <div class="mt-16 grid gap-12 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
-    <div class="max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
+    <div data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
       <p class="font-serif text-xl leading-[1.65] text-ink sm:text-2xl">
         {introParts.map((part) =>
           part === "{{age}}" ? (
@@ -72,7 +72,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
     </div>
 
-    <aside>
+    <aside data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
       <h2 class="mb-5 text-sm font-semibold text-ink">{about.socialTitle}</h2>
       <ul class="space-y-3">
         {person.socialLinks.map((link) => (

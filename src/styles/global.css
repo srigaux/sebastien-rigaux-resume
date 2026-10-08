@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tailwindcss-intersect";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -34,7 +35,6 @@
   }
 
   html {
-    scroll-behavior: smooth;
     scroll-padding-top: 6rem;
   }
 
@@ -78,6 +78,40 @@
   display: none;
 }
 
+/* motion-ready is set before the page content is parsed. Without JavaScript,
+   the observer's initial no-intersect attributes do not hide any content. */
+@media (prefers-reduced-motion: no-preference) {
+  .motion-ready [data-reveal] {
+    transition: opacity 360ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 360ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .motion-ready [data-reveal][no-intersect]:not([data-reveal="bar"]) {
+    opacity: 0;
+  }
+
+  .motion-ready [data-reveal="rise"][no-intersect] {
+    transform: translateY(16px);
+  }
+
+  .motion-ready [data-reveal="hero"] {
+    transition-duration: 440ms;
+  }
+
+  .motion-ready [data-reveal="hero"][no-intersect] {
+    transform: translateY(20px);
+  }
+
+  .motion-ready [data-reveal="bar"] [data-skill-fill] {
+    transition: transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+    transition-delay: var(--bar-delay);
+  }
+
+  .motion-ready [data-reveal="bar"][no-intersect] [data-skill-fill] {
+    transform: scaleX(0);
+  }
+}
+
 :root[data-theme-preference] [data-theme-switcher] {
   display: block;
 }
@@ -89,7 +123,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+  .motion-ready [data-reveal] {
+    transition: opacity 200ms ease;
+  }
+
+  .motion-ready [data-reveal][no-intersect]:not([data-reveal="bar"]) {
+    opacity: 0;
+  }
+
+  .motion-ready [data-reveal="bar"] [data-skill-fill] {
+    transition: opacity 200ms ease;
+  }
+
+  .motion-ready [data-reveal="bar"][no-intersect] [data-skill-fill] {
+    opacity: 0;
   }
 }

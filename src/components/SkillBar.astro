@@ -3,9 +3,10 @@ import type { Skill } from "@/types";
 
 interface Props {
   skill: Skill;
+  index: number;
 }
 
-const { skill } = Astro.props;
+const { skill, index } = Astro.props;
 const accessibleLabel = `${skill.label}: ${skill.level ? `${skill.level}, ` : ""}${skill.value}%`;
 ---
 
@@ -17,13 +18,16 @@ const accessibleLabel = `${skill.label}: ${skill.level ? `${skill.level}, ` : ""
     </span>
   </div>
   <div
+    data-reveal="bar"
+    no-intersect
     role="meter"
     aria-label={accessibleLabel}
     aria-valuemin="0"
     aria-valuemax="100"
     aria-valuenow={skill.value}
-    class="h-1.5 overflow-hidden bg-rule/65"
+    class="intersect:opacity-100 intersect-once intersect-half h-1.5 overflow-hidden bg-rule/65"
+    style={`--bar-delay: ${index * 70}ms`}
   >
-    <div class="h-full bg-accent" style={`width: ${skill.value}%`}></div>
+    <div data-skill-fill class="h-full origin-left bg-accent" style={`width: ${skill.value}%`}></div>
   </div>
 </div>

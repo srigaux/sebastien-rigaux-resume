@@ -54,14 +54,14 @@ const copy = content[locale];
 <section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
   <div class="grid gap-10 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-14">
     <div class="h-fit lg:sticky lg:top-28">
-      <h2 id="skills-title" class="font-serif text-3xl leading-tight font-medium tracking-tight text-ink sm:text-4xl">
+      <h2 id="skills-title" data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half font-serif text-3xl leading-tight font-medium tracking-tight text-ink sm:text-4xl">
         {copy.title}
       </h2>
       <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
     </div>
 
     <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
-      <div>
+      <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
         {copy.notes.length > 0 && (
           <div class="mb-8 space-y-1 text-sm leading-relaxed text-muted">
@@ -69,14 +69,14 @@ const copy = content[locale];
           </div>
         )}
         <ul class="space-y-7">
-          {copy.languages.map((skill) => <li><SkillBar skill={skill} /></li>)}
+          {copy.languages.map((skill, index) => <li><SkillBar skill={skill} index={index} /></li>)}
         </ul>
       </div>
 
-      <div>
+      <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
         <h3 class="mb-8 text-xl font-semibold tracking-tight text-ink">{copy.competencesTitle}</h3>
         <ul class="space-y-7">
-          {competences.map((skill) => <li><SkillBar skill={skill} /></li>)}
+          {competences.map((skill, index) => <li><SkillBar skill={skill} index={index} /></li>)}
         </ul>
       </div>
     </div>
