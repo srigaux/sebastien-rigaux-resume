@@ -17,6 +17,9 @@ importers:
       '@lucide/astro':
         specifier: ^1.52.0
         version: 1.52.0(astro@7.3.7(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1))
+      '@tabler/icons-astro':
+        specifier: ^3.49.0
+        version: 3.49.0(astro@7.3.7(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1))
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -782,6 +785,14 @@ packages:
 
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
+
+  '@tabler/icons-astro@3.49.0':
+    resolution: {integrity: sha512-eRVSiRjNyDQlfWQmtkNgSCOqmCNg486a2C9TM/3xFAO78ifg+WMJFP3rq0lu46gXFL3ZBPdSpPdA5xBA6z7D0A==}
+    peerDependencies:
+      astro: '>=4.0.0'
+
+  '@tabler/icons@3.49.0':
+    resolution: {integrity: sha512-l+GnSkFETx0U26icxv1VUFnxxiTqXfCcVRiRAnyMwibupM2S2L/hSaZ9gmSgz01rkrsH/93NvLsxykqdanc6lw==}
 
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
@@ -2637,6 +2648,13 @@ snapshots:
       '@types/hast': 3.0.5
 
   '@shikijs/vscode-textmate@10.0.2': {}
+
+  '@tabler/icons-astro@3.49.0(astro@7.3.7(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1))':
+    dependencies:
+      '@tabler/icons': 3.49.0
+      astro: 7.3.7(@types/node@24.19.1)(jiti@2.7.0)(yaml@2.9.1)
+
+  '@tabler/icons@3.49.0': {}
 
   '@tailwindcss/node@4.3.3':
     dependencies:

@@ -16,6 +16,7 @@
     "@astrojs/react": "^7.0.1",
     "@astrojs/sitemap": "^3.7.4",
     "@lucide/astro": "^1.52.0",
+    "@tabler/icons-astro": "^3.49.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

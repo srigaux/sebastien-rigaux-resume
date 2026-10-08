@@ -1,4 +1,5 @@
 ---
+import ExternalLink from "@/components/ExternalLink.astro";
 import { yearsSince } from "@/lib/years";
 import type { Locale, Person } from "@/types";
 
@@ -50,8 +51,8 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       <h2 class="mb-5 text-sm font-semibold text-ink">{about.contactTitle}</h2>
       <address class="space-y-3 text-sm leading-relaxed not-italic text-muted">
         <p>{person.address.formatted}</p>
-        <p><a class="break-all decoration-rule hover:text-accent hover:decoration-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</a></p>
-        <p><a class="break-all decoration-rule hover:text-accent hover:decoration-accent" href={`mailto:${person.email}`}>{person.email}</a></p>
+        <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</ExternalLink></p>
+        <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`mailto:${person.email}`}>{person.email}</ExternalLink></p>
       </address>
     </div>
   </div>
@@ -77,15 +78,14 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       <ul class="space-y-3">
         {person.socialLinks.map((link) => (
           <li>
-            <a
+            <ExternalLink
               href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent"
+              newTab
+              class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
             >
-              <span class="font-semibold text-ink group-hover:text-accent">{link.label}</span>
+              <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">{link.label}</span>
               <span>{link.identifier}</span>
-            </a>
+            </ExternalLink>
           </li>
         ))}
       </ul>
