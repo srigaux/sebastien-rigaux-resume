@@ -20,6 +20,7 @@ export type Person = {
   firstExperienceDate: string;
   email: string;
   phone: string;
+  website: string;
   address: {
     formatted: string;
     zip: string;

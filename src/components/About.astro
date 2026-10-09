@@ -1,6 +1,6 @@
 ---
 import Logo from "@/assets/logo.svg";
-import { Download } from "@lucide/astro";
+import { ArrowUpRight } from "@lucide/astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import { yearsSince } from "@/lib/years";
 import type { Locale, Person } from "@/types";
@@ -22,7 +22,8 @@ const about = {
     ],
     socialTitle: "Retrouvez-moi",
     contactTitle: "Contact",
-    downloadLabel: "Télécharger le CV (PDF)",
+    pdfLabel: "Voir le CV (PDF)",
+    pdfAriaLabel: "Voir le CV au format PDF dans un nouvel onglet",
   },
   en: {
     intro:
@@ -34,7 +35,8 @@ const about = {
     ],
     socialTitle: "Find me online",
     contactTitle: "Contact",
-    downloadLabel: "Download the résumé (PDF)",
+    pdfLabel: "View résumé (PDF)",
+    pdfAriaLabel: "View the résumé PDF in a new tab",
   },
 }[locale];
 const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
@@ -65,12 +67,13 @@ const paragraphDelays = [
       no-intersect
       class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once"
     >
-      <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent">
+      <div data-cv-decoration aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent">
       </div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">
         {person.jobTitle[locale]}
       </p>
       <div
+        data-cv-identity
         class="lg:grid lg:grid-cols-[minmax(0,1fr)_9rem] lg:items-center lg:gap-8 xl:grid-cols-[minmax(0,1fr)_11rem] xl:gap-12"
       >
         <h1
@@ -130,13 +133,16 @@ const paragraphDelays = [
       </p>
       <a
         data-cv-download
-        href={`/${locale}.pdf`}
-        download={`Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
+        no-intersect
+        href={`/pdf/Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
+        aria-label={about.pdfAriaLabel}
+        target="_blank"
+        rel="noopener noreferrer"
         type="application/pdf"
-        class="mt-8 inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline transition-colors hover:bg-ink focus-visible:bg-ink"
+        class="mt-8 inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline intersect:motion-preset-blur-up-sm motion-duration-300 motion-delay-[420ms] intersect-once transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98] motion-reduce:animate-none motion-reduce:transform-none"
       >
-        <Download class="size-4" aria-hidden="true" />
-        {about.downloadLabel}
+        {about.pdfLabel}
+        <ArrowUpRight class="size-4" aria-hidden="true" />
       </a>
     </div>
   </div>
@@ -207,6 +213,12 @@ const paragraphDelays = [
             <ExternalLink
               class="inline-block break-all hover:text-accent focus-visible:text-accent"
               href={`mailto:${person.email}`}>{person.email}</ExternalLink
+            >
+          </p>
+          <p>
+            <ExternalLink
+              class="inline-block break-all hover:text-accent focus-visible:text-accent"
+              href={person.website}>{new URL(person.website).hostname}</ExternalLink
             >
           </p>
         </address>

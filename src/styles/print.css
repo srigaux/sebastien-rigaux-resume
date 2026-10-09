@@ -1,0 +1,419 @@
+/* Styles used only by the printable CV and astro-pdf. */
+@page {
+  size: A4;
+  margin: 13mm 15mm;
+
+  @top-right {
+    content: "SÉBASTIEN RIGAUX  /  CV";
+    color: #536361;
+    font-family: Arial, sans-serif;
+    font-size: 7pt;
+    letter-spacing: 0.08em;
+  }
+
+  @bottom-left {
+    content: "sebastien.rigaux.be";
+    color: #536361;
+    font-family: Arial, sans-serif;
+    font-size: 8pt;
+  }
+
+  @bottom-right {
+    content: counter(page) " / " counter(pages);
+    color: #536361;
+    font-family: Arial, sans-serif;
+    font-size: 8pt;
+  }
+}
+
+@page :first {
+  @top-right {
+    content: none;
+  }
+}
+
+@media print {
+  :root,
+  :root.light,
+  :root.dark,
+  :root:not(.light):not(.dark) {
+    color-scheme: light;
+    --theme-paper: #fff;
+    --theme-ink: #1d2b2a;
+    --theme-accent: #0e625a;
+    --theme-muted: #354541;
+    --theme-rule: #b8c7c3;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* The reveal placeholder remains transparent when its animation is removed. */
+  [no-intersect] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: var(--theme-ink);
+    font-size: 10pt;
+    line-height: 1.4;
+    print-color-adjust: exact;
+  }
+
+  header,
+  footer,
+  [data-cv-download] {
+    display: none !important;
+  }
+
+  main[data-cv] {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #about {
+    padding: 0 0 5mm;
+  }
+
+  [data-cv-decoration] {
+    display: none !important;
+  }
+
+  #about [data-cv-hero] > div {
+    display: grid;
+    grid-template-columns: 18mm minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    column-gap: 5mm;
+  }
+
+  #about [data-cv-hero] > div > p:first-of-type {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 1mm;
+    font-size: 9pt;
+  }
+
+  [data-cv-identity] {
+    display: contents;
+  }
+
+  #about [data-hero-logo] {
+    display: block !important;
+    grid-column: 1;
+    grid-row: 1 / 4;
+    width: 18mm;
+    height: 18mm;
+    align-self: center;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  #name {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 28pt;
+    line-height: 1.08;
+  }
+
+  #name > span {
+    display: inline;
+    white-space: normal;
+  }
+
+  #about [data-cv-hero] > div > p:last-of-type {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 1mm;
+    font-size: 9.5pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-profile] {
+    display: flex;
+    flex-direction: column;
+    gap: 3mm;
+    margin-top: 4mm;
+    padding-top: 0;
+    border: 0;
+  }
+
+  [data-cv-contact] {
+    order: -1;
+    display: block;
+    border-top: 1px solid var(--theme-rule);
+    border-bottom: 1px solid var(--theme-rule);
+    padding: 2mm 0;
+    break-inside: avoid-page;
+  }
+
+  [data-cv-contact] > div {
+    margin: 0;
+  }
+
+  [data-cv-contact] > div:last-child,
+  [data-cv-contact] h2 {
+    display: none;
+  }
+
+  [data-cv-contact] address {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1mm 4mm;
+    font-size: 9pt;
+    line-height: 1.25;
+  }
+
+  [data-cv-contact] address > p {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  [data-cv-summary] {
+    max-width: none;
+    font-size: 9.5pt;
+    line-height: 1.42;
+  }
+
+  [data-cv-summary] > p:first-child {
+    font-size: 11pt;
+    line-height: 1.36;
+  }
+
+  [data-cv-summary] > p {
+    margin: 0 !important;
+  }
+
+  [data-cv-summary] > p + p {
+    margin-top: 2.5mm !important;
+  }
+
+  [data-cv-summary] > p:first-child + p {
+    margin-top: 3.5mm !important;
+  }
+
+  [data-cv-timeline],
+  #skills {
+    border-top: 0;
+    padding: 4.5mm 0 0;
+  }
+
+  [data-cv-timeline-layout],
+  [data-cv-skills-layout] {
+    display: block;
+  }
+
+  [data-cv-section-heading] {
+    position: static;
+    margin-bottom: 2.5mm;
+    border-bottom: 1px solid var(--theme-rule);
+    padding-bottom: 1.5mm;
+    break-after: avoid-page;
+  }
+
+  [data-cv-section-heading] h2 {
+    max-width: none;
+    font-size: 14pt;
+    line-height: 1.15;
+  }
+
+  [data-cv-section-heading] h2::before {
+    display: inline-block;
+    margin-right: 3mm;
+    color: var(--theme-accent);
+    font-family: var(--font-plex-sans), sans-serif;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    vertical-align: 0.2em;
+  }
+
+  #experience [data-cv-section-heading] h2::before {
+    content: "01";
+  }
+
+  #education [data-cv-section-heading] h2::before {
+    content: "02";
+  }
+
+  #skills [data-cv-section-heading] h2::before {
+    content: "03";
+  }
+
+  [data-cv-timeline-list] {
+    margin-left: 1.2mm;
+    border-left: 1px solid var(--theme-rule);
+    padding-left: 6mm;
+  }
+
+  [data-cv-timeline-item] {
+    padding: 0;
+    margin-bottom: 3mm;
+    break-inside: avoid-page;
+  }
+
+  [data-cv-entry-heading] {
+    position: relative;
+    top: auto;
+    display: block;
+    padding: 0;
+    background: transparent;
+    break-after: avoid-page;
+  }
+
+  [data-cv-entry-heading] > span[aria-hidden] {
+    display: block;
+    position: absolute;
+    top: 1mm;
+    left: -7.2mm;
+    width: 2.4mm;
+    height: 2.4mm;
+    border: 1px solid var(--theme-accent);
+    border-radius: 0;
+    background: #fff;
+    rotate: 45deg;
+    transform: none;
+  }
+
+  [data-cv-entry-heading] > p {
+    padding: 0;
+    font-size: 8.5pt;
+    line-height: 1.25;
+  }
+
+  [data-cv-entry-heading] h3 {
+    font-size: 11.5pt;
+    line-height: 1.25;
+  }
+
+  [data-cv-entry-body] {
+    margin-left: 0;
+  }
+
+  [data-cv-entry-body] > p {
+    margin-top: 1mm;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-entry-body] > ul {
+    margin-top: 1.5mm;
+    padding-left: 0;
+    list-style: none;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-entry-body] > ul > li {
+    display: list-item;
+    position: relative;
+    padding-left: 4mm;
+  }
+
+  [data-cv-entry-body] > ul > li::before {
+    display: block;
+    position: absolute;
+    top: 0.58em;
+    left: 1mm;
+    width: 1.3mm;
+    height: 1.3mm;
+    background: var(--theme-accent);
+    rotate: 45deg;
+    transform: none;
+    content: "";
+  }
+
+  [data-cv-entry-body] > ul > li + li {
+    margin-top: 1mm;
+  }
+
+  #experience [data-cv-entry-body] > ul {
+    max-width: none;
+    columns: 2;
+    column-gap: 7mm;
+  }
+
+  #experience [data-cv-entry-body] > ul > li {
+    margin-block: 0 !important;
+    break-inside: avoid-column;
+  }
+
+  #education [data-cv-timeline-list] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4mm 7mm;
+    margin-left: 0;
+    border-left: 0;
+    padding-left: 1.2mm;
+  }
+
+  #education [data-cv-timeline-item] {
+    margin: 0;
+    border-left: 1px solid var(--theme-rule);
+    padding-left: 4mm;
+  }
+
+  #education [data-cv-entry-heading] > span[aria-hidden] {
+    left: -5.2mm;
+  }
+
+  [data-cv-skills-content] {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 7mm;
+  }
+
+  #skills {
+    padding-top: 6mm;
+    break-inside: avoid-page;
+  }
+
+  [data-cv-skills-content] > div,
+  [data-cv-skills-content] li {
+    break-inside: avoid-page;
+  }
+
+  [data-cv-skills-content] h3 {
+    margin: 0 0 1.5mm;
+    font-size: 11pt;
+  }
+
+  [data-cv-skills-content] h3:not(:first-child) {
+    margin-top: 2mm;
+  }
+
+  [data-cv-skills-content] h4 {
+    font-size: 9.5pt;
+  }
+
+  [data-cv-skills-content] li {
+    padding-top: 0.6mm;
+    padding-bottom: 0.6mm;
+    font-size: 9.5pt;
+  }
+
+  [data-cv-skills-content] li p {
+    font-size: 9pt;
+    line-height: 1.32;
+  }
+
+  p,
+  li {
+    orphans: 2;
+    widows: 2;
+  }
+}

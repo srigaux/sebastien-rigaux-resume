@@ -55,7 +55,10 @@ export default defineConfig({
       pageSeparator: "\n\n---\n\n",
     }),
     pdf({
-      pages: { "/fr/": "/fr.pdf", "/en/": "/en.pdf" },
+      pages: {
+        "/fr/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
+        "/en/": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
+      },
       baseOptions: {
         throwOnFail: true,
         pdf: {

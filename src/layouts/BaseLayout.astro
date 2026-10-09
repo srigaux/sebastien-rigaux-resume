@@ -2,6 +2,7 @@
 import { Font } from "astro:assets";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import type { Locale, Person } from "@/types";
+import printStyles from "@/styles/print.css?url";
 import "@/styles/global.css";
 
 interface Props {
@@ -248,6 +249,7 @@ const structuredData = person && JSON.stringify({
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <Font cssVariable="--font-plex-sans" preload />
     <Font cssVariable="--font-sora" />
+    <link rel="stylesheet" href={printStyles} media="print" />
     {noindex ? (
       <meta name="robots" content="noindex, follow" />
     ) : (
