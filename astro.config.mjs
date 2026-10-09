@@ -8,14 +8,16 @@ export default defineConfig({
   site: "https://sebastien.rigaux.be",
   integrations: [
     react(),
-    sitemap({ filter: (page) => ["/fr/", "/en/"].includes(new URL(page).pathname) }),
+    sitemap({
+      filter: (page) => ["/fr/", "/en/"].includes(new URL(page).pathname),
+    }),
   ],
   i18n: {
     locales: ["fr", "en"],
     defaultLocale: "fr",
     routing: {
       prefixDefaultLocale: true,
-      redirectToDefaultLocale: false,
+      redirectToDefaultLocale: true,
     },
   },
   fonts: [
