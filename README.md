@@ -21,6 +21,8 @@ pnpm build
 
 Le build statique est généré dans `dist/`. Les fontes IBM Plex sont récupérées par Astro Fonts lors du premier build, puis servies depuis le site.
 
+`astro-pdf` génère aussi `dist/fr.pdf` et `dist/en.pdf` à partir des pages imprimables. Après `pnpm build`, utiliser `pnpm astro preview` pour tester les téléchargements en local. Les PDF sont régénérés à chaque publication et par le workflow annuel du 1er février pour actualiser les années d’expérience.
+
 ## Publication
 
 Le workflow `.github/workflows/deploy.yml` publie `master` sur GitHub Pages. Dans les paramètres du dépôt, sélectionner **GitHub Actions** comme source Pages. `public/CNAME` configure le domaine `sebastien.rigaux.be` ; le DNS doit pointer vers GitHub Pages. Lors de la bascule, retirer ce domaine personnalisé de l'ancien dépôt Pages avant de l'activer sur ce dépôt. Vérifier ensuite `/fr/`, `/en/`, le certificat HTTPS et le sitemap.

@@ -58,15 +58,15 @@ const copy = content[locale];
 ---
 
 <section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
-  <div class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14">
-    <div class="h-fit lg:sticky lg:top-28">
+  <div data-cv-skills-layout class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14">
+    <div data-cv-section-heading class="h-fit lg:sticky lg:top-28">
       <h2 id="skills-title" no-intersect class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl">
         {copy.title}
       </h2>
       <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
     </div>
 
-    <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
+    <div data-cv-skills-content class="grid gap-14 xl:grid-cols-2 xl:gap-20">
       <div no-intersect class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-[0.2]">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
         <ul class="divide-y divide-rule">

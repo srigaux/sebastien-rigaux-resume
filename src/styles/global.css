@@ -144,3 +144,278 @@
     transition: opacity 200ms ease;
   }
 }
+
+@page {
+  size: A4;
+  margin: 14mm 15mm;
+}
+
+@media print {
+  :root,
+  :root.light,
+  :root.dark,
+  :root:not(.light):not(.dark) {
+    color-scheme: light;
+    --theme-paper: #fff;
+    --theme-ink: #1d2b2a;
+    --theme-accent: #0e625a;
+    --theme-muted: #354541;
+    --theme-rule: #b8c7c3;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* The reveal placeholder remains transparent when its animation is removed. */
+  [no-intersect] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: var(--theme-ink);
+    font-size: 10pt;
+    line-height: 1.4;
+    print-color-adjust: exact;
+  }
+
+  header,
+  footer,
+  [data-cv-download] {
+    display: none !important;
+  }
+
+  main[data-cv] {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #about {
+    padding: 0 0 5mm;
+  }
+
+  #about [data-hero-logo] {
+    display: none;
+  }
+
+  #about [data-cv-hero] > div > div:first-child {
+    margin-bottom: 3mm;
+  }
+
+  #about [data-cv-hero] > div > p:first-of-type {
+    margin-bottom: 2mm;
+    font-size: 9pt;
+  }
+
+  #name {
+    font-size: 29pt;
+    line-height: 1.08;
+  }
+
+  #name > span {
+    display: inline;
+    white-space: normal;
+  }
+
+  #about [data-cv-hero] > div > p:last-of-type {
+    margin-top: 3mm;
+    font-size: 9.5pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-profile] {
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+    margin-top: 5mm;
+    padding-top: 4mm;
+  }
+
+  [data-cv-contact] {
+    order: -1;
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 6mm;
+    border: 0;
+    padding: 0;
+    break-inside: avoid-page;
+  }
+
+  [data-cv-contact] > div {
+    margin: 0;
+  }
+
+  [data-cv-contact] h2 {
+    margin-bottom: 1mm;
+    font-size: 9pt;
+  }
+
+  [data-cv-contact] address,
+  [data-cv-contact] ul {
+    font-size: 8.5pt;
+    line-height: 1.3;
+  }
+
+  [data-cv-contact] address > p + p,
+  [data-cv-contact] ul > li + li {
+    margin-top: 0.5mm;
+  }
+
+  [data-cv-summary] {
+    max-width: none;
+    font-size: 9.5pt;
+    line-height: 1.42;
+  }
+
+  [data-cv-summary] > p:first-child {
+    font-size: 11pt;
+    line-height: 1.36;
+  }
+
+  [data-cv-summary] > p + p {
+    margin-top: 2mm;
+  }
+
+  [data-cv-timeline],
+  #skills {
+    border-top: 1px solid var(--theme-rule);
+    padding: 5mm 0 0;
+  }
+
+  [data-cv-timeline-layout],
+  [data-cv-skills-layout] {
+    display: block;
+  }
+
+  [data-cv-section-heading] {
+    position: static;
+    margin-bottom: 4mm;
+    break-after: avoid-page;
+  }
+
+  [data-cv-section-heading] h2 {
+    max-width: none;
+    font-size: 16pt;
+    line-height: 1.15;
+  }
+
+  [data-cv-section-heading] > div[aria-hidden] {
+    margin-top: 2mm;
+  }
+
+  [data-cv-timeline-list] {
+    border: 0;
+    padding: 0;
+  }
+
+  [data-cv-timeline-item] {
+    padding: 0;
+    margin-bottom: 5mm;
+    break-inside: avoid-page;
+  }
+
+  [data-cv-entry-heading] {
+    position: static;
+    display: block;
+    padding: 0;
+    background: transparent;
+    break-after: avoid-page;
+  }
+
+  [data-cv-entry-heading] > span[aria-hidden] {
+    display: none;
+  }
+
+  [data-cv-entry-heading] > p {
+    padding: 0;
+    font-size: 8.5pt;
+    line-height: 1.25;
+  }
+
+  [data-cv-entry-heading] h3 {
+    font-size: 11.5pt;
+    line-height: 1.25;
+  }
+
+  [data-cv-entry-body] {
+    margin-left: 0;
+  }
+
+  [data-cv-entry-body] > p {
+    margin-top: 1mm;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-entry-body] > ul {
+    margin-top: 2mm;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  [data-cv-entry-body] > ul > li {
+    padding-left: 3mm;
+  }
+
+  [data-cv-entry-body] > ul > li + li {
+    margin-top: 1mm;
+  }
+
+  [data-cv-skills-content] {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 7mm;
+  }
+
+  #skills {
+    break-inside: avoid-page;
+  }
+
+  [data-cv-skills-content] > div,
+  [data-cv-skills-content] li {
+    break-inside: avoid-page;
+  }
+
+  [data-cv-skills-content] h3 {
+    margin: 0 0 2mm;
+    font-size: 10pt;
+  }
+
+  [data-cv-skills-content] h3:not(:first-child) {
+    margin-top: 4mm;
+  }
+
+  [data-cv-skills-content] h4 {
+    font-size: 9pt;
+  }
+
+  [data-cv-skills-content] li {
+    padding-top: 1mm;
+    padding-bottom: 1mm;
+    font-size: 8.5pt;
+  }
+
+  [data-cv-skills-content] li p {
+    font-size: 8.5pt;
+    line-height: 1.35;
+  }
+
+  p,
+  li {
+    orphans: 2;
+    widows: 2;
+  }
+}

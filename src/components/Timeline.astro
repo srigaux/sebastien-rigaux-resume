@@ -12,14 +12,16 @@ const { id, title, items } = Astro.props;
 ---
 
 <section
+  data-cv-timeline
   id={id}
   aria-labelledby={`${id}-title`}
   class="border-t border-rule py-16 sm:py-20 lg:py-24"
 >
   <div
+    data-cv-timeline-layout
     class="grid gap-10 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[21rem_minmax(0,1fr)]"
   >
-    <div class="h-fit lg:sticky lg:top-28">
+    <div data-cv-section-heading class="h-fit lg:sticky lg:top-28">
       <h2
         id={`${id}-title`}
         no-intersect
@@ -31,15 +33,16 @@ const { id, title, items } = Astro.props;
       </div>
     </div>
 
-    <ol class="border-l border-rule pl-7 sm:pl-9">
+    <ol data-cv-timeline-list class="border-l border-rule pl-7 sm:pl-9">
       {
         items.map((item) => (
           <li
+            data-cv-timeline-item
             no-intersect
             class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-[0.2] relative pb-12 last:pb-0 sm:pb-14"
           >
             <article>
-              <div class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
+              <div data-cv-entry-heading class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
                 <span
                   aria-hidden="true"
                   class="absolute -left-[2.15rem] top-3 size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"
@@ -55,7 +58,7 @@ const { id, title, items } = Astro.props;
                       )}
                 </h3>
               </div>
-              <div class="sm:ml-44">
+              <div data-cv-entry-body class="sm:ml-44">
                 <p class="mt-1 text-base leading-relaxed text-muted">
                   {typeof item.subtitle === "string"
                     ? item.subtitle

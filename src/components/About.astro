@@ -1,5 +1,6 @@
 ---
 import Logo from "@/assets/logo.svg";
+import { Download } from "@lucide/astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import { yearsSince } from "@/lib/years";
 import type { Locale, Person } from "@/types";
@@ -21,6 +22,7 @@ const about = {
     ],
     socialTitle: "Retrouvez-moi",
     contactTitle: "Contact",
+    downloadLabel: "Télécharger le CV (PDF)",
   },
   en: {
     intro:
@@ -32,6 +34,7 @@ const about = {
     ],
     socialTitle: "Find me online",
     contactTitle: "Contact",
+    downloadLabel: "Download the résumé (PDF)",
   },
 }[locale];
 const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
@@ -57,7 +60,7 @@ const paragraphDelays = [
   aria-labelledby="name"
   class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24"
 >
-  <div>
+  <div data-cv-hero>
     <div
       no-intersect
       class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once"
@@ -125,13 +128,25 @@ const paragraphDelays = [
           ))
         }
       </p>
+      <a
+        data-cv-download
+        href={`/${locale}.pdf`}
+        download={`Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
+        type="application/pdf"
+        class="mt-8 inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline transition-colors hover:bg-ink focus-visible:bg-ink"
+      >
+        <Download class="size-4" aria-hidden="true" />
+        {about.downloadLabel}
+      </a>
     </div>
   </div>
 
   <div
+    data-cv-profile
     class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12"
   >
     <div
+      data-cv-summary
       class="max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg"
     >
       <p
@@ -169,6 +184,7 @@ const paragraphDelays = [
     </div>
 
     <aside
+      data-cv-contact
       no-intersect
       class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
     >
