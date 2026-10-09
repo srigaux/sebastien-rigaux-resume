@@ -13,6 +13,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@4hse/astro-llms-txt": "^1.0.5",
     "@astrojs/react": "^7.0.1",
     "@astrojs/sitemap": "^3.7.4",
     "@lucide/astro": "^1.52.0",

@@ -17,6 +17,8 @@ const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
 const canonical = new URL(getRelativeLocaleUrl(locale), site).href;
 const frenchUrl = new URL(getRelativeLocaleUrl("fr"), site).href;
 const englishUrl = new URL(getRelativeLocaleUrl("en"), site).href;
+const markdownUrl = new URL(`/${locale}.md`, site).href;
+const llmsUrl = new URL("/llms.txt", site).href;
 const imageUrl = new URL("/og-image.png", site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
 const personId = new URL("/#person", site).href;
@@ -254,6 +256,8 @@ const structuredData = person && JSON.stringify({
         <link rel="alternate" hreflang="fr" href={frenchUrl} />
         <link rel="alternate" hreflang="en" href={englishUrl} />
         <link rel="alternate" hreflang="x-default" href={new URL("/", site).href} />
+        <link rel="alternate" type="text/markdown" href={markdownUrl} />
+        <link rel="describedby" href={llmsUrl} />
         <meta property="og:type" content="profile" />
         <meta property="og:locale" content={locale === "fr" ? "fr_BE" : "en_US"} />
         <meta property="og:title" content={fullTitle} />

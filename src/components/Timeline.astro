@@ -51,7 +51,7 @@ const { id, title, items } = Astro.props;
                   {typeof item.title === "string"
                     ? item.title
                     : item.title.map((part) =>
-                        typeof part === "string" ? part : <ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink>
+                        typeof part === "string" ? part : <><ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink><span class="sr-only"> </span></>
                       )}
                 </h3>
               </div>
@@ -60,7 +60,7 @@ const { id, title, items } = Astro.props;
                   {typeof item.subtitle === "string"
                     ? item.subtitle
                     : item.subtitle.map((part) =>
-                        typeof part === "string" ? part : <ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink>
+                        typeof part === "string" ? part : <><ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink><span class="sr-only"> </span></>
                       )}
                 </p>
                 {item.description && (
