@@ -10,41 +10,82 @@ interface Props {
 const { id, title, items } = Astro.props;
 ---
 
-<section id={id} aria-labelledby={`${id}-title`} class="border-t border-rule py-16 sm:py-20 lg:py-24">
-  <div class="grid gap-10 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[21rem_minmax(0,1fr)]">
+<section
+  id={id}
+  aria-labelledby={`${id}-title`}
+  class="border-t border-rule py-16 sm:py-20 lg:py-24"
+>
+  <div
+    class="grid gap-10 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[21rem_minmax(0,1fr)]"
+  >
     <div class="h-fit lg:sticky lg:top-28">
-      <h2 id={`${id}-title`} no-intersect class="intersect:motion-preset-slide-up-sm intersect-once intersect-half max-w-[18ch] font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)]">
+      <h2
+        id={`${id}-title`}
+        no-intersect
+        class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-half max-w-[18ch] font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)]"
+      >
         {title}
       </h2>
-      <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
+      <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent">
+      </div>
     </div>
 
     <ol class="border-l border-rule pl-7 sm:pl-9">
-      {items.map((item) => (
-        <li no-intersect class="intersect:motion-preset-fade-sm intersect-once intersect-[0.2] relative pb-12 last:pb-0 sm:pb-14">
-          <article>
-            <div class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
-              <span aria-hidden="true" class="absolute -left-[2.15rem] top-3 size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"></span>
-              <p class="pt-0.5 text-sm leading-relaxed font-semibold text-accent">{item.period}</p>
-              <h3 class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">{item.title}</h3>
-            </div>
-            <div class="sm:ml-44">
-              <p class="mt-1 text-base leading-relaxed text-muted">{item.subtitle}</p>
-              {item.description && <p class="mt-4 max-w-[68ch] leading-relaxed text-muted">{item.description}</p>}
-              {item.bullets && (
-                <ul role="list" class="mt-5 max-w-[72ch] list-none space-y-2 text-base leading-relaxed text-muted">
-                  {item.bullets.map((bullet, index) => (
-                    <li no-intersect class:list={["intersect:motion-preset-fade-sm intersect-once relative pl-5 before:absolute before:left-0 before:top-[0.65em] before:size-1.5 before:rotate-45 before:bg-accent before:content-['']", ["motion-delay-75", "motion-delay-100", "motion-delay-150", "motion-delay-200", "motion-delay-300"][Math.min(index, 4)]]}>
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {item.distinction && <p class="mt-4 text-sm font-medium text-ink">{item.distinction}</p>}
-            </div>
-          </article>
-        </li>
-      ))}
+      {
+        items.map((item) => (
+          <li
+            no-intersect
+            class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-[0.2] relative pb-12 last:pb-0 sm:pb-14"
+          >
+            <article>
+              <div class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
+                <span
+                  aria-hidden="true"
+                  class="absolute -left-[2.15rem] top-3 size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"
+                />
+                <p class="pt-0.5 text-sm leading-relaxed font-semibold text-accent">
+                  {item.period}
+                </p>
+                <h3 class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">
+                  {item.title}
+                </h3>
+              </div>
+              <div class="sm:ml-44">
+                <p class="mt-1 text-base leading-relaxed text-muted">
+                  {item.subtitle}
+                </p>
+                {item.description && (
+                  <p class="mt-4 max-w-[68ch] leading-relaxed text-muted">
+                    {item.description}
+                  </p>
+                )}
+                {item.bullets && (
+                  <ul
+                    role="list"
+                    class="mt-5 max-w-[72ch] list-none space-y-2 text-base leading-relaxed text-muted"
+                  >
+                    {item.bullets.map((bullet) => (
+                      <li
+                        no-intersect
+                        class:list={[
+                          "intersect:motion-preset-blur-up-sm intersect-half motion-duration-300 intersect-once relative pl-5 before:absolute before:left-0 before:top-[0.65em] before:size-1.5 before:rotate-45 before:bg-accent before:content-['']",
+                        ]}
+                      >
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {item.distinction && (
+                  <p class="mt-4 text-sm font-medium text-ink">
+                    {item.distinction}
+                  </p>
+                )}
+              </div>
+            </article>
+          </li>
+        ))
+      }
     </ol>
   </div>
 </section>

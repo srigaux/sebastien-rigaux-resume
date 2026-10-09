@@ -38,6 +38,18 @@ const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
 const experienceYears = yearsSince(person.firstExperienceDate);
 const firstNameLetters = Array.from(person.firstName);
 const lastNameLetters = Array.from(person.lastName);
+const rolePoints = person.role[locale].split(" · ");
+const roleDelays = [
+  "motion-delay-[300ms]",
+  "motion-delay-[330ms]",
+  "motion-delay-[360ms]",
+];
+const paragraphDelays = [
+  "motion-delay-[330ms]",
+  "motion-delay-[530ms]",
+  "motion-delay-[560ms]",
+  "motion-delay-[590ms]",
+];
 ---
 
 <section
@@ -48,7 +60,7 @@ const lastNameLetters = Array.from(person.lastName);
   <div>
     <div
       no-intersect
-      class="intersect:motion-preset-slide-up-sm intersect-once"
+      class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once"
     >
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent">
       </div>
@@ -68,7 +80,7 @@ const lastNameLetters = Array.from(person.lastName);
               firstNameLetters.map((letter, index) => (
                 <span
                   no-intersect
-                  class="inline-block intersect:motion-preset-fade-sm intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  class="inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
                   style={`--letter-index:${index}`}
                 >
                   {letter}
@@ -81,7 +93,7 @@ const lastNameLetters = Array.from(person.lastName);
               lastNameLetters.map((letter, index) => (
                 <span
                   no-intersect
-                  class="inline-block intersect:motion-preset-fade-sm intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  class="inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
                   style={`--letter-index:${index + 3}`}
                 >
                   {letter}
@@ -96,10 +108,21 @@ const lastNameLetters = Array.from(person.lastName);
           aria-hidden="true"
         />
       </div>
-      <p
-        class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl"
-      >
-        {person.role[locale]}
+      <p class="mt-7 text-lg leading-relaxed text-muted sm:text-xl">
+        {
+          rolePoints.map((point, index) => (
+            <span
+              no-intersect
+              class:list={[
+                "inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none",
+                roleDelays[Math.min(index, roleDelays.length - 1)],
+              ]}
+            >
+              {index > 0 && <>&nbsp;·&nbsp;</>}
+              {point}
+            </span>
+          ))
+        }
       </p>
     </div>
   </div>
@@ -108,11 +131,14 @@ const lastNameLetters = Array.from(person.lastName);
     class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12"
   >
     <div
-      no-intersect
-      class="intersect:motion-preset-slide-up-sm intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg"
+      class="max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg"
     >
       <p
-        class="font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl"
+        no-intersect
+        class:list={[
+          "intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl",
+          paragraphDelays[0],
+        ]}
       >
         {
           introParts.map((part) =>
@@ -126,12 +152,24 @@ const lastNameLetters = Array.from(person.lastName);
           )
         }
       </p>
-      {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {
+        about.paragraphs.map((paragraph, index) => (
+          <p
+            no-intersect
+            class:list={[
+              "intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none",
+              paragraphDelays[Math.min(index + 1, paragraphDelays.length - 1)],
+            ]}
+          >
+            {paragraph}
+          </p>
+        ))
+      }
     </div>
 
     <aside
       no-intersect
-      class="intersect:motion-preset-slide-up-sm intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
+      class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
     >
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">
