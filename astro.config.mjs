@@ -81,7 +81,8 @@ export default defineConfig({
     defaultLocale: "fr",
     routing: {
       prefixDefaultLocale: true,
-      redirectToDefaultLocale: true,
+      // The root page handles the GitHub Pages redirect without Astro's 2-second delay.
+      redirectToDefaultLocale: false,
     },
   },
   fonts: [

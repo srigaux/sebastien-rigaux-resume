@@ -1,5 +1,19 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 
-return Astro.redirect(getRelativeLocaleUrl("fr"), 302);
+const destination = getRelativeLocaleUrl("fr");
 ---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${destination}`} />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={new URL(destination, Astro.site)} />
+    <title>Redirection vers le CV français</title>
+  </head>
+  <body>
+    <p><a href={destination}>Voir le CV en français</a></p>
+  </body>
+</html>
