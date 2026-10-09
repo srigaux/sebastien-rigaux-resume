@@ -36,61 +36,145 @@ const about = {
 }[locale];
 const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
 const experienceYears = yearsSince(person.firstExperienceDate);
+const firstNameLetters = Array.from(person.firstName);
+const lastNameLetters = Array.from(person.lastName);
 ---
 
-<section id="about" aria-labelledby="name" class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
+<section
+  id="about"
+  aria-labelledby="name"
+  class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24"
+>
   <div>
-    <div no-intersect class="intersect:motion-preset-slide-up-sm intersect-once">
-      <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
-      <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle[locale]}</p>
-      <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_9rem] lg:items-center lg:gap-8 xl:grid-cols-[minmax(0,1fr)_11rem] xl:gap-12">
-        <h1 id="name" class="font-display text-[clamp(3.25rem,calc(1.5rem+9vw),8rem)] leading-[0.98] font-bold tracking-[-0.04em] text-ink">
-          {person.firstName}<br /><span class="text-accent">{person.lastName}</span>
-        </h1>
-        <Logo data-hero-logo class="hidden w-full text-accent lg:block" aria-hidden="true" />
+    <div
+      no-intersect
+      class="intersect:motion-preset-slide-up-sm intersect-once"
+    >
+      <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent">
       </div>
-      <p class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl">{person.role[locale]}</p>
+      <p class="mb-4 text-base font-semibold tracking-tight text-accent">
+        {person.jobTitle[locale]}
+      </p>
+      <div
+        class="lg:grid lg:grid-cols-[minmax(0,1fr)_9rem] lg:items-center lg:gap-8 xl:grid-cols-[minmax(0,1fr)_11rem] xl:gap-12"
+      >
+        <h1
+          id="name"
+          aria-label={`${person.firstName} ${person.lastName}`}
+          class="font-display text-[clamp(3.25rem,calc(1.5rem+9vw),8rem)] leading-[0.98] font-bold tracking-[-0.04em] text-ink"
+        >
+          <span aria-hidden="true" class="block whitespace-nowrap">
+            {
+              firstNameLetters.map((letter, index) => (
+                <span
+                  no-intersect
+                  class="inline-block intersect:motion-preset-fade-sm intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  style={`--letter-index:${index}`}
+                >
+                  {letter}
+                </span>
+              ))
+            }
+          </span>
+          <span aria-hidden="true" class="block whitespace-nowrap text-accent">
+            {
+              lastNameLetters.map((letter, index) => (
+                <span
+                  no-intersect
+                  class="inline-block intersect:motion-preset-fade-sm intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  style={`--letter-index:${index + 3}`}
+                >
+                  {letter}
+                </span>
+              ))
+            }
+          </span>
+        </h1>
+        <Logo
+          data-hero-logo
+          class="hidden w-full text-accent lg:block"
+          aria-hidden="true"
+        />
+      </div>
+      <p
+        class="mt-7 max-w-[38rem] text-lg leading-relaxed text-muted sm:text-xl"
+      >
+        {person.role[locale]}
+      </p>
     </div>
   </div>
 
-  <div class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
-    <div no-intersect class="intersect:motion-preset-slide-up-sm intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
-      <p class="font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl">
-        {introParts.map((part) =>
-          part === "{{experienceYears}}" ? (
-            <span data-years-since={person.firstExperienceDate}>{experienceYears}</span>
-          ) : (
-            part
-          ),
-        )}
+  <div
+    class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12"
+  >
+    <div
+      no-intersect
+      class="intersect:motion-preset-slide-up-sm intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg"
+    >
+      <p
+        class="font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl"
+      >
+        {
+          introParts.map((part) =>
+            part === "{{experienceYears}}" ? (
+              <span data-years-since={person.firstExperienceDate}>
+                {experienceYears}
+              </span>
+            ) : (
+              part
+            ),
+          )
+        }
       </p>
       {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
     </div>
 
-    <aside no-intersect class="intersect:motion-preset-slide-up-sm intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0">
+    <aside
+      no-intersect
+      class="intersect:motion-preset-slide-up-sm intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
+    >
       <div>
-        <h2 class="mb-4 text-sm font-semibold text-ink">{about.contactTitle}</h2>
-        <address class="space-y-2 text-sm leading-relaxed not-italic text-muted">
+        <h2 class="mb-4 text-sm font-semibold text-ink">
+          {about.contactTitle}
+        </h2>
+        <address
+          class="space-y-2 text-sm leading-relaxed not-italic text-muted"
+        >
           <p>{person.address.formatted}</p>
-          <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}>{person.phone}</ExternalLink></p>
-          <p><ExternalLink class="inline-block break-all hover:text-accent focus-visible:text-accent" href={`mailto:${person.email}`}>{person.email}</ExternalLink></p>
+          <p>
+            <ExternalLink
+              class="inline-block break-all hover:text-accent focus-visible:text-accent"
+              href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}
+              >{person.phone}</ExternalLink
+            >
+          </p>
+          <p>
+            <ExternalLink
+              class="inline-block break-all hover:text-accent focus-visible:text-accent"
+              href={`mailto:${person.email}`}>{person.email}</ExternalLink
+            >
+          </p>
         </address>
       </div>
       <div class="lg:mt-10">
         <h2 class="mb-4 text-sm font-semibold text-ink">{about.socialTitle}</h2>
         <ul class="space-y-2">
-          {person.socialLinks.map((link) => (
-            <li>
-              <ExternalLink
-                href={link.url}
-                newTab
-                class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
-              >
-                <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">{link.label}</span>
-                <span>{link.identifier}</span>
-              </ExternalLink>
-            </li>
-          ))}
+          {
+            person.socialLinks.map((link) => (
+              <li>
+                <ExternalLink
+                  href={link.url}
+                  newTab
+                  class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
+                >
+                  <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">
+                    {link.label}
+                  </span>
+                  <span>{link.identifier}</span>
+                </ExternalLink>
+              </li>
+            ))
+          }
         </ul>
       </div>
     </aside>
@@ -100,8 +184,10 @@ const experienceYears = yearsSince(person.firstExperienceDate);
 <script>
   import { yearsSince } from "@/lib/years";
 
-  document.querySelectorAll<HTMLElement>("[data-years-since]").forEach((element) => {
-    const date = element.dataset.yearsSince;
-    if (date) element.textContent = String(yearsSince(date));
-  });
+  document
+    .querySelectorAll<HTMLElement>("[data-years-since]")
+    .forEach((element) => {
+      const date = element.dataset.yearsSince;
+      if (date) element.textContent = String(yearsSince(date));
+    });
 </script>
