@@ -40,7 +40,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
 
 <section id="about" aria-labelledby="name" class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
   <div>
-    <div data-reveal="hero" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once">
+    <div no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once transition-[opacity,translate] duration-[440ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100 motion-safe:translate-y-5 [@media(scripting:none)]:translate-y-0">
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">{person.jobTitle[locale]}</p>
       <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_9rem] lg:items-center lg:gap-8 xl:grid-cols-[minmax(0,1fr)_11rem] xl:gap-12">
@@ -54,7 +54,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
   </div>
 
   <div class="mt-14 grid gap-10 border-t border-rule pt-10 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-20 lg:pt-12">
-    <div data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
+    <div no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once transition-[opacity,translate] duration-[360ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100 motion-safe:translate-y-4 [@media(scripting:none)]:translate-y-0 max-w-[72ch] space-y-5 text-base leading-[1.9] text-muted sm:text-lg">
       <p class="font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl">
         {introParts.map((part) =>
           part === "{{experienceYears}}" ? (
@@ -67,7 +67,7 @@ const experienceYears = yearsSince(person.firstExperienceDate);
       {about.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
     </div>
 
-    <aside data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0">
+    <aside no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once transition-[opacity,translate] duration-[360ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100 motion-safe:translate-y-4 [@media(scripting:none)]:translate-y-0 grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0">
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">{about.contactTitle}</h2>
         <address class="space-y-2 text-sm leading-relaxed not-italic text-muted">

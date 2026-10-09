@@ -86,13 +86,10 @@ const name = `${person.firstName} ${person.lastName}`;
   <script is:inline>
     (() => {
       const root = document.documentElement;
-      root.classList.add("motion-ready");
       root.classList.add("brand-ready");
       window.addEventListener(
         "load",
         () => {
-          if (!root.hasAttribute("data-reveal-observing"))
-            root.classList.remove("motion-ready");
           if (!root.hasAttribute("data-brand-observing"))
             root.classList.remove("brand-ready");
         },
@@ -100,7 +97,11 @@ const name = `${person.firstName} ${person.lastName}`;
       );
     })();
   </script>
-  <Header locale={locale} firstName={person.firstName} lastName={person.lastName} />
+  <Header
+    locale={locale}
+    firstName={person.firstName}
+    lastName={person.lastName}
+  />
   <main class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
     <About locale={locale} person={person} />
     <Experience locale={locale} />
@@ -120,19 +121,13 @@ const name = `${person.firstName} ${person.lastName}`;
   <script>
     import { Observer } from "tailwindcss-intersect/observer";
 
-    if ("IntersectionObserver" in window) {
-      document.documentElement.setAttribute("data-reveal-observing", "");
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          try {
-            Observer.start();
-          } catch {
-            document.documentElement.classList.remove("motion-ready");
-          }
-        }),
-      );
-    } else {
-      document.documentElement.classList.remove("motion-ready");
-    }
+    const startObserver = () => Observer.start();
+
+    document.addEventListener("astro:page-load", startObserver);
+    if (document.readyState === "loading")
+      document.addEventListener("DOMContentLoaded", startObserver, {
+        once: true,
+      });
+    else startObserver();
   </script>
 </BaseLayout>

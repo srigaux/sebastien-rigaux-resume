@@ -60,14 +60,14 @@ const copy = content[locale];
 <section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
   <div class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14">
     <div class="h-fit lg:sticky lg:top-28">
-      <h2 id="skills-title" data-reveal="rise" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl">
+      <h2 id="skills-title" no-intersect class="intersect:opacity-100 intersect:translate-y-0 intersect-once intersect-half transition-[opacity,translate] duration-[360ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100 motion-safe:translate-y-4 [@media(scripting:none)]:translate-y-0 font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl">
         {copy.title}
       </h2>
       <div aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
     </div>
 
     <div class="grid gap-14 xl:grid-cols-2 xl:gap-20">
-      <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
+      <div no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2] transition-opacity duration-[360ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
         <ul class="divide-y divide-rule">
           {copy.languages.map((language) => (
@@ -79,7 +79,7 @@ const copy = content[locale];
         </ul>
       </div>
 
-      <div data-reveal="fade" no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2]">
+      <div no-intersect class="intersect:opacity-100 intersect-once intersect-[0.2] transition-opacity duration-[360ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-safe:opacity-0 [@media(scripting:none)]:opacity-100">
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.expertiseTitle}</h3>
         <ul class="divide-y divide-rule">
           {copy.expertise.map((area) => (
