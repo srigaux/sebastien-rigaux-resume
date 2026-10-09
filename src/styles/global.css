@@ -1,7 +1,15 @@
 @import "tailwindcss";
 @import "tailwindcss-intersect";
+@plugin "tailwindcss-motion";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Hide a pending reveal before the observer's first callback. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [no-intersect] {
+    opacity: 0;
+  }
+}
 
 @theme inline {
   --color-paper: var(--theme-paper);
