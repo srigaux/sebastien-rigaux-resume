@@ -17,14 +17,14 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
-      filter: (page) => ["/fr/", "/en/"].includes(new URL(page).pathname),
+      filter: (page) => ["/", "/en/"].includes(new URL(page).pathname),
     }),
     astroLlmsTxt({
       title: "Sébastien Rigaux — CV / Résumé",
       description:
         "CV bilingue de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
       details:
-        "Pages officielles : [français](https://sebastien.rigaux.be/fr/) et [English](https://sebastien.rigaux.be/en/).",
+        "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en/).",
       notes:
         "Contenu généré automatiquement à partir des pages publiques du CV ; ces pages restent la source de référence.",
       docSet: [
@@ -33,15 +33,15 @@ export default defineConfig({
           description:
             "Le CV complet en français et en anglais / The complete résumé in French and English.",
           url: "/llms-full.txt",
-          include: ["fr/", "en/"],
-          promote: ["fr/", "en/"],
+          include: ["/", "en/"],
+          promote: ["/", "en/"],
           mainSelector: "main",
         },
         {
           title: "CV en français",
           description: "Version Markdown de la page française du CV.",
           url: "/fr.md",
-          include: ["fr/"],
+          include: ["/"],
           mainSelector: "main",
         },
         {
@@ -56,7 +56,7 @@ export default defineConfig({
     }),
     pdf({
       pages: {
-        "/fr/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
+        "/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
         "/en/": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
       },
       baseOptions: {
@@ -70,7 +70,8 @@ export default defineConfig({
       launch: {
         ...(executablePath ? { executablePath } : {}),
         // GitHub's Ubuntu runner cannot sandbox Chrome for Testing.
-        ...(process.env.GITHUB_ACTIONS === "true" && process.platform === "linux"
+        ...(process.env.GITHUB_ACTIONS === "true" &&
+        process.platform === "linux"
           ? { args: ["--no-sandbox"] }
           : {}),
       },
@@ -80,7 +81,7 @@ export default defineConfig({
     locales: ["fr", "en"],
     defaultLocale: "fr",
     routing: {
-      prefixDefaultLocale: true,
+      prefixDefaultLocale: false,
       // The root page handles the GitHub Pages redirect without Astro's 2-second delay.
       redirectToDefaultLocale: false,
     },
