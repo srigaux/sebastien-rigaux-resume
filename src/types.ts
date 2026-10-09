@@ -1,9 +1,11 @@
 export type Locale = "fr" | "en";
 
+export type TimelineText = string | readonly (string | { text: string; href: string })[];
+
 export type TimelineItem = {
   id: string;
-  title: string;
-  subtitle: string;
+  title: TimelineText;
+  subtitle: TimelineText;
   period: string;
   description?: string;
   bullets?: readonly string[];

@@ -1,5 +1,6 @@
 ---
 import type { TimelineItem } from "@/types";
+import ExternalLink from "@/components/ExternalLink.astro";
 
 interface Props {
   id: "experience" | "education";
@@ -47,12 +48,20 @@ const { id, title, items } = Astro.props;
                   {item.period}
                 </p>
                 <h3 class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">
-                  {item.title}
+                  {typeof item.title === "string"
+                    ? item.title
+                    : item.title.map((part) =>
+                        typeof part === "string" ? part : <ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink>
+                      )}
                 </h3>
               </div>
               <div class="sm:ml-44">
                 <p class="mt-1 text-base leading-relaxed text-muted">
-                  {item.subtitle}
+                  {typeof item.subtitle === "string"
+                    ? item.subtitle
+                    : item.subtitle.map((part) =>
+                        typeof part === "string" ? part : <ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink>
+                      )}
                 </p>
                 {item.description && (
                   <p class="mt-4 max-w-[68ch] leading-relaxed text-muted">

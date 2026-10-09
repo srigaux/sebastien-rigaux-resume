@@ -13,28 +13,33 @@ const content: Record<Locale, { title: string; items: readonly TimelineItem[] }>
     items: [
       {
         id: "master-uliege",
-        title: "HEC & Université de Liège – ULiège (BELGIQUE)",
+        title: [
+          { text: "HEC", href: "https://www.hec.uliege.be/" },
+          "& ",
+          { text: "Université de Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" },
+          "(BELGIQUE)",
+        ],
         subtitle: "Master en sciences informatiques, finalité gestion",
         period: "sept. 2013 – juin 2015",
         distinction: "Grade : distinction",
       },
       {
         id: "bachelor-uliege-2013",
-        title: "Université de Liège – ULiège (BELGIQUE)",
+        title: [{ text: "Université de Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" }, "(BELGIQUE)"],
         subtitle: "Bachelier en sciences informatiques",
         period: "sept. 2012 – juin 2013",
         distinction: "Grade : distinction",
       },
       {
         id: "inpres",
-        title: "Haute École de la province de Liège – INPRES (BELGIQUE)",
+        title: [{ text: "Haute École de la province de Liège – INPRES", href: "https://www.hepl.be/fr/informatique" }, "(BELGIQUE)"],
         subtitle: "Bachelier en informatique de gestion",
         period: "sept. 2010 – juin 2012",
         distinction: "Grade : distinction",
       },
       {
         id: "bachelor-uliege-2010",
-        title: "Université de Liège – ULiège (BELGIQUE)",
+        title: [{ text: "Université de Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" }, "(BELGIQUE)"],
         subtitle: "Bachelier en sciences informatiques",
         period: "sept. 2007 – juin 2010",
         description:
@@ -47,28 +52,33 @@ const content: Record<Locale, { title: string; items: readonly TimelineItem[] }>
     items: [
       {
         id: "master-uliege",
-        title: "HEC & University of Liège – ULiège (BELGIUM)",
+        title: [
+          { text: "HEC", href: "https://www.hec.uliege.be/" },
+          "& ",
+          { text: "University of Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" },
+          "(BELGIUM)",
+        ],
         subtitle: "Master of Science in Computer Science, Management track",
         period: "Sept. 2013 – Jun. 2015",
         distinction: "Graduated with Honors",
       },
       {
         id: "bachelor-uliege-2013",
-        title: "University of Liège – ULiège (BELGIUM)",
+        title: [{ text: "University of Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" }, "(BELGIUM)"],
         subtitle: "Bachelor of Science in Computer Science",
         period: "Sept. 2012 – Jun. 2013",
         distinction: "Graduated with Honors",
       },
       {
         id: "inpres",
-        title: "The HEI of the Province of Liège – INPRES (BELGIUM)",
+        title: [{ text: "The HEI of the Province of Liège – INPRES", href: "https://www.hepl.be/fr/informatique" }, "(BELGIUM)"],
         subtitle: "Bachelor in Management Computing",
         period: "Sept. 2010 – Jun. 2012",
         distinction: "Graduated with Honors",
       },
       {
         id: "bachelor-uliege-2010",
-        title: "University of Liège – ULiège (BELGIUM)",
+        title: [{ text: "University of Liège – ULiège", href: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" }, "(BELGIUM)"],
         subtitle: "Bachelor of Science in Computer Science",
         period: "Sept. 2007 – Jun. 2010",
         description:
