@@ -19,23 +19,175 @@ const frenchUrl = new URL(getRelativeLocaleUrl("fr"), site).href;
 const englishUrl = new URL(getRelativeLocaleUrl("en"), site).href;
 const imageUrl = new URL("/og-image.png", site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
+const personId = new URL("/#person", site).href;
+const profileId = `${canonical}#profile`;
+const cvSchema = {
+  fr: {
+    occupations: [
+      {
+        name: "Directeur de la technologie (CTO)",
+        employer: "djm digital S.A.",
+        startDate: "2016",
+        responsibilities: "Stratégie technologique, accompagnement des équipes, transition vers l’IA et conseil en architecture en CTO as a Service.",
+      },
+      {
+        name: "Software Engineer II · Voicemail",
+        employer: "Microsoft",
+        startDate: "2020",
+        endDate: "2021",
+        responsibilities: "Direction de l’équipe Voicemail pour Microsoft Teams et Skype for Business, montée en charge des services et intégration de technologies vocales.",
+      },
+      {
+        name: "Directeur de la technologie - Mobile",
+        employer: "djm digital S.A.",
+        startDate: "2015",
+        endDate: "2016",
+        responsibilities: "Direction des équipes mobile et API/backend .NET, architecture d’applications iOS et Android et intégration d’IoT en temps réel.",
+      },
+      {
+        name: "Développeur iOS & Web",
+        employer: "djm digital S.A.",
+        startDate: "2012",
+        endDate: "2015",
+        responsibilities: "Développement d’applications iOS natives et accompagnement des projets de la conception au support client.",
+      },
+      {
+        name: "Stage Développeur iOS",
+        employer: "djm digital S.A.",
+        startDate: "2012",
+        endDate: "2012",
+        responsibilities: "Développement d’une application iPhone, d’API et d’applications web en ASP.NET MVC.",
+      },
+    ],
+    credentials: [
+      { name: "Master en sciences informatiques, finalité gestion", level: "Master" },
+      { name: "Bachelier en sciences informatiques", level: "Bachelier" },
+      { name: "Bachelier en informatique de gestion", level: "Bachelier" },
+    ],
+    skills: [
+      "Leadership technique & CTO as a Service",
+      "Développement web & mobile",
+      "Transition IA & automatisation",
+      "Communication à grande échelle",
+      "Technologies vocales & IA appliquée",
+    ],
+    knowsAbout: ["Évolutions de l’IA", "React", "Développement frontend", "C#", "Pratiques de tech lead", "Kubernetes"],
+  },
+  en: {
+    occupations: [
+      {
+        name: "Chief Technology Officer",
+        employer: "djm digital S.A.",
+        startDate: "2016",
+        responsibilities: "Technology strategy, team support, AI transition and architecture advice through CTO as a Service engagements.",
+      },
+      {
+        name: "Software Engineer II · Voicemail",
+        employer: "Microsoft",
+        startDate: "2020",
+        endDate: "2021",
+        responsibilities: "Led the Voicemail team for Microsoft Teams and Skype for Business, scaled services and integrated speech technologies.",
+      },
+      {
+        name: "Chief Technology Officer · Mobile",
+        employer: "djm digital S.A.",
+        startDate: "2015",
+        endDate: "2016",
+        responsibilities: "Led the mobile and .NET API/backend teams, architected iOS and Android applications and integrated real-time IoT.",
+      },
+      {
+        name: "iOS & Web Developer",
+        employer: "djm digital S.A.",
+        startDate: "2012",
+        endDate: "2015",
+        responsibilities: "Built native iOS applications and supported projects from planning through launch and client support.",
+      },
+      {
+        name: "iOS Developer Intern",
+        employer: "djm digital S.A.",
+        startDate: "2012",
+        endDate: "2012",
+        responsibilities: "Developed an iPhone app, APIs and web applications using ASP.NET MVC.",
+      },
+    ],
+    credentials: [
+      { name: "Master of Science in Computer Science, Management track", level: "Master" },
+      { name: "Bachelor of Science in Computer Science", level: "Bachelor" },
+      { name: "Bachelor in Management Computing", level: "Bachelor" },
+    ],
+    skills: [
+      "Technical leadership & CTO as a Service",
+      "Web & mobile engineering",
+      "AI transition & automation",
+      "Communication at scale",
+      "Speech technology & applied AI",
+    ],
+    knowsAbout: ["AI developments", "React", "Frontend development", "C#", "Engineering leadership", "Kubernetes"],
+  },
+}[locale];
 const structuredData = person && JSON.stringify({
   "@context": "https://schema.org",
-  "@type": "Person",
-  name: `${person.firstName} ${person.lastName}`,
-  givenName: person.firstName,
-  familyName: person.lastName,
-  jobTitle: person.jobTitle[locale],
-  url: canonical,
-  email: person.email,
-  telephone: person.phone,
-  address: {
-    "@type": "PostalAddress",
-    addressCountry: person.address.country,
-    addressLocality: person.address.locality,
-    postalCode: person.address.zip,
-  },
-  sameAs: person.socialLinks.map((link) => link.url),
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "@id": profileId,
+      url: canonical,
+      name: fullTitle,
+      description,
+      inLanguage: locale,
+      mainEntity: { "@id": personId },
+    },
+    {
+      "@type": "Person",
+      "@id": personId,
+      name: `${person.firstName} ${person.lastName}`,
+      givenName: person.firstName,
+      familyName: person.lastName,
+      description,
+      jobTitle: person.jobTitle[locale],
+      url: canonical,
+      email: person.email,
+      telephone: person.phone,
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: person.address.country,
+        addressLocality: person.address.locality,
+        postalCode: person.address.zip,
+      },
+      worksFor: {
+        "@type": "Organization",
+        name: "djm digital S.A.",
+        url: "https://djmdigital.be/fr/",
+      },
+      hasOccupation: cvSchema.occupations.map(({ name, employer, startDate, responsibilities, ...dates }) => ({
+        "@type": "Role",
+        roleName: name,
+        description: `${name} · ${employer}`,
+        startDate,
+        ...dates,
+        hasOccupation: {
+          "@type": "Occupation",
+          name,
+          responsibilities,
+        },
+      })),
+      alumniOf: [
+        { "@type": "CollegeOrUniversity", name: "HEC Liège", url: "https://www.hec.uliege.be/" },
+        { "@type": "CollegeOrUniversity", name: "Université de Liège", url: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" },
+        { "@type": "CollegeOrUniversity", name: "Haute École de la Province de Liège", url: "https://www.hepl.be/fr/informatique" },
+      ],
+      hasCredential: cvSchema.credentials.map(({ name, level }) => ({
+        "@type": "EducationalOccupationalCredential",
+        name,
+        credentialCategory: "degree",
+        educationalLevel: level,
+      })),
+      knowsLanguage: ["fr", "en", "nl"],
+      skills: cvSchema.skills,
+      knowsAbout: cvSchema.knowsAbout,
+      sameAs: person.socialLinks.map((link) => link.url),
+    },
+  ],
 }).replaceAll("<", "\\u003c");
 ---
 
