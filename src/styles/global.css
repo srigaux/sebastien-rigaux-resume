@@ -121,7 +121,7 @@
   }
 }
 
-@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none;

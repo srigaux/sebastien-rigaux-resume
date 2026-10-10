@@ -46,8 +46,8 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       class="group flex min-w-0 shrink-0 items-center gap-2 rounded-sm py-3 text-ink no-underline sm:gap-3"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
-      <Logo data-header-brand-logo class="hidden size-8 text-accent min-[360px]:block sm:size-10" aria-hidden="true" />
-      <span class="whitespace-nowrap font-display text-[clamp(1rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
+      <Logo data-header-brand-logo class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10" aria-hidden="true" />
+      <span class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
         {firstName} <span class="text-accent">{lastName}</span>
       </span>
     </a>
@@ -139,11 +139,9 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   const root = document.documentElement;
   const header = document.querySelector<HTMLElement>("header");
   const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
-  const heroTitle = document.querySelector<HTMLElement>("#name");
-  const desktop = window.matchMedia("(min-width: 64rem)");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  if (header && heroLogo && heroTitle) {
+  if (header && heroLogo) {
     let brandVisible = false;
     let transition: ViewTransition | undefined;
     let frame = 0;
@@ -151,8 +149,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 
     const syncBrand = (animate = true) => {
       header.toggleAttribute("data-scrolled", window.scrollY > 0);
-      const reference = desktop.matches ? heroLogo : heroTitle;
-      const rect = reference.getBoundingClientRect();
+      const rect = heroLogo.getBoundingClientRect();
       const headerBottom = header.getBoundingClientRect().bottom;
       const nextVisible = rect.top <= headerBottom;
       if (nextVisible === brandVisible) return;
@@ -165,7 +162,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       }
 
       const logoIsVisible = rect.bottom > headerBottom && rect.top < window.innerHeight;
-      if (animate && desktop.matches && !reducedMotion.matches && logoIsVisible && document.startViewTransition) {
+      if (animate && !reducedMotion.matches && logoIsVisible && document.startViewTransition) {
         transition = document.startViewTransition(apply);
         transition.finished.then(() => {
           transition = undefined;
