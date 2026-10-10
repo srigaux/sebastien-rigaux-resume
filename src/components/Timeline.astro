@@ -41,16 +41,20 @@ const { id, title, items } = Astro.props;
             no-intersect
             class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once intersect-[0.2] relative pb-12 last:pb-0 sm:pb-14"
           >
-            <article>
+            <article id={item.id} aria-labelledby={`${item.id}-title`}>
               <div data-cv-entry-heading class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
                 <span
                   aria-hidden="true"
                   class="absolute -left-[2.15rem] top-3 size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"
                 />
                 <p class="pt-0.5 text-sm leading-relaxed font-semibold text-accent">
-                  {item.period}
+                  <time datetime={item.startDate}>{item.period.split(" – ")[0]}</time>
+                  {" – "}
+                  {item.endDate
+                    ? <time datetime={item.endDate}>{item.period.split(" – ")[1]}</time>
+                    : <span>{item.period.split(" – ")[1]}</span>}
                 </p>
-                <h3 class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">
+                <h3 id={`${item.id}-title`} class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">
                   {typeof item.title === "string"
                     ? item.title
                     : item.title.map((part) =>

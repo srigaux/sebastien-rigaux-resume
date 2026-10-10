@@ -1,6 +1,8 @@
 // @ts-check
 import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import { loadEnvFile } from "node:process";
+import { fileURLToPath } from "node:url";
 import { defineConfig, fontProviders } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -18,8 +20,12 @@ export default defineConfig({
     react(),
     sitemap({
       filter: (page) => ["/", "/en/"].includes(new URL(page).pathname),
+      i18n: {
+        defaultLocale: "fr",
+        locales: { fr: "fr", en: "en" },
+      },
     }),
-    astroLlmsTxt({
+    astroLlmsTxtWithRootPageFix({
       title: "Sébastien Rigaux — CV / Résumé",
       description:
         "CV bilingue de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
@@ -82,7 +88,7 @@ export default defineConfig({
     defaultLocale: "fr",
     routing: {
       prefixDefaultLocale: false,
-      // The root page handles the GitHub Pages redirect without Astro's 2-second delay.
+      // The French CV lives at /; /fr/ has its own immediate static redirect page.
       redirectToDefaultLocale: false,
     },
   },
@@ -110,3 +116,54 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
 });
+
+/**
+ * Fixes the root page pathname for Astro LLMs TXT integration.
+ *
+ * @param {Parameters<typeof astroLlmsTxt>[0]} options
+ */
+function astroLlmsTxtWithRootPageFix(options) {
+  const integration = astroLlmsTxt(options);
+  const onBuildDone = integration.hooks["astro:build:done"];
+  // Astro 7 reports the root page as an empty pathname. This integration
+  // matches route globs, so present it as "/" when generating Markdown.
+  integration.hooks["astro:build:done"] = async (context) => {
+    await onBuildDone?.({
+      ...context,
+      pages: context.pages.map((page) =>
+        page.pathname === "" ? { ...page, pathname: "/" } : page,
+      ),
+    });
+
+    // The package wraps descriptions in <SYSTEM>, which reads like a prompt
+    // instruction in a public document. Keep each export as ordinary Markdown
+    // with a direct link back to its canonical HTML page.
+    const exports = [
+      [
+        "fr.md",
+        "Source canonique : [CV en français](https://sebastien.rigaux.be/)",
+      ],
+      [
+        "en.md",
+        "Canonical source: [English résumé](https://sebastien.rigaux.be/en/)",
+      ],
+      [
+        "llms-full.txt",
+        "Sources canoniques : [français](https://sebastien.rigaux.be/) · [English](https://sebastien.rigaux.be/en/)",
+      ],
+    ];
+    for (const [name, source] of exports) {
+      const file = fileURLToPath(new URL(name, context.dir));
+      const content = await readFile(file, "utf8");
+      if (content.length < 500 || !content.startsWith("<SYSTEM>")) {
+        throw new Error(`Incomplete LLM export: ${name}`);
+      }
+      const clean = content.replace(
+        /^<SYSTEM>(.*?)<\/SYSTEM>\n\n/s,
+        (_, description) => `> ${description}\n\n${source}\n\n`,
+      );
+      await writeFile(file, clean);
+    }
+  };
+  return integration;
+}

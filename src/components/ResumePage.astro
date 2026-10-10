@@ -28,7 +28,7 @@ const person: Person = {
   phone: "+32 476 42 08 48",
   website: "https://sebastien.rigaux.be",
   address: {
-    formatted: "Visé, Belgium",
+    formatted: { fr: "Visé, Belgique", en: "Visé, Belgium" },
     zip: "4600",
     locality: "Visé",
     country: "Belgium",
@@ -63,15 +63,15 @@ const person: Person = {
 };
 const copy = {
   fr: {
-    title: "Directeur technique (CTO) et Tech Lead",
+    title: "Directeur technique (CTO) et Tech Lead près de Liège",
     description:
-      "Sébastien Rigaux, directeur technique (CTO) et Tech Lead à Visé. Architecture web et mobile, transition IA et accompagnement CTO as a Service.",
+      "Sébastien Rigaux, CTO et Tech Lead basé près de Liège. Architecture logicielle, produits web et mobiles, transition IA et CTO as a Service.",
     backToTop: "Retour en haut",
   },
   en: {
-    title: "CTO and Tech Lead",
+    title: "CTO and Tech Lead in Belgium",
     description:
-      "Sébastien Rigaux is a CTO and Tech Lead based in Belgium. Software architecture, AI transition and CTO as a Service for web and mobile products.",
+      "Sébastien Rigaux is a CTO and Tech Lead near Liège, Belgium. Software architecture, web and mobile products, AI transition and CTO as a Service.",
     backToTop: "Back to top",
   },
 }[locale];

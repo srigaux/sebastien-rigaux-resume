@@ -20,9 +20,10 @@ const frenchUrl = new URL(getRelativeLocaleUrl("fr"), site).href;
 const englishUrl = new URL(getRelativeLocaleUrl("en"), site).href;
 const markdownUrl = new URL(`/${locale}.md`, site).href;
 const llmsUrl = new URL("/llms.txt", site).href;
-const imageUrl = new URL("/og-image.png", site).href;
+const imageUrl = new URL(`/og-image-${locale}.png`, site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
 const personId = new URL("/#person", site).href;
+const websiteId = new URL("/#website", site).href;
 const profileId = `${canonical}#profile`;
 const cvSchema = {
   fr: {
@@ -128,9 +129,18 @@ const cvSchema = {
     knowsAbout: ["AI developments", "React", "Frontend development", "C#", "Engineering leadership", "Kubernetes"],
   },
 }[locale];
+// Keep one stable Person ID across translations; each page describes that person.
 const structuredData = person && JSON.stringify({
   "@context": "https://schema.org",
   "@graph": [
+    ...(locale === "fr" ? [{
+      "@type": "WebSite",
+      "@id": websiteId,
+      url: new URL("/", site).href,
+      name: `${person.firstName} ${person.lastName}`,
+      inLanguage: ["fr", "en"],
+      author: { "@id": personId },
+    }] : []),
     {
       "@type": "ProfilePage",
       "@id": profileId,
@@ -138,6 +148,8 @@ const structuredData = person && JSON.stringify({
       name: fullTitle,
       description,
       inLanguage: locale,
+      isPartOf: { "@id": websiteId },
+      creator: { "@id": personId },
       mainEntity: { "@id": personId },
     },
     {
@@ -148,7 +160,7 @@ const structuredData = person && JSON.stringify({
       familyName: person.lastName,
       description,
       jobTitle: person.jobTitle[locale],
-      url: canonical,
+      url: person.website,
       email: person.email,
       telephone: person.phone,
       address: {
@@ -245,6 +257,7 @@ const structuredData = person && JSON.stringify({
       })();
     </script>
     <meta name="description" content={description} />
+    {person && <meta name="author" content={`${person.firstName} ${person.lastName}`} />}
     <title>{fullTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <Font cssVariable="--font-plex-sans" preload />
@@ -261,17 +274,23 @@ const structuredData = person && JSON.stringify({
         <link rel="alternate" type="text/markdown" href={markdownUrl} />
         <link rel="describedby" href={llmsUrl} />
         <meta property="og:type" content="profile" />
+        <meta property="og:site_name" content="Sébastien Rigaux" />
         <meta property="og:locale" content={locale === "fr" ? "fr_BE" : "en_US"} />
+        <meta property="og:locale:alternate" content={locale === "fr" ? "en_US" : "fr_BE"} />
         <meta property="og:title" content={fullTitle} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <meta property="og:image" content={imageUrl} />
-        <meta property="og:image:alt" content={locale === "fr" ? "Monogramme SR de Sébastien Rigaux" : "Sébastien Rigaux’s SR monogram"} />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead"} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:creator" content="@rigauxse" />
         <meta name="twitter:title" content={fullTitle} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content={imageUrl} />
+        <meta name="twitter:image:alt" content={locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead"} />
         {structuredData && <script type="application/ld+json" set:html={structuredData} />}
       </>
     )}

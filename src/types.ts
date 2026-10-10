@@ -7,6 +7,8 @@ export type TimelineItem = {
   title: TimelineText;
   subtitle: TimelineText;
   period: string;
+  startDate: string;
+  endDate?: string;
   description?: string;
   bullets?: readonly string[];
   distinction?: string;
@@ -22,7 +24,7 @@ export type Person = {
   phone: string;
   website: string;
   address: {
-    formatted: string;
+    formatted: Record<Locale, string>;
     zip: string;
     locality: string;
     country: string;
