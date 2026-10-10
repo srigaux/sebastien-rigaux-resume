@@ -67,15 +67,24 @@ const copy = {
     description:
       "Sébastien Rigaux, CTO et Tech Lead basé près de Liège. Architecture logicielle, produits web et mobiles, transition IA et CTO as a Service.",
     backToTop: "Retour en haut",
+    resourcesLabel: "Formats du CV et fichiers pour les LLM",
+    pdfFooterLabel: "CV en français au format PDF",
+    markdownFooterLabel: "Version Markdown de cette page",
+    markdownFooterText: "Version MD",
   },
   en: {
     title: "CTO and Tech Lead in Belgium",
     description:
       "Sébastien Rigaux is a CTO and Tech Lead near Liège, Belgium. Software architecture, web and mobile products, AI transition and CTO as a Service.",
     backToTop: "Back to top",
+    resourcesLabel: "Résumé formats and LLM files",
+    pdfFooterLabel: "English résumé as PDF",
+    markdownFooterLabel: "Markdown version of this page",
+    markdownFooterText: "MD version",
   },
 }[locale];
 const name = `${person.firstName} ${person.lastName}`;
+const footerLinkClass = "text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline";
 ---
 
 <BaseLayout
@@ -111,10 +120,37 @@ const name = `${person.firstName} ${person.lastName}`;
   </main>
   <footer class="border-t border-rule">
     <div
-      class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12"
+      class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 md:grid-cols-[1fr_auto_1fr] lg:px-12"
     >
-      <p>{name}</p>
-      <a href="#about" class="font-medium text-accent hover:underline"
+      <p class="col-start-1 row-start-1">{name}</p>
+      <nav
+        aria-label={copy.resourcesLabel}
+        class="col-span-2 row-start-2 justify-self-center md:col-span-1 md:col-start-2 md:row-start-1"
+      >
+        <ul class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+          <li>
+            <a
+              href={`/pdf/Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
+              aria-label={copy.pdfFooterLabel}
+              type="application/pdf"
+              class={footerLinkClass}>PDF</a
+            >
+          </li>
+          <li>
+            <a
+              href={`/${locale}.md`}
+              aria-label={copy.markdownFooterLabel}
+              type="text/markdown"
+              class={footerLinkClass}>{copy.markdownFooterText}</a
+            >
+          </li>
+          <li><a href="/llms.txt" class={footerLinkClass}>llms.txt</a></li>
+          <li><a href="/llms-full.txt" class={footerLinkClass}>llms-full.txt</a></li>
+        </ul>
+      </nav>
+      <a
+        href="#about"
+        class="col-start-2 row-start-1 justify-self-end font-medium text-accent hover:underline md:col-start-3"
         >{copy.backToTop}</a
       >
     </div>

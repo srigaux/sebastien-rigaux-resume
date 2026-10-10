@@ -162,7 +162,7 @@ function astroLlmsTxtWithRootPageFix(options) {
         /^<SYSTEM>(.*?)<\/SYSTEM>\n\n/s,
         (_, description) => `> ${description}\n\n${source}\n\n`,
       );
-      await writeFile(file, clean);
+      await writeFile(file, clean, "utf8");
     }
   };
   return integration;
