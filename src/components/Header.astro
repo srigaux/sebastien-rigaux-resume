@@ -151,7 +151,9 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       header.toggleAttribute("data-scrolled", window.scrollY > 0);
       const rect = heroLogo.getBoundingClientRect();
       const headerBottom = header.getBoundingClientRect().bottom;
-      const nextVisible = rect.top <= headerBottom;
+      // Start the handoff before the sticky header clips the logo in Chromium.
+      const handoffLine = headerBottom + Math.min(rect.height / 2, 64);
+      const nextVisible = rect.top <= handoffLine;
       if (nextVisible === brandVisible) return;
 
       brandVisible = nextVisible;
@@ -163,10 +165,12 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 
       const logoIsVisible = rect.bottom > headerBottom && rect.top < window.innerHeight;
       if (animate && !reducedMotion.matches && logoIsVisible && document.startViewTransition) {
+        root.classList.add("brand-transitioning");
         transition = document.startViewTransition(apply);
-        transition.finished.then(() => {
+        transition.finished.finally(() => {
           transition = undefined;
           apply();
+          root.classList.remove("brand-transitioning");
         });
       } else {
         apply();
