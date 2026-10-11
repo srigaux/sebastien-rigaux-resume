@@ -13,7 +13,7 @@
   const shader = canvas?.parentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  if (canvas && shader && !reducedMotion.matches) {
+  if (canvas && shader && !reducedMotion.matches && !window.matchMedia("print").matches) {
     const start = async () => {
       try {
         const THREE = await import("three");

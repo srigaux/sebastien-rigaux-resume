@@ -67,6 +67,8 @@ export default defineConfig({
       },
       baseOptions: {
         throwOnFail: true,
+        // Apply print media before navigation so decorative WebGL never starts in PDF pages.
+        preCallback: (page) => page.emulateMediaType("print"),
         pdf: {
           format: "A4",
           printBackground: true,
