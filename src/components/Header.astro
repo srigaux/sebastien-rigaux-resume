@@ -252,8 +252,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
         if (item.nav.hasAttribute("data-brand-pending")) {
           if (shown) item.nav.removeAttribute("data-brand-pending");
         } else {
-          // Reverse the same blur-up preset, including an interrupted animation.
-          for (const animation of item.nav.getAnimations()) animation.reverse();
+          // Keep the entrance pacing, but retreat quickly when returning to the hero.
+          for (const animation of item.nav.getAnimations()) {
+            animation.reverse();
+            animation.updatePlaybackRate(shown ? 1 : -4);
+          }
         }
       }
       headerBrand.inert = !items.some((item) => item.shown);
