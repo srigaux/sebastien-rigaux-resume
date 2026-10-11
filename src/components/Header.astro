@@ -40,7 +40,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 ---
 
 <header
-  class="sticky top-0 z-50 border-b border-transparent bg-paper/95 backdrop-blur-md data-[scrolled]:border-rule motion-safe:transition-colors"
+  class="sticky top-0 z-50 border-b border-transparent bg-transparent data-[scrolled]:border-rule data-[scrolled]:bg-paper/95 data-[scrolled]:backdrop-blur-md motion-safe:transition-[background-color,border-color,backdrop-filter] motion-safe:duration-300"
 >
   <div
     class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12"
@@ -215,7 +215,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
     "[data-header-last-name]",
   );
   const syncHeader = () =>
-    header?.toggleAttribute("data-scrolled", window.scrollY > 0);
+    header?.toggleAttribute("data-scrolled", window.scrollY > 96);
   syncHeader();
   window.addEventListener("scroll", syncHeader, { passive: true });
 

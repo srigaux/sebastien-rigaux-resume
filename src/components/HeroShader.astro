@@ -1,0 +1,186 @@
+<div class="hero-shader" aria-hidden="true">
+  <canvas data-hero-shader></canvas>
+</div>
+
+<style>
+  .hero-shader {
+    position: absolute;
+    inset: -8rem calc(50% - 50vw) -2rem;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, transparent, black 16%, black 87%, transparent);
+    background: radial-gradient(
+      ellipse 35% 50% at 76% 48%,
+      color-mix(in srgb, var(--theme-accent) 10%, transparent),
+      transparent 75%
+    );
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0;
+    transition: opacity 700ms ease;
+  }
+
+  .hero-shader[data-ready] canvas {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    canvas { display: none; }
+  }
+
+  @media print {
+    .hero-shader { display: none; }
+  }
+</style>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-hero-shader]");
+  const shader = canvas?.parentElement;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  if (canvas && shader && !reducedMotion.matches) {
+    const start = async () => {
+      try {
+        const THREE = await import("three");
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.Camera();
+        camera.position.z = 1;
+        const root = document.documentElement;
+        const uniforms = {
+          resolution: { value: new THREE.Vector2(1, 1) },
+          time: { value: 0 },
+          accent: { value: new THREE.Color() },
+          lightMode: { value: 0 },
+        };
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          transparent: true,
+          depthWrite: false,
+          vertexShader: `
+            void main() {
+              gl_Position = vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            precision highp float;
+            uniform vec2 resolution;
+            uniform float time;
+            uniform vec3 accent;
+            uniform float lightMode;
+
+            void main() {
+              vec2 uv = (gl_FragCoord.xy - resolution * 0.5) / min(resolution.x, resolution.y);
+              vec2 p = uv - vec2(0.29 * resolution.x / min(resolution.x, resolution.y), 0.015);
+              float radius = length(p);
+              float angle = atan(p.y, p.x);
+              float light = 0.0;
+
+              // The concentric interference lines are adapted from the supplied shader.
+              for (int i = 0; i < 6; i++) {
+                float n = float(i);
+                float orbit = 0.16 + n * 0.091
+                  + 0.018 * sin(angle * 3.0 + time * 0.34 + n * 0.8)
+                  + 0.012 * sin((p.x + p.y) * 8.0 - time * 0.22);
+                float line = 0.0018 / (abs(radius - orbit) + 0.0025);
+                float dash = 0.4 + 0.6 * smoothstep(-0.4, 0.8,
+                  sin(angle * 2.0 + n * 1.7 - time * 0.18));
+                light += line * dash * (0.38 + n * 0.055);
+              }
+
+              float bloom = 0.17 / (0.15 + radius * radius * 4.0);
+              float leftFade = smoothstep(-0.65, 0.0, uv.x);
+              float edgeFade = 1.0 - smoothstep(0.6, 0.98, radius);
+              float intensity = (
+                light * mix(1.0, 1.35, lightMode)
+                + bloom * mix(1.0, 0.18, lightMode)
+              ) * leftFade * edgeFade;
+              float alpha = min(
+                intensity * mix(0.42, 0.2, lightMode),
+                mix(0.55, 0.18, lightMode)
+              );
+              vec3 ink = accent * mix(0.72 + min(light, 1.0) * 0.45, 1.25, lightMode);
+              gl_FragColor = vec4(ink, alpha);
+            }
+          `,
+        });
+        scene.add(new THREE.Mesh(geometry, material));
+
+        const syncTheme = () => {
+          const styles = getComputedStyle(root);
+          const isLight = styles.colorScheme === "light";
+          uniforms.accent.value.set(styles.getPropertyValue("--theme-accent").trim());
+          // ShaderMaterial does not convert custom uniform colors to display space.
+          if (isLight) uniforms.accent.value.convertLinearToSRGB();
+          uniforms.lightMode.value = Number(isLight);
+          renderer.render(scene, camera);
+        };
+        const themeObserver = new MutationObserver(syncTheme);
+        themeObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
+        const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+        scheme.addEventListener("change", syncTheme);
+        syncTheme();
+
+        const resize = () => {
+          const { width, height } = shader.getBoundingClientRect();
+          renderer.setSize(width, height, false);
+          uniforms.resolution.value.set(canvas.width, canvas.height);
+          renderer.render(scene, camera);
+        };
+        const resizeObserver = new ResizeObserver(resize);
+        resizeObserver.observe(shader);
+        resize();
+
+        let visible = true;
+        let frame = 0;
+        const render = (now: number) => {
+          frame = 0;
+          if (!visible || document.hidden || reducedMotion.matches) return;
+          uniforms.time.value = now * 0.001;
+          renderer.render(scene, camera);
+          shader.dataset.ready = "";
+          frame = requestAnimationFrame(render);
+        };
+        const queueRender = () => {
+          if (!frame && visible && !document.hidden && !reducedMotion.matches) frame = requestAnimationFrame(render);
+        };
+        const stopRender = () => {
+          cancelAnimationFrame(frame);
+          frame = 0;
+        };
+        new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible) queueRender(); else stopRender();
+        }).observe(shader);
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) stopRender(); else queueRender();
+        });
+        reducedMotion.addEventListener("change", () => {
+          if (reducedMotion.matches) {
+            stopRender();
+            delete shader.dataset.ready;
+          } else queueRender();
+        });
+        canvas.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          stopRender();
+          delete shader.dataset.ready;
+        });
+        queueRender();
+      } catch {
+        // The CSS glow remains visible when WebGL is unavailable.
+      }
+    };
+    if ("requestIdleCallback" in window) window.requestIdleCallback(start);
+    else setTimeout(start, 0);
+  }
+</script>

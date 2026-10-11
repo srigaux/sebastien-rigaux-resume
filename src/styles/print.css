@@ -93,8 +93,13 @@
     display: none !important;
   }
 
-  #about [data-cv-hero] > div {
+  #about [data-cv-hero] > .hero-shader {
+    display: none !important;
+  }
+
+  #about [data-cv-hero] > div:not(.hero-shader) {
     display: grid;
+    min-height: 0;
     grid-template-columns: 18mm minmax(0, 1fr);
     grid-template-rows: auto auto auto;
     column-gap: 5mm;
