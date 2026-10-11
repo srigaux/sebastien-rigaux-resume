@@ -53,16 +53,26 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
     >
       <Logo
         data-header-brand-logo
-        class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10"
+        data-brand-pending
+        data-brand-hidden
+        class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10 motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
         aria-hidden="true"
       />
       <span
         data-header-brand-name
         class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]"
       >
-        <span data-header-first-name>{firstName}</span>{" "}<span
+        <span
+          data-header-first-name
+          data-brand-pending
+          data-brand-hidden
+          class="inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
+          >{firstName}</span
+        >{" "}<span
           data-header-last-name
-          class="ml-[0.125em] text-accent">{lastName}</span
+          data-brand-pending
+          data-brand-hidden
+          class="ml-[0.125em] inline-block text-accent motion-preset-blur-up motion-duration-500 motion-reduce:animate-none">{lastName}</span
         >
       </span>
     </a>
@@ -185,6 +195,9 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 <script>
   const root = document.documentElement;
   const header = document.querySelector<HTMLElement>("header");
+  const headerBrand = document.querySelector<HTMLAnchorElement>(
+    "[data-header-brand]",
+  );
   const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
   const heroFirstName = document.querySelector<HTMLElement>(
     "[data-hero-first-name]",
@@ -192,96 +205,77 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   const heroLastName = document.querySelector<HTMLElement>(
     "[data-hero-last-name]",
   );
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const headerLogo = document.querySelector<SVGElement>(
+    "[data-header-brand-logo]",
+  );
+  const headerFirstName = document.querySelector<HTMLElement>(
+    "[data-header-first-name]",
+  );
+  const headerLastName = document.querySelector<HTMLElement>(
+    "[data-header-last-name]",
+  );
+  const syncHeader = () =>
+    header?.toggleAttribute("data-scrolled", window.scrollY > 0);
+  syncHeader();
+  window.addEventListener("scroll", syncHeader, { passive: true });
 
-  if (header && heroLogo && heroFirstName && heroLastName) {
-    let brandVisible = false;
-    let firstNameVisible = false;
-    let lastNameVisible = false;
-    let transition: ViewTransition | undefined;
-    let frame = 0;
-    const apply = () => {
-      root.classList.toggle("brand-visible", brandVisible);
-      root.classList.toggle("brand-first-name-visible", firstNameVisible);
-      root.classList.toggle("brand-last-name-visible", lastNameVisible);
+  if (
+    header &&
+    headerBrand &&
+    heroLogo &&
+    heroFirstName &&
+    heroLastName &&
+    headerLogo &&
+    headerFirstName &&
+    headerLastName
+  ) {
+    const items = [
+      { hero: heroLogo, nav: headerLogo, shown: false },
+      { hero: heroFirstName, nav: headerFirstName, shown: false },
+      { hero: heroLastName, nav: headerLastName, shown: false },
+    ];
+    const byHero = new Map<Element, (typeof items)[number]>(
+      items.map((item) => [item.hero, item]),
+    );
+    const visibleThreshold = 0.9;
+    headerBrand.inert = true;
+
+    const updateBrand = (entries: IntersectionObserverEntry[]) => {
+      for (const entry of entries) {
+        const item = byHero.get(entry.target);
+        if (!item) continue;
+        const shown = entry.intersectionRatio < visibleThreshold;
+        if (shown === item.shown) continue;
+
+        item.shown = shown;
+        item.nav.toggleAttribute("data-brand-hidden", !shown);
+        if (item.nav.hasAttribute("data-brand-pending")) {
+          if (shown) item.nav.removeAttribute("data-brand-pending");
+        } else {
+          // Reverse the same blur-up preset, including an interrupted animation.
+          for (const animation of item.nav.getAnimations()) animation.reverse();
+        }
+      }
+      headerBrand.inert = !items.some((item) => item.shown);
     };
 
-    const syncBrand = (animate = true) => {
-      header.toggleAttribute("data-scrolled", window.scrollY > 0);
-      const rect = heroLogo.getBoundingClientRect();
-      const headerBottom = header.getBoundingClientRect().bottom;
-      // Start the handoff before the sticky header clips the logo in Chromium.
-      const handoffLine = headerBottom + Math.min(rect.height / 2, 64);
-      const nextVisible = rect.top <= handoffLine;
-      const firstNameRect = heroFirstName.getBoundingClientRect();
-      const lastNameRect = heroLastName.getBoundingClientRect();
-      const nextFirstNameVisible =
-        nextVisible &&
-        firstNameRect.top <=
-          headerBottom + Math.min(firstNameRect.height / 2, 64);
-      const nextLastNameVisible =
-        nextVisible &&
-        lastNameRect.top <=
-          headerBottom + Math.min(lastNameRect.height / 2, 64);
-      if (
-        nextVisible === brandVisible &&
-        nextFirstNameVisible === firstNameVisible &&
-        nextLastNameVisible === lastNameVisible
-      )
-        return;
-
-      const logoChanged = nextVisible !== brandVisible;
-      const firstNameChanged = nextFirstNameVisible !== firstNameVisible;
-      const lastNameChanged = nextLastNameVisible !== lastNameVisible;
-      brandVisible = nextVisible;
-      firstNameVisible = nextFirstNameVisible;
-      lastNameVisible = nextLastNameVisible;
-      if (transition) {
-        transition.skipTransition();
-        apply();
-        return;
-      }
-
-      const logoIsVisible =
-        rect.bottom > headerBottom && rect.top < window.innerHeight;
-      const firstNameIsVisible =
-        firstNameRect.bottom > headerBottom &&
-        firstNameRect.top < window.innerHeight;
-      const lastNameIsVisible =
-        lastNameRect.bottom > headerBottom &&
-        lastNameRect.top < window.innerHeight;
-      if (
-        animate &&
-        !reducedMotion.matches &&
-        (!logoChanged || logoIsVisible) &&
-        (!firstNameChanged || firstNameIsVisible) &&
-        (!lastNameChanged || lastNameIsVisible) &&
-        document.startViewTransition
-      ) {
-        root.classList.add("brand-transitioning");
-        transition = document.startViewTransition(apply);
-        transition.finished.finally(() => {
-          transition = undefined;
-          apply();
-          root.classList.remove("brand-transitioning");
-        });
-      } else {
-        apply();
-      }
-    };
-
-    const scheduleBrandSync = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        syncBrand();
+    let observedHeaderHeight = -1;
+    let observer: IntersectionObserver | undefined;
+    const observeBrand = () => {
+      const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+      if (headerHeight === observedHeaderHeight) return;
+      observedHeaderHeight = headerHeight;
+      observer?.disconnect();
+      observer = new IntersectionObserver(updateBrand, {
+        rootMargin: `-${headerHeight}px 0px 0px 0px`,
+        threshold: visibleThreshold,
       });
+      for (const { hero } of items) observer.observe(hero);
     };
 
-    syncBrand(false);
+    observeBrand();
+    new ResizeObserver(observeBrand).observe(header);
     root.dataset.brandObserving = "";
-    window.addEventListener("scroll", scheduleBrandSync, { passive: true });
-    window.addEventListener("resize", scheduleBrandSync);
   }
 
   const updateLanguageLinks = () => {
