@@ -45,15 +45,15 @@ const firstNameLetters = Array.from(person.firstName);
 const lastNameLetters = Array.from(person.lastName);
 const rolePoints = person.role[locale].split(" · ");
 const roleDelays = [
-  "motion-delay-[300ms]",
-  "motion-delay-[330ms]",
-  "motion-delay-[360ms]",
+  "sm:motion-delay-[300ms]",
+  "sm:motion-delay-[330ms]",
+  "sm:motion-delay-[360ms]",
 ];
 const paragraphDelays = [
-  "motion-delay-[330ms]",
-  "motion-delay-[530ms]",
-  "motion-delay-[560ms]",
-  "motion-delay-[590ms]",
+  "sm:motion-delay-[330ms]",
+  "sm:motion-delay-[530ms]",
+  "sm:motion-delay-[560ms]",
+  "sm:motion-delay-[590ms]",
 ];
 ---
 
@@ -64,8 +64,7 @@ const paragraphDelays = [
 >
   <div data-cv-hero>
     <div
-      no-intersect
-      class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once"
+      class="motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
     >
       <div
         data-cv-decoration
@@ -93,8 +92,7 @@ const paragraphDelays = [
             {
               firstNameLetters.map((letter, index) => (
                 <span
-                  no-intersect
-                  class="inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  class="inline-block motion-preset-blur-up motion-duration-500 motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
                   style={`--letter-index:${index}`}
                 >
                   {letter}
@@ -111,8 +109,7 @@ const paragraphDelays = [
             {
               lastNameLetters.map((letter, index) => (
                 <span
-                  no-intersect
-                  class="inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
+                  class="inline-block motion-preset-blur-up motion-duration-500 motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
                   style={`--letter-index:${index + 3}`}
                 >
                   {letter}
@@ -131,9 +128,8 @@ const paragraphDelays = [
         {
           rolePoints.map((point, index) => (
             <span
-              no-intersect
               class:list={[
-                "inline-block intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none",
+                "inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none",
                 roleDelays[Math.min(index, roleDelays.length - 1)],
               ]}
             >
@@ -145,13 +141,12 @@ const paragraphDelays = [
       </p>
       <a
         data-cv-download
-        no-intersect
         href={`/pdf/Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
         aria-label={about.pdfAriaLabel}
         target="_blank"
         rel="noopener noreferrer"
         type="application/pdf"
-        class="mt-8 inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline intersect:motion-preset-blur-up-sm motion-duration-300 motion-delay-[420ms] intersect-once transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98] motion-reduce:animate-none motion-reduce:transform-none"
+        class="mt-8 inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline motion-preset-blur-up motion-duration-500 sm:motion-delay-[420ms] transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98] motion-reduce:animate-none motion-reduce:transform-none"
       >
         {about.pdfLabel}
         <ArrowUpRight class="size-4" aria-hidden="true" />
@@ -170,7 +165,7 @@ const paragraphDelays = [
       <p
         no-intersect
         class:list={[
-          "intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl",
+          "intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl",
           paragraphDelays[0],
         ]}
       >
@@ -191,7 +186,7 @@ const paragraphDelays = [
           <p
             no-intersect
             class:list={[
-              "intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once motion-reduce:animate-none",
+              "intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none",
               paragraphDelays[Math.min(index + 1, paragraphDelays.length - 1)],
             ]}
           >
@@ -204,7 +199,7 @@ const paragraphDelays = [
     <aside
       data-cv-contact
       no-intersect
-      class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
+      class="intersect:motion-preset-blur-up motion-duration-500 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
     >
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">
