@@ -1,5 +1,5 @@
 ---
-import Logo from "@/assets/logo.svg";
+import Logo from "@/assets/logo-animated.svg";
 import { ArrowUpRight } from "@lucide/astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import { yearsSince } from "@/lib/years";
@@ -67,7 +67,11 @@ const paragraphDelays = [
       no-intersect
       class="intersect:motion-preset-blur-up-sm motion-duration-300 intersect-once"
     >
-      <div data-cv-decoration aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent">
+      <div
+        data-cv-decoration
+        aria-hidden="true"
+        class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"
+      >
       </div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">
         {person.jobTitle[locale]}
@@ -81,7 +85,11 @@ const paragraphDelays = [
           aria-label={`${person.firstName} ${person.lastName}`}
           class="font-display text-[clamp(3.25rem,calc(1.5rem+9vw),8rem)] leading-[0.98] font-bold tracking-[-0.04em] text-ink"
         >
-          <span data-hero-first-name aria-hidden="true" class="block w-fit whitespace-nowrap">
+          <span
+            data-hero-first-name
+            aria-hidden="true"
+            class="block w-fit whitespace-nowrap"
+          >
             {
               firstNameLetters.map((letter, index) => (
                 <span
@@ -95,7 +103,11 @@ const paragraphDelays = [
             }
           </span>
           {" "}
-          <span data-hero-last-name aria-hidden="true" class="block w-fit whitespace-nowrap text-accent">
+          <span
+            data-hero-last-name
+            aria-hidden="true"
+            class="block w-fit whitespace-nowrap text-accent"
+          >
             {
               lastNameLetters.map((letter, index) => (
                 <span
@@ -218,7 +230,8 @@ const paragraphDelays = [
           <p>
             <ExternalLink
               class="inline-block break-all hover:text-accent focus-visible:text-accent"
-              href={person.website}>{new URL(person.website).hostname}</ExternalLink
+              href={person.website}
+              >{new URL(person.website).hostname}</ExternalLink
             >
           </p>
         </address>

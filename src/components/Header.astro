@@ -1,7 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { EllipsisVertical } from "@lucide/astro";
-import Logo from "@/assets/logo.svg";
+import Logo from "@/assets/logo-animated.svg";
 import ThemeToggle from "@/components/ThemeToggle.astro";
 import type { Locale } from "@/types";
 
@@ -34,39 +34,62 @@ const sections = [
   { id: "education", label: nav.education },
   { id: "skills", label: nav.skills },
 ];
-const navigationLabel = locale === "fr" ? "Navigation principale" : "Main navigation";
+const navigationLabel =
+  locale === "fr" ? "Navigation principale" : "Main navigation";
 const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 ---
 
-<header class="sticky top-0 z-50 border-b border-transparent bg-paper/95 backdrop-blur-md data-[scrolled]:border-rule motion-safe:transition-colors">
-  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+<header
+  class="sticky top-0 z-50 border-b border-transparent bg-paper/95 backdrop-blur-md data-[scrolled]:border-rule motion-safe:transition-colors"
+>
+  <div
+    class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12"
+  >
     <a
       data-header-brand
       href="#about"
       class="group flex min-w-0 shrink-0 items-center gap-2 rounded-sm py-3 text-ink no-underline sm:gap-3"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
-      <Logo data-header-brand-logo class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10" aria-hidden="true" />
-      <span data-header-brand-name class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
-        <span data-header-first-name>{firstName}</span>{" "}<span data-header-last-name class="ml-[0.125em] text-accent">{lastName}</span>
+      <Logo
+        data-header-brand-logo
+        class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10"
+        aria-hidden="true"
+      />
+      <span
+        data-header-brand-name
+        class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]"
+      >
+        <span data-header-first-name>{firstName}</span>{" "}<span
+          data-header-last-name
+          class="ml-[0.125em] text-accent">{lastName}</span
+        >
       </span>
     </a>
 
-    <nav aria-label={navigationLabel} class="hidden items-stretch self-stretch lg:flex">
-      {sections.map(({ id, label }) => (
-        <a
-          href={`#${id}`}
-          class="group flex items-center px-3 text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent"
-        >
-          <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
-            {label}
-          </span>
-        </a>
-      ))}
+    <nav
+      aria-label={navigationLabel}
+      class="hidden items-stretch self-stretch lg:flex"
+    >
+      {
+        sections.map(({ id, label }) => (
+          <a
+            href={`#${id}`}
+            class="group flex items-center px-3 text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent"
+          >
+            <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
+              {label}
+            </span>
+          </a>
+        ))
+      }
     </nav>
 
     <div class="flex items-center gap-2 py-3 sm:gap-4">
-      <nav aria-label={languageLabel} class="hidden items-center gap-1 text-sm font-semibold lg:flex">
+      <nav
+        aria-label={languageLabel}
+        class="hidden items-center gap-1 text-sm font-semibold lg:flex"
+      >
         <a
           data-locale-link
           href={getRelativeLocaleUrl("fr")}
@@ -75,9 +98,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
           aria-current={locale === "fr" ? "page" : undefined}
           class:list={[
             "rounded-sm px-2 py-1 transition-colors hover:text-accent",
-            locale === "fr" ? "text-accent underline decoration-2" : "text-muted",
-          ]}
-        >FR</a>
+            locale === "fr"
+              ? "text-accent underline decoration-2"
+              : "text-muted",
+          ]}>FR</a
+        >
         <span aria-hidden="true" class="text-rule">/</span>
         <a
           data-locale-link
@@ -87,15 +112,20 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
           aria-current={locale === "en" ? "page" : undefined}
           class:list={[
             "rounded-sm px-2 py-1 transition-colors hover:text-accent",
-            locale === "en" ? "text-accent underline decoration-2" : "text-muted",
-          ]}
-        >EN</a>
+            locale === "en"
+              ? "text-accent underline decoration-2"
+              : "text-muted",
+          ]}>EN</a
+        >
       </nav>
 
       <ThemeToggle locale={locale} />
 
       <details id="mobile-menu" class="group relative lg:hidden">
-        <summary title={nav.menu} class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-sm border border-rule text-ink transition-colors hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10 marker:hidden">
+        <summary
+          title={nav.menu}
+          class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-sm border border-rule text-ink transition-colors hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10 marker:hidden"
+        >
           <EllipsisVertical class="size-5" aria-hidden="true" />
           <span class="sr-only">{nav.menu}</span>
         </summary>
@@ -103,13 +133,24 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
           aria-label={navigationLabel}
           class="absolute right-0 top-[calc(100%+0.75rem)] w-56 border border-rule bg-paper p-2 shadow-lg shadow-ink/10"
         >
-          {sections.map(({ id, label }) => (
-            <a href={`#${id}`} class="block rounded-sm px-3 py-3 text-sm font-medium text-ink hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10">
-              {label}
-            </a>
-          ))}
-          <div role="group" aria-label={languageLabel} class="mt-2 border-t border-rule pt-2">
-            <p class="px-3 py-1 text-xs font-semibold text-muted">{languageLabel}</p>
+          {
+            sections.map(({ id, label }) => (
+              <a
+                href={`#${id}`}
+                class="block rounded-sm px-3 py-3 text-sm font-medium text-ink hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10"
+              >
+                {label}
+              </a>
+            ))
+          }
+          <div
+            role="group"
+            aria-label={languageLabel}
+            class="mt-2 border-t border-rule pt-2"
+          >
+            <p class="px-3 py-1 text-xs font-semibold text-muted">
+              {languageLabel}
+            </p>
             <div class="grid grid-cols-2 gap-1">
               <a
                 data-locale-link
@@ -117,16 +158,22 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
                 lang="fr"
                 hreflang="fr"
                 aria-current={locale === "fr" ? "page" : undefined}
-                class:list={["rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10", locale === "fr" ? "text-accent" : "text-ink"]}
-              >Français</a>
+                class:list={[
+                  "rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10",
+                  locale === "fr" ? "text-accent" : "text-ink",
+                ]}>Français</a
+              >
               <a
                 data-locale-link
                 href={getRelativeLocaleUrl("en")}
                 lang="en"
                 hreflang="en"
                 aria-current={locale === "en" ? "page" : undefined}
-                class:list={["rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10", locale === "en" ? "text-accent" : "text-ink"]}
-              >English</a>
+                class:list={[
+                  "rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10",
+                  locale === "en" ? "text-accent" : "text-ink",
+                ]}>English</a
+              >
             </div>
           </div>
         </nav>
@@ -139,8 +186,12 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   const root = document.documentElement;
   const header = document.querySelector<HTMLElement>("header");
   const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
-  const heroFirstName = document.querySelector<HTMLElement>("[data-hero-first-name]");
-  const heroLastName = document.querySelector<HTMLElement>("[data-hero-last-name]");
+  const heroFirstName = document.querySelector<HTMLElement>(
+    "[data-hero-first-name]",
+  );
+  const heroLastName = document.querySelector<HTMLElement>(
+    "[data-hero-last-name]",
+  );
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   if (header && heroLogo && heroFirstName && heroLastName) {
@@ -164,9 +215,20 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       const nextVisible = rect.top <= handoffLine;
       const firstNameRect = heroFirstName.getBoundingClientRect();
       const lastNameRect = heroLastName.getBoundingClientRect();
-      const nextFirstNameVisible = nextVisible && firstNameRect.top <= headerBottom + Math.min(firstNameRect.height / 2, 64);
-      const nextLastNameVisible = nextVisible && lastNameRect.top <= headerBottom + Math.min(lastNameRect.height / 2, 64);
-      if (nextVisible === brandVisible && nextFirstNameVisible === firstNameVisible && nextLastNameVisible === lastNameVisible) return;
+      const nextFirstNameVisible =
+        nextVisible &&
+        firstNameRect.top <=
+          headerBottom + Math.min(firstNameRect.height / 2, 64);
+      const nextLastNameVisible =
+        nextVisible &&
+        lastNameRect.top <=
+          headerBottom + Math.min(lastNameRect.height / 2, 64);
+      if (
+        nextVisible === brandVisible &&
+        nextFirstNameVisible === firstNameVisible &&
+        nextLastNameVisible === lastNameVisible
+      )
+        return;
 
       const logoChanged = nextVisible !== brandVisible;
       const firstNameChanged = nextFirstNameVisible !== firstNameVisible;
@@ -180,10 +242,22 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
         return;
       }
 
-      const logoIsVisible = rect.bottom > headerBottom && rect.top < window.innerHeight;
-      const firstNameIsVisible = firstNameRect.bottom > headerBottom && firstNameRect.top < window.innerHeight;
-      const lastNameIsVisible = lastNameRect.bottom > headerBottom && lastNameRect.top < window.innerHeight;
-      if (animate && !reducedMotion.matches && (!logoChanged || logoIsVisible) && (!firstNameChanged || firstNameIsVisible) && (!lastNameChanged || lastNameIsVisible) && document.startViewTransition) {
+      const logoIsVisible =
+        rect.bottom > headerBottom && rect.top < window.innerHeight;
+      const firstNameIsVisible =
+        firstNameRect.bottom > headerBottom &&
+        firstNameRect.top < window.innerHeight;
+      const lastNameIsVisible =
+        lastNameRect.bottom > headerBottom &&
+        lastNameRect.top < window.innerHeight;
+      if (
+        animate &&
+        !reducedMotion.matches &&
+        (!logoChanged || logoIsVisible) &&
+        (!firstNameChanged || firstNameIsVisible) &&
+        (!lastNameChanged || lastNameIsVisible) &&
+        document.startViewTransition
+      ) {
         root.classList.add("brand-transitioning");
         transition = document.startViewTransition(apply);
         transition.finished.finally(() => {
@@ -211,11 +285,13 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   }
 
   const updateLanguageLinks = () => {
-    document.querySelectorAll<HTMLAnchorElement>("[data-locale-link]").forEach((link) => {
-      const url = new URL(link.href);
-      url.hash = window.location.hash;
-      link.href = url.href;
-    });
+    document
+      .querySelectorAll<HTMLAnchorElement>("[data-locale-link]")
+      .forEach((link) => {
+        const url = new URL(link.href);
+        url.hash = window.location.hash;
+        link.href = url.href;
+      });
   };
 
   updateLanguageLinks();
