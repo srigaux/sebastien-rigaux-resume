@@ -47,8 +47,8 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
       <Logo data-header-brand-logo class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10" aria-hidden="true" />
-      <span class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
-        {firstName} <span class="text-accent">{lastName}</span>
+      <span data-header-brand-name class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]">
+        <span data-header-first-name>{firstName}</span>{" "}<span data-header-last-name class="ml-[0.125em] text-accent">{lastName}</span>
       </span>
     </a>
 
@@ -139,13 +139,21 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   const root = document.documentElement;
   const header = document.querySelector<HTMLElement>("header");
   const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
+  const heroFirstName = document.querySelector<HTMLElement>("[data-hero-first-name]");
+  const heroLastName = document.querySelector<HTMLElement>("[data-hero-last-name]");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  if (header && heroLogo) {
+  if (header && heroLogo && heroFirstName && heroLastName) {
     let brandVisible = false;
+    let firstNameVisible = false;
+    let lastNameVisible = false;
     let transition: ViewTransition | undefined;
     let frame = 0;
-    const apply = () => root.classList.toggle("brand-visible", brandVisible);
+    const apply = () => {
+      root.classList.toggle("brand-visible", brandVisible);
+      root.classList.toggle("brand-first-name-visible", firstNameVisible);
+      root.classList.toggle("brand-last-name-visible", lastNameVisible);
+    };
 
     const syncBrand = (animate = true) => {
       header.toggleAttribute("data-scrolled", window.scrollY > 0);
@@ -154,9 +162,18 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       // Start the handoff before the sticky header clips the logo in Chromium.
       const handoffLine = headerBottom + Math.min(rect.height / 2, 64);
       const nextVisible = rect.top <= handoffLine;
-      if (nextVisible === brandVisible) return;
+      const firstNameRect = heroFirstName.getBoundingClientRect();
+      const lastNameRect = heroLastName.getBoundingClientRect();
+      const nextFirstNameVisible = nextVisible && firstNameRect.top <= headerBottom + Math.min(firstNameRect.height / 2, 64);
+      const nextLastNameVisible = nextVisible && lastNameRect.top <= headerBottom + Math.min(lastNameRect.height / 2, 64);
+      if (nextVisible === brandVisible && nextFirstNameVisible === firstNameVisible && nextLastNameVisible === lastNameVisible) return;
 
+      const logoChanged = nextVisible !== brandVisible;
+      const firstNameChanged = nextFirstNameVisible !== firstNameVisible;
+      const lastNameChanged = nextLastNameVisible !== lastNameVisible;
       brandVisible = nextVisible;
+      firstNameVisible = nextFirstNameVisible;
+      lastNameVisible = nextLastNameVisible;
       if (transition) {
         transition.skipTransition();
         apply();
@@ -164,7 +181,9 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       }
 
       const logoIsVisible = rect.bottom > headerBottom && rect.top < window.innerHeight;
-      if (animate && !reducedMotion.matches && logoIsVisible && document.startViewTransition) {
+      const firstNameIsVisible = firstNameRect.bottom > headerBottom && firstNameRect.top < window.innerHeight;
+      const lastNameIsVisible = lastNameRect.bottom > headerBottom && lastNameRect.top < window.innerHeight;
+      if (animate && !reducedMotion.matches && (!logoChanged || logoIsVisible) && (!firstNameChanged || firstNameIsVisible) && (!lastNameChanged || lastNameIsVisible) && document.startViewTransition) {
         root.classList.add("brand-transitioning");
         transition = document.startViewTransition(apply);
         transition.finished.finally(() => {

@@ -81,7 +81,7 @@ const paragraphDelays = [
           aria-label={`${person.firstName} ${person.lastName}`}
           class="font-display text-[clamp(3.25rem,calc(1.5rem+9vw),8rem)] leading-[0.98] font-bold tracking-[-0.04em] text-ink"
         >
-          <span aria-hidden="true" class="block whitespace-nowrap">
+          <span data-hero-first-name aria-hidden="true" class="block w-fit whitespace-nowrap">
             {
               firstNameLetters.map((letter, index) => (
                 <span
@@ -95,7 +95,7 @@ const paragraphDelays = [
             }
           </span>
           {" "}
-          <span aria-hidden="true" class="block whitespace-nowrap text-accent">
+          <span data-hero-last-name aria-hidden="true" class="block w-fit whitespace-nowrap text-accent">
             {
               lastNameLetters.map((letter, index) => (
                 <span
