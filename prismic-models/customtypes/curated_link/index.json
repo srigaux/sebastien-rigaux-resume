@@ -1,0 +1,111 @@
+{
+  "format": "custom",
+  "id": "curated_link",
+  "json": {
+    "Main": {
+      "uid": {
+        "config": {
+          "label": "UID"
+        },
+        "type": "UID"
+      },
+      "title": {
+        "config": {
+          "label": "Title",
+          "single": "heading1"
+        },
+        "type": "StructuredText"
+      },
+      "summary": {
+        "config": {
+          "label": "Summary",
+          "single": "paragraph"
+        },
+        "type": "StructuredText"
+      },
+      "url": {
+        "config": {
+          "label": "Url",
+          "select": "web"
+        },
+        "type": "Link"
+      },
+      "selected_on": {
+        "config": {
+          "label": "Selected On"
+        },
+        "type": "Date"
+      },
+      "published_on": {
+        "config": {
+          "label": "Published On"
+        },
+        "type": "Date"
+      },
+      "format": {
+        "config": {
+          "label": "Format",
+          "options": [
+            "Article",
+            "Video",
+            "Repository",
+            "Release",
+            "Documentation",
+            "Tool",
+            "Other"
+          ]
+        },
+        "type": "Select"
+      },
+      "credit": {
+        "config": {
+          "label": "Credit"
+        },
+        "type": "Text"
+      },
+      "discovered_via": {
+        "config": {
+          "customtypes": [
+            "discovery_source"
+          ],
+          "label": "Discovered Via",
+          "select": "document"
+        },
+        "type": "Link"
+      },
+      "topics": {
+        "config": {
+          "fields": {
+            "topic": {
+              "config": {
+                "customtypes": [
+                  "topic"
+                ],
+                "label": "Topic",
+                "select": "document"
+              },
+              "type": "Link"
+            }
+          },
+          "label": "Topics"
+        },
+        "type": "Group"
+      },
+      "image": {
+        "config": {
+          "label": "Image"
+        },
+        "type": "Image"
+      },
+      "site_icon": {
+        "config": {
+          "label": "Site Icon"
+        },
+        "type": "Image"
+      }
+    }
+  },
+  "label": "Curated Link",
+  "repeatable": true,
+  "status": true
+}

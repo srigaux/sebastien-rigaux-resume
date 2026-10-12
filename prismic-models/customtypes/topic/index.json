@@ -1,0 +1,29 @@
+{
+  "format": "custom",
+  "id": "topic",
+  "json": {
+    "Main": {
+      "uid": {
+        "config": {
+          "label": "UID"
+        },
+        "type": "UID"
+      },
+      "name": {
+        "config": {
+          "label": "Name"
+        },
+        "type": "Text"
+      },
+      "description": {
+        "config": {
+          "label": "Description"
+        },
+        "type": "Text"
+      }
+    }
+  },
+  "label": "Topic",
+  "repeatable": true,
+  "status": true
+}

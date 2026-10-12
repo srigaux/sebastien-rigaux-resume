@@ -1,0 +1,36 @@
+{
+  "format": "custom",
+  "id": "discovery_source",
+  "json": {
+    "Main": {
+      "uid": {
+        "config": {
+          "label": "UID"
+        },
+        "type": "UID"
+      },
+      "name": {
+        "config": {
+          "label": "Name"
+        },
+        "type": "Text"
+      },
+      "url": {
+        "config": {
+          "label": "Url",
+          "select": "web"
+        },
+        "type": "Link"
+      },
+      "icon": {
+        "config": {
+          "label": "Icon"
+        },
+        "type": "Image"
+      }
+    }
+  },
+  "label": "Discovery Source",
+  "repeatable": true,
+  "status": true
+}

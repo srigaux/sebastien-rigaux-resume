@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "tech-watch-prismic-models",
+  "version": "1.0.0",
+  "dependencies": {
+    "next": "^15.0.0"
+  }
+}
