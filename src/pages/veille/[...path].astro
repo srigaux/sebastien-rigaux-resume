@@ -1,0 +1,9 @@
+---
+import WatchPage from "@/components/WatchPage.astro";
+import { getWatchStaticPaths, type WatchPageProps } from "@/lib/watch-pages";
+
+export const getStaticPaths = () => getWatchStaticPaths("fr");
+const props = Astro.props as WatchPageProps;
+---
+
+<WatchPage {...props} />

@@ -3,21 +3,29 @@ import { getRelativeLocaleUrl } from "astro:i18n";
 import { EllipsisVertical } from "@lucide/astro";
 import Logo from "@/assets/logo-animated.svg";
 import ThemeToggle from "@/components/ThemeToggle.astro";
+import { watchPath } from "@/lib/watch-model";
 import type { Locale } from "@/types";
 
 interface Props {
   locale: Locale;
   firstName: string;
   lastName: string;
+  page?: "cv" | "watch";
+  languagePaths?: Record<Locale, string>;
 }
 
-const { locale, firstName, lastName } = Astro.props;
+const { locale, firstName, lastName, page = "cv", languagePaths } = Astro.props;
+const isWatch = page === "watch";
+const homePath = getRelativeLocaleUrl(locale);
+const frenchPath = languagePaths?.fr ?? getRelativeLocaleUrl("fr");
+const englishPath = languagePaths?.en ?? getRelativeLocaleUrl("en");
 const nav = {
   fr: {
     about: "À propos",
     experience: "Expérience",
     education: "Études",
     skills: "Compétences",
+    watch: "Veille tech",
     menu: "Menu",
   },
   en: {
@@ -25,14 +33,16 @@ const nav = {
     experience: "Experience",
     education: "Education",
     skills: "Skills",
+    watch: "Tech watch",
     menu: "Menu",
   },
 }[locale];
 const sections = [
-  { id: "about", label: nav.about },
-  { id: "experience", label: nav.experience },
-  { id: "education", label: nav.education },
-  { id: "skills", label: nav.skills },
+  { href: isWatch ? `${homePath}#about` : "#about", label: nav.about },
+  { href: isWatch ? `${homePath}#experience` : "#experience", label: nav.experience },
+  { href: isWatch ? `${homePath}#education` : "#education", label: nav.education },
+  { href: isWatch ? `${homePath}#skills` : "#skills", label: nav.skills },
+  { href: watchPath(locale), label: nav.watch },
 ];
 const navigationLabel =
   locale === "fr" ? "Navigation principale" : "Main navigation";
@@ -40,6 +50,8 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 ---
 
 <header
+  data-watch-header={isWatch ? "" : undefined}
+  data-scrolled={isWatch ? "" : undefined}
   class="sticky top-0 z-50 border-b border-transparent bg-transparent data-[scrolled]:border-rule data-[scrolled]:bg-paper/95 data-[scrolled]:backdrop-blur-md motion-safe:transition-[background-color,border-color,backdrop-filter] motion-safe:duration-300"
 >
   <div
@@ -47,14 +59,14 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
   >
     <a
       data-header-brand
-      href="#about"
+      href={isWatch ? homePath : "#about"}
       class="group flex min-w-0 shrink-0 items-center gap-2 rounded-sm py-3 text-ink no-underline sm:gap-3"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
       <Logo
         data-header-brand-logo
-        data-brand-pending
-        data-brand-hidden
+        data-brand-pending={isWatch ? undefined : ""}
+        data-brand-hidden={isWatch ? undefined : ""}
         class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10 motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
         aria-hidden="true"
       />
@@ -64,14 +76,14 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       >
         <span
           data-header-first-name
-          data-brand-pending
-          data-brand-hidden
+          data-brand-pending={isWatch ? undefined : ""}
+          data-brand-hidden={isWatch ? undefined : ""}
           class="inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
           >{firstName}</span
         >{" "}<span
           data-header-last-name
-          data-brand-pending
-          data-brand-hidden
+          data-brand-pending={isWatch ? undefined : ""}
+          data-brand-hidden={isWatch ? undefined : ""}
           class="ml-[0.125em] inline-block text-accent motion-preset-blur-up motion-duration-500 motion-reduce:animate-none">{lastName}</span
         >
       </span>
@@ -82,10 +94,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       class="hidden items-stretch self-stretch lg:flex"
     >
       {
-        sections.map(({ id, label }) => (
+        sections.map(({ href, label }) => (
           <a
-            href={`#${id}`}
-            class="group flex items-center px-3 text-sm font-medium text-muted no-underline transition-colors hover:text-accent focus-visible:text-accent"
+            href={href}
+            aria-current={isWatch && href === watchPath(locale) ? "page" : undefined}
+            class:list={["group flex items-center px-3 text-sm font-medium no-underline transition-colors hover:text-accent focus-visible:text-accent", isWatch && href === watchPath(locale) ? "text-accent" : "text-muted"]}
           >
             <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
               {label}
@@ -102,7 +115,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       >
         <a
           data-locale-link
-          href={getRelativeLocaleUrl("fr")}
+          href={frenchPath}
           lang="fr"
           hreflang="fr"
           aria-current={locale === "fr" ? "page" : undefined}
@@ -116,7 +129,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
         <span aria-hidden="true" class="text-rule">/</span>
         <a
           data-locale-link
-          href={getRelativeLocaleUrl("en")}
+          href={englishPath}
           lang="en"
           hreflang="en"
           aria-current={locale === "en" ? "page" : undefined}
@@ -144,10 +157,11 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
           class="absolute right-0 top-[calc(100%+0.75rem)] w-56 border border-rule bg-paper p-2 shadow-lg shadow-ink/10"
         >
           {
-            sections.map(({ id, label }) => (
+            sections.map(({ href, label }) => (
               <a
-                href={`#${id}`}
-                class="block rounded-sm px-3 py-3 text-sm font-medium text-ink hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10"
+                href={href}
+                aria-current={isWatch && href === watchPath(locale) ? "page" : undefined}
+                class:list={["block rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10", isWatch && href === watchPath(locale) ? "text-accent" : "text-ink"]}
               >
                 {label}
               </a>
@@ -164,7 +178,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
             <div class="grid grid-cols-2 gap-1">
               <a
                 data-locale-link
-                href={getRelativeLocaleUrl("fr")}
+                href={frenchPath}
                 lang="fr"
                 hreflang="fr"
                 aria-current={locale === "fr" ? "page" : undefined}
@@ -175,7 +189,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
               >
               <a
                 data-locale-link
-                href={getRelativeLocaleUrl("en")}
+                href={englishPath}
                 lang="en"
                 hreflang="en"
                 aria-current={locale === "en" ? "page" : undefined}
@@ -215,7 +229,7 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
     "[data-header-last-name]",
   );
   const syncHeader = () =>
-    header?.toggleAttribute("data-scrolled", window.scrollY > 96);
+    header?.toggleAttribute("data-scrolled", header.hasAttribute("data-watch-header") || window.scrollY > 96);
   syncHeader();
   window.addEventListener("scroll", syncHeader, { passive: true });
 

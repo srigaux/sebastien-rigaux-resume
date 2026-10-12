@@ -5,6 +5,8 @@ on:
     branches: [master]
   workflow_dispatch:
   schedule:
+    # Publish newly curated Prismic links throughout the day.
+    - cron: "17 */4 * * *"
     # Refresh the experience-years figure embedded in the static PDFs.
     - cron: "0 6 1 2 *"
 

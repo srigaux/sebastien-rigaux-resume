@@ -1,0 +1,36 @@
+{
+  "curatedLinks": [
+    {
+      "uid": "portless-stable-local-urls",
+      "title": "portless: Stable, Named Local URLs",
+      "summary": "Portless gives local apps memorable .localhost addresses instead of port numbers, making development URLs easier to use for people and coding agents.",
+      "url": "https://github.com/vercel-labs/portless",
+      "selected_on": "2026-10-12",
+      "format": "Repository",
+      "credit": "Vercel Labs",
+      "topics": ["nodejs", "tooling", "developer-experience", "ai-agents"]
+    },
+    {
+      "uid": "gsap-3-13-free-toolkit",
+      "title": "GSAP 3.13 Makes the Full Toolkit Free",
+      "summary": "GSAP 3.13 makes formerly paid plugins, including SplitText and MorphSVG, available for commercial use and brings the complete toolkit into the public package.",
+      "url": "https://gsap.com/blog/3-13/",
+      "selected_on": "2026-10-12",
+      "published_on": "2025-04-29",
+      "format": "Release",
+      "credit": "Jack Doyle and Cassie Evans",
+      "topics": ["javascript", "animation", "releases"]
+    },
+    {
+      "uid": "claude-design-system-sync",
+      "title": "How to Sync a Design System with Claude Design",
+      "summary": "A practical walkthrough of syncing real React components into Claude Design, covering compiled styles, fonts, type definitions, and visual checks with Storybook.",
+      "url": "https://nitayneeman.com/blog/how-to-sync-a-design-system-with-claude-design/",
+      "selected_on": "2026-10-12",
+      "published_on": "2026-09-28",
+      "format": "Article",
+      "credit": "Nitay Neeman",
+      "topics": ["design-systems", "react", "ai", "developer-experience"]
+    }
+  ]
+}

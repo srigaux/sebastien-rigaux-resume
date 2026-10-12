@@ -19,10 +19,27 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
-      filter: (page) => ["/", "/en/"].includes(new URL(page).pathname),
-      i18n: {
-        defaultLocale: "fr",
-        locales: { fr: "fr", en: "en" },
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        return ["/", "/en/"].includes(path) || path.startsWith("/veille/") || path.startsWith("/en/tech-watch/");
+      },
+      serialize: (item) => {
+        const page = new URL(item.url);
+        const path = page.pathname;
+        const suffix = path.startsWith("/veille/")
+          ? path.slice("/veille/".length)
+          : path.startsWith("/en/tech-watch/")
+            ? path.slice("/en/tech-watch/".length)
+            : undefined;
+        const fr = suffix === undefined ? "/" : `/veille/${suffix}`;
+        const en = suffix === undefined ? "/en/" : `/en/tech-watch/${suffix}`;
+        return {
+          ...item,
+          links: [
+            { lang: "fr", url: new URL(fr, page.origin).href },
+            { lang: "en", url: new URL(en, page.origin).href },
+          ],
+        };
       },
     }),
     astroLlmsTxtWithRootPageFix({

@@ -1,0 +1,127 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Header from "@/components/Header.astro";
+import { watchPath } from "@/lib/watch-model";
+import type { WatchPageProps } from "@/lib/watch-pages";
+
+const { locale, links, topics, topic, page, totalPages } = Astro.props as WatchPageProps;
+const t = {
+  fr: {
+    title: "Veille technologique",
+    selectedLabel: "Liens sélectionnés",
+    linksFor: "Liens sur",
+    intro: "Une sélection personnelle de liens, outils et idées que je souhaite garder et partager avec mes équipes.",
+    all: "Tous les liens",
+    topics: "Explorer par sujet",
+    empty: "Les premiers liens sélectionnés arrivent bientôt.",
+    previous: "Précédent",
+    next: "Suivant",
+    page: "Page",
+    of: "sur",
+    source: "Repéré via",
+    external: "Ouvrir le lien original",
+    selected: "Sélectionné le",
+    backToTop: "Retour en haut",
+  },
+  en: {
+    title: "Tech watch",
+    selectedLabel: "Selected links",
+    linksFor: "Links about",
+    intro: "A personal selection of links, tools, and ideas I want to keep and share with my teams.",
+    all: "All links",
+    topics: "Explore topics",
+    empty: "The first selected links are coming soon.",
+    previous: "Previous",
+    next: "Next",
+    page: "Page",
+    of: "of",
+    source: "Found via",
+    external: "Open original link",
+    selected: "Selected on",
+    backToTop: "Back to top",
+  },
+}[locale];
+const path = watchPath(locale, page, topic?.uid);
+const alternatePaths = { fr: watchPath("fr", page, topic?.uid), en: watchPath("en", page, topic?.uid) };
+const heading = topic ? `${topic.name} · ${t.title}` : t.title;
+const description = topic
+  ? `${topic.name}: ${locale === "fr" ? "liens sélectionnés par Sébastien Rigaux" : "links selected by Sébastien Rigaux"}.`
+  : t.intro;
+const intro = topic?.description || (topic
+  ? locale === "fr" ? `Mes liens sélectionnés autour de ${topic.name}.` : `My selected links about ${topic.name}.`
+  : t.intro);
+const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+---
+
+<BaseLayout locale={locale} title={heading} description={description} canonicalPath={path} alternatePaths={alternatePaths}>
+  <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={alternatePaths} />
+  <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
+      <section class="border-b border-rule pb-16 pt-14 sm:pt-20 lg:pb-20 lg:pt-24">
+        <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
+        <p class="mb-4 text-base font-semibold tracking-tight text-accent">{topic ? t.title : t.selectedLabel}</p>
+        <h1 class="max-w-5xl font-display text-[clamp(2.75rem,7vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink">{topic ? topic.name : t.title}</h1>
+        <p class="mt-7 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
+      </section>
+
+      <div class="grid gap-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16 lg:pt-20">
+        <section aria-label={topic?.name || t.all} class="min-w-0">
+          <div class="mb-6 flex items-baseline justify-between gap-4">
+            <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{topic ? `${t.linksFor} ${topic.name}` : t.all}</h2>
+            {totalPages > 1 && <span class="text-sm text-muted">{t.page} {page} {t.of} {totalPages}</span>}
+          </div>
+          {topic && <a href={watchPath(locale)} class="mb-6 inline-block text-sm font-medium text-accent hover:underline">← {t.all}</a>}
+          {links.length === 0 && <p class="border-t border-rule py-12 text-muted">{t.empty}</p>}
+          <div class="divide-y divide-rule border-t border-rule">
+            {links.map((link) => {
+              const icon = link.siteIcon || link.discoveredVia?.icon;
+              const monogram = new URL(link.url).hostname.replace(/^www\./, "").charAt(0).toUpperCase();
+              return <article class="py-8 sm:py-10">
+                <div class="flex gap-4 sm:gap-5">
+                  <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden border border-rule bg-ink/5 text-lg font-semibold text-accent">
+                    {icon ? <img src={icon.url} alt="" loading="lazy" class="size-8 object-contain" /> : <span aria-hidden="true">{monogram}</span>}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                      <time datetime={link.selectedOn} aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}>{dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}</time>
+                      <span aria-hidden="true">·</span><span>{link.format}</span>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang="en">
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`${link.title} — ${t.external}`} class="text-ink no-underline decoration-accent decoration-2 underline-offset-4 hover:text-accent hover:underline">{link.title} <span aria-hidden="true" class="inline-block text-sm text-accent">↗</span></a>
+                    </h3>
+                    <p class="mt-3 max-w-[72ch] text-base leading-[1.75] text-muted" lang="en">{link.summary}</p>
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                      {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
+                    </div>
+                    {(link.credit || link.discoveredVia) && <p class="mt-4 text-xs text-muted">
+                      {link.credit && <span lang="en">{link.credit}</span>}
+                      {link.credit && link.discoveredVia && <span aria-hidden="true"> · </span>}
+                      {link.discoveredVia && <span>{t.source} <a href={link.discoveredVia.url} target="_blank" rel="noopener noreferrer" class="underline decoration-rule hover:text-accent">{link.discoveredVia.name}</a></span>}
+                    </p>}
+                  </div>
+                </div>
+              </article>;
+            })}
+          </div>
+          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 flex items-center justify-between text-sm font-semibold">
+            {page > 1 ? <a href={watchPath(locale, page - 1, topic?.uid)} class="text-accent hover:underline">← {t.previous}</a> : <span />}
+            <span class="text-muted">{page} / {totalPages}</span>
+            {page < totalPages ? <a href={watchPath(locale, page + 1, topic?.uid)} class="text-accent hover:underline">{t.next} →</a> : <span />}
+          </nav>}
+        </section>
+
+        {topics.length > 0 && <aside class="lg:pt-0" aria-label={t.topics}>
+          <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t.topics}</h2>
+          <div aria-hidden="true" class="mb-6 mt-5 h-0.5 w-12 -rotate-12 bg-accent"></div>
+          <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">
+            {topics.map((item) => <a href={watchPath(locale, 1, item.uid)} aria-current={topic?.uid === item.uid ? "page" : undefined} class:list={["inline-block px-2 py-1.5 text-sm no-underline transition-colors lg:block", topic?.uid === item.uid ? "border-l-2 border-accent font-semibold text-accent" : "border-l-2 border-transparent text-muted hover:text-accent"]}>{item.name}</a>)}
+          </div>
+        </aside>}
+      </div>
+  </main>
+  <footer class="border-t border-rule">
+    <div class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12">
+      <p>Sébastien Rigaux</p>
+      <a href="#main" class="justify-self-end font-medium text-accent hover:underline">{t.backToTop}</a>
+    </div>
+  </footer>
+</BaseLayout>

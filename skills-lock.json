@@ -55,6 +55,12 @@
       "skillPath": "skills/improve-animations/SKILL.md",
       "computedHash": "524ea241e41d58bbdd8e288700fe24f5725e2a2f3ae7186ad7cebf9055058356"
     },
+    "prismic": {
+      "source": "prismicio/skills",
+      "sourceType": "github",
+      "skillPath": "skills/prismic/SKILL.md",
+      "computedHash": "b9db42744127efd6439f09daccd94365d0ed9dee4a8c8c6d53c2779c0ddec0bb"
+    },
     "review-animations": {
       "source": "emilkowalski/skills",
       "sourceType": "github",
