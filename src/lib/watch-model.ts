@@ -28,6 +28,10 @@ export type WatchSource = {
 };
 export type WatchLink = {
   id: string;
+  uid: string;
+  locale: Locale;
+  updatedAt: string;
+  alternatePaths: Partial<Record<Locale, string>>;
   title: string;
   summary: string;
   url: string;
@@ -135,7 +139,14 @@ export function buildWatchData(
   }
 
   const seenUrls = new Set<string>();
+  const seenPaths = new Set<string>();
   const links = drafts.map(({ topicIds, sourceId, ...draft }) => {
+    // Preserve existing Prismic UIDs, including historical consecutive hyphens.
+    if (typeof draft.uid !== "string" || !/^[a-zA-Z0-9_-]+$/.test(draft.uid)) throw new Error(`Invalid curated link UID: ${draft.id}`);
+    const path = watchLinkPath(draft.locale, draft.uid);
+    if (seenPaths.has(path)) throw new Error(`Duplicate curated link path: ${path}`);
+    seenPaths.add(path);
+    if (Number.isNaN(Date.parse(draft.updatedAt))) throw new Error(`Invalid modification date: ${draft.id}`);
     const title = draft.title.trim();
     const summary = draft.summary.trim();
     if (!title || !summary || !draft.id) {
@@ -214,4 +225,61 @@ export function watchPath(locale: Locale, page = 1, topicUid?: string): string {
   const base = locale === "fr" ? "/veille/" : "/en/tech-watch/";
   const topic = topicUid ? `tags/${topicUid}/` : "";
   return `${base}${topic}${page > 1 ? `page/${page}/` : ""}`;
+}
+
+export function watchLinkPath(locale: Locale, uid: string): string {
+  return locale === "fr" ? `/veille/liens/${uid}/` : `/en/tech-watch/links/${uid}/`;
+}
+
+export function watchLinkTarget(link: WatchLink, locale: Locale): string {
+  return link.alternatePaths[locale] ?? watchLinkPath(link.locale, link.uid);
+}
+
+export type WatchTranslationDraft = WatchLinkDraft & {
+  translationIds: Partial<Record<Locale, string>>;
+};
+
+// Group only by Prismic document relationships, never by titles, UIDs or URLs.
+export function buildLocalizedWatchData(
+  topics: WatchTopic[], sources: WatchSource[], documents: WatchTranslationDraft[],
+): Record<Locale, WatchData> {
+  const byId = new Map(documents.map((doc) => [doc.id, doc]));
+  if (byId.size !== documents.length) throw new Error("Duplicate Prismic document ID");
+  const neighbors = new Map(documents.map((doc) => [doc.id, new Set<string>()]));
+  for (const doc of documents) {
+    for (const [locale, id] of Object.entries(doc.translationIds)) {
+      const target = id ? byId.get(id) : undefined;
+      if (!target) continue; // Unpublished translations are not public routes.
+      if (target.locale !== locale) throw new Error(`Translation language mismatch: ${doc.id}`);
+      neighbors.get(doc.id)!.add(target.id);
+      neighbors.get(target.id)!.add(doc.id);
+    }
+  }
+  const visited = new Set<string>();
+  const localized: Record<Locale, WatchLinkDraft[]> = { fr: [], en: [] };
+  for (const document of documents) {
+    if (visited.has(document.id)) continue;
+    const group = new Map<Locale, WatchTranslationDraft>();
+    const pending = [document.id];
+    while (pending.length) {
+      const id = pending.pop()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const doc = byId.get(id)!;
+      if (group.has(doc.locale)) throw new Error(`Multiple translations for ${document.id}: ${doc.locale}`);
+      group.set(doc.locale, doc);
+      pending.push(...neighbors.get(id)!);
+    }
+    const alternatePaths: Partial<Record<Locale, string>> = {};
+    for (const [locale, doc] of group) alternatePaths[locale] = watchLinkPath(locale, doc.uid);
+    for (const locale of ["fr", "en"] as const) {
+      const chosen = group.get(locale) ?? group.values().next().value!;
+      const { translationIds: _translations, ...draft } = chosen;
+      localized[locale].push({ ...draft, alternatePaths });
+    }
+  }
+  return {
+    fr: buildWatchData(topics, sources, localized.fr),
+    en: buildWatchData(topics, sources, localized.en),
+  };
 }

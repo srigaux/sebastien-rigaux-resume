@@ -3,11 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   buildWatchData,
+  buildLocalizedWatchData,
+  watchLinkPath,
+  watchLinkTarget,
   findPublishedTranslation,
   isCleanSlug,
   paginateLinks,
   watchPath,
-} from "../src/lib/watch-model.ts";
+} from "#watch-model";
 
 const topic = { id: "topic-react", uid: "react", name: "React" };
 const secondTopic = { id: "topic-ai", uid: "ai-agents", name: "AI Agents" };
@@ -21,6 +24,10 @@ const source = {
 function link(id, overrides = {}) {
   return {
     id,
+    uid: `link-${id}`,
+    locale: "en",
+    updatedAt: "2026-10-13T10:00:00Z",
+    alternatePaths: { en: `/en/tech-watch/links/link-${id}/` },
     title: `Link ${id}`,
     summary: "A useful technical resource.",
     url: `https://example.com/${id}`,
@@ -119,4 +126,63 @@ test("English copy is selected only through the master's published translation I
   assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "en-1", lang: "en-us" }] }, "en-us", translations), english);
   assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "en-1", lang: "en-us" }] }, "fr-be", translations), undefined);
   assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "draft-1", lang: "en-us" }] }, "en-us", translations), undefined);
+});
+
+function translation(id, locale, uid, translationIds = {}, overrides = {}) {
+  return link(id, { locale, textLanguage: locale, uid, translationIds, url: "https://example.com/shared", ...overrides });
+}
+
+test("localized slugs are paired by Prismic IDs and keep document-specific content", () => {
+  const data = buildLocalizedWatchData([topic], [], [
+    translation("fr-doc", "fr", "article-francais", { en: "en-doc" }, { title: "Titre français" }),
+    translation("en-doc", "en", "english-article", { fr: "fr-doc" }, { title: "English title", updatedAt: "2026-10-14T12:00:00Z" }),
+  ]);
+  assert.equal(data.fr.links[0].title, "Titre français");
+  assert.equal(data.en.links[0].title, "English title");
+  assert.equal(data.en.links[0].id, "en-doc");
+  assert.equal(data.en.links[0].updatedAt, "2026-10-14T12:00:00Z");
+  const paths = { fr: "/veille/liens/article-francais/", en: "/en/tech-watch/links/english-article/" };
+  assert.deepEqual(data.fr.links[0].alternatePaths, paths);
+  assert.deepEqual(data.en.links[0].alternatePaths, paths);
+  assert.equal(watchLinkTarget(data.fr.links[0], "en"), paths.en);
+});
+
+test("single-language entries remain listed in both languages and target the actual page", () => {
+  for (const locale of ["fr", "en"]) {
+    const missing = locale === "fr" ? "en" : "fr";
+    const data = buildLocalizedWatchData([topic], [], [translation("only", locale, "only-published", { [missing]: "unpublished" })]);
+    for (const listLocale of ["fr", "en"]) {
+      assert.equal(data[listLocale].links.length, 1);
+      assert.equal(data[listLocale].links[0].locale, locale);
+      assert.deepEqual(data[listLocale].links[0].alternatePaths, { [locale]: watchLinkPath(locale, "only-published") });
+      assert.equal(watchLinkTarget(data[listLocale].links[0], missing), watchLinkPath(locale, "only-published"));
+    }
+  }
+});
+
+test("identical UIDs and similar titles do not imply a translation relationship", () => {
+  const data = buildLocalizedWatchData([topic], [], [
+    translation("one", "fr", "same-slug", {}, { url: "https://example.com/one" }),
+    translation("two", "en", "same-slug", {}, { url: "https://example.com/two" }),
+  ]);
+  assert.equal(data.fr.links.length, 2);
+  assert.ok(data.fr.links.every((item) => Object.keys(item.alternatePaths).length === 1));
+});
+
+test("ambiguous language relationships and duplicate localized paths fail clearly", () => {
+  assert.throws(() => buildLocalizedWatchData([topic], [], [
+    translation("fr", "fr", "fr", { en: "not-en" }),
+    translation("not-en", "fr", "other-fr"),
+  ]), /Translation language mismatch/);
+  assert.throws(() => buildWatchData([topic], [], [
+    link("one", { uid: "same" }), link("two", { uid: "same" }),
+  ]), /Duplicate curated link path/);
+});
+
+test("published Prismic UIDs with consecutive hyphens are preserved", () => {
+  const uid = "argo-cd-autopilot--structurer-un-depot-gitops";
+  const data = buildWatchData([topic], [], [link("legacy", { uid, locale: "fr" })]);
+  assert.equal(data.links[0].uid, uid);
+  assert.equal(watchLinkPath("fr", uid), `/veille/liens/${uid}/`);
+  assert.throws(() => buildWatchData([topic], [], [link("bad", { uid: "../bad" })]), /Invalid curated link UID/);
 });

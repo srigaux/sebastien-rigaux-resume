@@ -32,3 +32,10 @@ export async function getWatchStaticPaths(locale: Locale) {
   for (const topic of topics) append(links.filter((link) => link.topics.some((item) => item.id === topic.id)), topic);
   return paths;
 }
+
+export async function getWatchLinkStaticPaths(locale: Locale) {
+  const { links } = await getWatchData(locale);
+  return links.filter((link) => link.locale === locale).map((link) => ({
+    params: { uid: link.uid }, props: { locale, link },
+  }));
+}

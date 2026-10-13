@@ -5,7 +5,7 @@ import { loadEnvFile } from "node:process";
 import { fileURLToPath } from "node:url";
 import { defineConfig, fontProviders } from "astro/config";
 import react from "@astrojs/react";
-import sitemap from "@astrojs/sitemap";
+import siteSitemap from "#site-sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import astroLlmsTxt from "@4hse/astro-llms-txt";
 import pdf from "astro-pdf";
@@ -18,38 +18,19 @@ export default defineConfig({
   site: "https://sebastien.rigaux.be",
   integrations: [
     react(),
-    sitemap({
-      filter: (page) => {
-        const path = new URL(page).pathname;
-        return ["/", "/en/"].includes(path) || path.startsWith("/veille/") || path.startsWith("/en/tech-watch/");
-      },
-      serialize: (item) => {
-        const page = new URL(item.url);
-        const path = page.pathname;
-        const suffix = path.startsWith("/veille/")
-          ? path.slice("/veille/".length)
-          : path.startsWith("/en/tech-watch/")
-            ? path.slice("/en/tech-watch/".length)
-            : undefined;
-        const fr = suffix === undefined ? "/" : `/veille/${suffix}`;
-        const en = suffix === undefined ? "/en/" : `/en/tech-watch/${suffix}`;
-        return {
-          ...item,
-          links: [
-            { lang: "fr", url: new URL(fr, page.origin).href },
-            { lang: "en", url: new URL(en, page.origin).href },
-          ],
-        };
-      },
-    }),
+    siteSitemap(),
     astroLlmsTxtWithRootPageFix({
-      title: "Sébastien Rigaux — CV / Résumé",
+      title: "Sébastien Rigaux — CV et veille / Résumé and tech watch",
       description:
-        "CV bilingue de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
+        "CV bilingue et veille technologique de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
       details:
         "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en/).",
       notes:
-        "Contenu généré automatiquement à partir des pages publiques du CV ; ces pages restent la source de référence.",
+        "Contenu généré automatiquement à partir des pages publiques du CV et des sélections de veille ; les pages HTML restent les sources canoniques.",
+      optionalLinks: [
+        { label: "Veille technologique — index Markdown", url: "https://sebastien.rigaux.be/veille/index.md", description: "Toutes les sélections, leurs permaliens et leurs versions Markdown." },
+        { label: "Tech watch — Markdown index", url: "https://sebastien.rigaux.be/en/tech-watch/index.md", description: "All selected resources, their permalinks and Markdown versions." },
+      ],
       docSet: [
         {
           title: "CV complet / Full résumé",

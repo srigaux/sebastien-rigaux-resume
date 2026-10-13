@@ -1,0 +1,77 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Header from "@/components/Header.astro";
+import { watchLinkPath, watchLinkTarget, watchPath, type WatchLink } from "@/lib/watch-model";
+import { renderSummaryMarkdown, summaryText } from "@/lib/watch-markdown";
+import type { Locale } from "@/types";
+
+interface Props { locale: Locale; link: WatchLink }
+const { locale, link } = Astro.props;
+const t = locale === "fr" ? {
+  watch: "Veille technologique", original: "Consulter la ressource originale", selected: "Sélectionné le",
+  published: "Publication de la ressource", updated: "Mise à jour de la fiche", credit: "Crédit",
+  discovered: "Repéré via", topics: "Sujets", back: "Retour à la veille", sourceLanguage: "Langue de la source",
+} : {
+  watch: "Tech watch", original: "Open the original resource", selected: "Selected on",
+  published: "Resource publication", updated: "Entry updated", credit: "Credit",
+  discovered: "Found via", topics: "Topics", back: "Back to tech watch", sourceLanguage: "Source language",
+};
+const path = watchLinkPath(locale, link.uid);
+const languagePaths = { fr: watchLinkTarget(link, "fr"), en: watchLinkTarget(link, "en") };
+const site = Astro.site!;
+const canonical = new URL(path, site).href;
+const description = summaryText(link.summary);
+const formatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const date = (value: string) => formatter.format(new Date(value.length === 10 ? `${value}T00:00:00Z` : value));
+const schema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: link.title, description,
+      inLanguage: locale, datePublished: link.firstPublishedAt, dateModified: link.updatedAt,
+      isPartOf: { "@id": new URL("/#website", site).href },
+      breadcrumb: { "@id": `${canonical}#breadcrumb` },
+      relatedLink: link.url,
+    },
+    {
+      "@type": "BreadcrumbList", "@id": `${canonical}#breadcrumb`, itemListElement: [
+        { "@type": "ListItem", position: 1, name: t.watch, item: new URL(watchPath(locale), site).href },
+        { "@type": "ListItem", position: 2, name: link.title, item: canonical },
+      ],
+    },
+  ],
+};
+---
+<BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={`${path}index.md`} modifiedAt={link.updatedAt}>
+  <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={languagePaths} />
+  <main id="main" class="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
+    <nav aria-label={locale === "fr" ? "Fil d’Ariane" : "Breadcrumb"} class="mb-10 text-sm text-muted">
+      <a href={watchPath(locale)} class="inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">← {t.back}</a>
+    </nav>
+    <article class="max-w-4xl">
+      <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
+      <p class="mb-4 text-base font-semibold text-accent">{t.watch} · {link.format}</p>
+      <h1 class="break-words font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold leading-[1.12] tracking-[-0.035em] text-ink">{link.title}</h1>
+      <div class="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+        <span>{t.selected} <time datetime={link.selectedOn}>{date(link.selectedOn)}</time></span>
+        {link.sourceLanguage && <span>{t.sourceLanguage} : {link.sourceLanguage}</span>}
+      </div>
+      <p class="mt-9 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl [&_a]:break-words [&_a]:underline [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" set:html={renderSummaryMarkdown(link.summary)} />
+      {link.image && <figure class="mt-9"><img src={link.image.url} alt={link.image.alt} loading="lazy" class="max-h-[32rem] w-full object-contain" /></figure>}
+      <a href={link.url} target="_blank" rel="noopener noreferrer" class="mt-9 inline-flex min-h-11 items-center gap-2 border border-accent px-5 py-3 text-base font-semibold text-accent underline-offset-4 hover:bg-accent/10 hover:underline">{t.original} <span aria-hidden="true">↗</span></a>
+      <p class="mt-3 break-all text-sm text-muted">{new URL(link.url).hostname}</p>
+      <dl class="mt-10 grid gap-4 border-t border-rule pt-8 text-sm text-muted sm:grid-cols-2">
+        {link.publishedOn && <div><dt class="font-semibold text-ink">{t.published}</dt><dd class="mt-1"><time datetime={link.publishedOn}>{date(link.publishedOn)}</time></dd></div>}
+        <div><dt class="font-semibold text-ink">{t.updated}</dt><dd class="mt-1"><time datetime={link.updatedAt}>{date(link.updatedAt)}</time></dd></div>
+        {link.credit && <div><dt class="font-semibold text-ink">{t.credit}</dt><dd class="mt-1">{link.credit}</dd></div>}
+        {link.discoveredVia && <div><dt class="font-semibold text-ink">{t.discovered}</dt><dd class="mt-1"><a href={link.discoveredVia.url} target="_blank" rel="noopener noreferrer" class="underline decoration-rule hover:text-accent">{link.discoveredVia.name}</a></dd></div>}
+      </dl>
+      <section class="mt-9" aria-label={t.topics}>
+        <h2 class="text-sm font-semibold text-ink">{t.topics}</h2>
+        <div class="mt-3 flex flex-wrap gap-2">{link.topics.map((topic) => <a href={watchPath(locale, 1, topic.uid)} class="inline-flex min-h-11 items-center border border-rule px-3 py-2 text-sm text-muted hover:border-accent hover:text-accent">{topic.name}</a>)}</div>
+      </section>
+    </article>
+    <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, "\\u003c")} />
+  </main>
+  <footer class="border-t border-rule"><div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12"><p>Sébastien Rigaux</p><a href={watchPath(locale)} class="text-accent hover:underline">{t.back}</a></div></footer>
+</BaseLayout>

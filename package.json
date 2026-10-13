@@ -5,7 +5,9 @@
     "#curate-scrape": "./.agents/skills/curate-prismic-link/scripts/scrape.mjs",
     "#curate-send": "./.agents/skills/curate-prismic-link/scripts/send-prismic.mjs",
     "#watch-markdown": "./src/lib/watch-markdown.ts",
-    "#teams-send": "./.agents/skills/curate-prismic-link/scripts/teams-send.mjs"
+    "#teams-send": "./.agents/skills/curate-prismic-link/scripts/teams-send.mjs",
+    "#watch-model": "./src/lib/watch-model.ts",
+    "#site-sitemap": "./src/integrations/site-sitemap.mjs"
   },
   "version": "0.0.1",
   "engines": {
@@ -16,7 +18,9 @@
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test:watch": "node --test tests/watch-model.test.mjs tests/watch-exports.test.mjs tests/curate-prismic-link.test.mjs tests/teams-import.test.mjs",
+    "check:watch-build": "node scripts/check-watch-build.mjs"
   },
   "dependencies": {
     "@4hse/astro-llms-txt": "^1.0.5",

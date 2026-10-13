@@ -12,7 +12,9 @@ interface Props {
   noindex?: boolean;
   person?: Person;
   canonicalPath?: string;
-  alternatePaths?: Record<Locale, string>;
+  alternatePaths?: Partial<Record<Locale, string>>;
+  markdownPath?: string;
+  modifiedAt?: string;
 }
 
 const {
@@ -23,12 +25,13 @@ const {
   person,
   canonicalPath,
   alternatePaths,
+  markdownPath,
+  modifiedAt,
 } = Astro.props;
 const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
 const canonical = new URL(canonicalPath ?? getRelativeLocaleUrl(locale), site).href;
-const frenchUrl = new URL(alternatePaths?.fr ?? getRelativeLocaleUrl("fr"), site).href;
-const englishUrl = new URL(alternatePaths?.en ?? getRelativeLocaleUrl("en"), site).href;
-const markdownUrl = new URL(`/${locale}.md`, site).href;
+const languagePaths = alternatePaths ?? { fr: getRelativeLocaleUrl("fr"), en: getRelativeLocaleUrl("en") };
+const markdownUrl = (markdownPath || person) ? new URL(markdownPath ?? `/${locale}.md`, site).href : undefined;
 const llmsUrl = new URL("/llms.txt", site).href;
 const imageUrl = new URL(`/og-image-${locale}.png`, site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
@@ -278,15 +281,15 @@ const structuredData = person && JSON.stringify({
     ) : (
       <>
         <link rel="canonical" href={canonical} />
-        <link rel="alternate" hreflang="fr" href={frenchUrl} />
-        <link rel="alternate" hreflang="en" href={englishUrl} />
-        <link rel="alternate" hreflang="x-default" href={frenchUrl} />
-        {person && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
-        {person && <link rel="describedby" href={llmsUrl} />}
+        {Object.entries(languagePaths).map(([lang, path]) => <link rel="alternate" hreflang={lang} href={new URL(path, site).href} />)}
+        <link rel="alternate" hreflang="x-default" href={new URL(languagePaths.fr ?? languagePaths.en ?? canonical, site).href} />
+        {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
+        {markdownUrl && <link rel="describedby" href={llmsUrl} />}
+        {modifiedAt && <meta name="last-modified" content={modifiedAt} />}
         <meta property="og:type" content={person ? "profile" : "website"} />
         <meta property="og:site_name" content="Sébastien Rigaux" />
         <meta property="og:locale" content={locale === "fr" ? "fr_BE" : "en_US"} />
-        <meta property="og:locale:alternate" content={locale === "fr" ? "en_US" : "fr_BE"} />
+        {languagePaths[locale === "fr" ? "en" : "fr"] && <meta property="og:locale:alternate" content={locale === "fr" ? "en_US" : "fr_BE"} />}
         <meta property="og:title" content={fullTitle} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />

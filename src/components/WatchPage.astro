@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header.astro";
-import { watchPath } from "@/lib/watch-model";
+import { watchPath, watchLinkTarget } from "@/lib/watch-model";
 import { renderSummaryMarkdown } from "@/lib/watch-markdown";
 import type { WatchPageProps } from "@/lib/watch-pages";
 
@@ -54,7 +54,7 @@ const intro = topic?.description || (topic
 const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 ---
 
-<BaseLayout locale={locale} title={heading} description={description} canonicalPath={path} alternatePaths={alternatePaths}>
+<BaseLayout locale={locale} title={heading} description={description} canonicalPath={path} alternatePaths={alternatePaths} markdownPath={topic || page > 1 ? undefined : `${path}index.md`}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={alternatePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
       <section class="border-b border-rule pb-16 pt-14 sm:pt-20 lg:pb-20 lg:pt-24">
@@ -91,6 +91,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
                       <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`${link.title} — ${t.external}`} class="text-ink no-underline decoration-accent decoration-2 underline-offset-4 hover:text-accent hover:underline">{link.title} <span aria-hidden="true" class="inline-block text-sm text-accent">↗</span></a>
                     </h3>
                     <p class="mt-3 max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
+                    <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="mt-3 inline-block text-xs text-muted underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
                     <div class="mt-4 flex flex-wrap items-center gap-2">
                       {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
                     </div>

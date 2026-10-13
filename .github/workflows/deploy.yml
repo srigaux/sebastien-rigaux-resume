@@ -32,7 +32,7 @@ jobs:
       - name: Build with Astro
         uses: withastro/action@v6
         with:
-          build-cmd: pnpm run check && pnpm run build
+          build-cmd: pnpm run check && pnpm run test:watch && pnpm run build && pnpm run check:watch-build
 
   deploy:
     needs: build

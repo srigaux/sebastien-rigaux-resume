@@ -6,7 +6,7 @@ import type {
   DiscoverySourceDocument,
   TopicDocument,
 } from "@prismic-models/prismicio-types";
-import { buildWatchData, findPublishedTranslation, type WatchData, type WatchImage, type WatchLinkDraft, type WatchSource, type WatchTopic } from "@/lib/watch-model";
+import { buildLocalizedWatchData, type WatchData, type WatchImage, type WatchTranslationDraft, type WatchSource, type WatchTopic } from "@/lib/watch-model";
 
 const client = prismic.createClient(config.repositoryName);
 let cached: Promise<Record<Locale, WatchData>> | undefined;
@@ -29,17 +29,18 @@ function relationId(field: unknown): string | undefined {
 }
 
 async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
-  // Prismic documents can be written in English even when the repository's
-  // master locale is French. Query the configured master locale, not a fixed one.
+  // Taxonomy lives in the master locale; curated copies use their actual locale.
   const repository = await client.getRepository();
   const masterLocale = repository.languages.find((locale) => locale.is_master)?.id;
   if (!masterLocale) throw new Error("Prismic repository has no master locale");
+  const frenchLocale = repository.languages.find((locale) => locale.id.startsWith("fr-"))?.id;
+  if (!frenchLocale) throw new Error("Prismic repository has no French locale");
   const englishLocale = repository.languages.find((locale) => locale.id.startsWith("en-"))?.id;
   if (!englishLocale) throw new Error("Prismic repository has no English locale");
   const [topicDocuments, sourceDocuments, linkDocuments, englishLinkDocuments] = await Promise.all([
     client.getAllByType<TopicDocument>("topic", { lang: masterLocale }),
     client.getAllByType<DiscoverySourceDocument>("discovery_source", { lang: masterLocale }),
-    client.getAllByType<CuratedLinkDocument>("curated_link", { lang: masterLocale }),
+    client.getAllByType<CuratedLinkDocument>("curated_link", { lang: frenchLocale }),
     client.getAllByType<CuratedLinkDocument>("curated_link", { lang: englishLocale }),
   ]);
 
@@ -56,33 +57,34 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
     url: webUrl(doc.data.url),
     icon: image(doc.data.icon),
   }));
-  const englishById = new Map(englishLinkDocuments.map((doc) => [doc.id, doc]));
-  const makeDraft = (doc: CuratedLinkDocument, copy: CuratedLinkDocument, textLanguage: "en" | "fr"): WatchLinkDraft => ({
+  const makeDraft = (doc: CuratedLinkDocument, locale: Locale): WatchTranslationDraft => ({
     id: doc.id,
-    title: prismic.asText(copy.data.title),
-    summary: prismic.asText(copy.data.summary),
+    uid: doc.uid,
+    locale,
+    updatedAt: doc.last_publication_date,
+    alternatePaths: {},
+    translationIds: Object.fromEntries(doc.alternate_languages
+      .filter((item) => item.lang === frenchLocale || item.lang === englishLocale)
+      .map((item) => [item.lang === englishLocale ? "en" : "fr", item.id])),
+    title: prismic.asText(doc.data.title),
+    summary: prismic.asText(doc.data.summary),
     url: webUrl(doc.data.url),
     selectedOn: doc.data.selected_on ?? "",
     publishedOn: doc.data.published_on || undefined,
     firstPublishedAt: doc.first_publication_date,
-    format: doc.data.format as WatchLinkDraft["format"],
+    format: doc.data.format as WatchTranslationDraft["format"],
     sourceLanguage: doc.data.source_language || undefined,
-    textLanguage,
+    textLanguage: locale,
     credit: doc.data.credit || undefined,
     sourceId: relationId(doc.data.discovered_via),
     topicIds: doc.data.topics.map(({ topic }) => relationId(topic)).filter((id): id is string => Boolean(id)),
     image: image(doc.data.image),
     siteIcon: image(doc.data.site_icon),
   });
-  const frenchDrafts = linkDocuments.map((doc) => makeDraft(doc, doc, doc.data.source_language ? "fr" : "en"));
-  const englishDrafts = linkDocuments.map((doc) => {
-    const translation = findPublishedTranslation(doc, englishLocale, englishById);
-    return makeDraft(doc, translation ?? doc, translation ? "en" : doc.data.source_language ? "fr" : "en");
-  });
-  return {
-    fr: buildWatchData(topics, sources, frenchDrafts),
-    en: buildWatchData(topics, sources, englishDrafts),
-  };
+  return buildLocalizedWatchData(topics, sources, [
+    ...linkDocuments.map((doc) => makeDraft(doc, "fr")),
+    ...englishLinkDocuments.map((doc) => makeDraft(doc, "en")),
+  ]);
 }
 
 export async function getWatchData(locale: Locale): Promise<WatchData> {
