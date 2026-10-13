@@ -1,4 +1,5 @@
 ---
+import { pageMarkdownPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header.astro";
 import { watchLinkPath, watchLinkTarget, watchPath, type WatchLink } from "@/lib/watch-model";
@@ -42,7 +43,7 @@ const schema = {
   ],
 };
 ---
-<BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={`${path}index.md`} modifiedAt={link.updatedAt}>
+<BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={pageMarkdownPath(path)} modifiedAt={link.updatedAt}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={languagePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
     <nav aria-label={locale === "fr" ? "Fil d’Ariane" : "Breadcrumb"} class="mb-10 text-sm text-muted">

@@ -224,11 +224,11 @@ export function paginateLinks(links: WatchLink[], page: number): {
 export function watchPath(locale: Locale, page = 1, topicUid?: string): string {
   const base = locale === "fr" ? "/veille/" : "/en/tech-watch/";
   const topic = topicUid ? `tags/${topicUid}/` : "";
-  return `${base}${topic}${page > 1 ? `page/${page}/` : ""}`;
+  return `${base}${topic}${page > 1 ? `page/${page}/` : ""}`.replace(/\/+$/, "");
 }
 
 export function watchLinkPath(locale: Locale, uid: string): string {
-  return locale === "fr" ? `/veille/liens/${uid}/` : `/en/tech-watch/links/${uid}/`;
+  return locale === "fr" ? `/veille/liens/${uid}` : `/en/tech-watch/links/${uid}`;
 }
 
 export function watchLinkTarget(link: WatchLink, locale: Locale): string {

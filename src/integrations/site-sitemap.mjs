@@ -28,13 +28,13 @@ export default function siteSitemap() {
   const integration = sitemap({
     filter: (page) => {
       const path = new URL(page).pathname;
-      return !path.includes(".md") && (["/", "/en/"].includes(path) ||
+      return !path.includes(".md") && (["/", "/en", "/veille", "/en/tech-watch"].includes(path) ||
         path.startsWith("/veille/") || path.startsWith("/en/tech-watch/"));
     },
     serialize: async (item) => {
-      const path = new URL(item.url).pathname.replace(/^\//, "");
+      const path = new URL(item.url).pathname.replace(/^\//, "").replace(/\/$/, "");
       try {
-        const html = await readFile(new URL(`${path}index.html`, directory), "utf8");
+        const html = await readFile(new URL(path ? `${path}.html` : "index.html", directory), "utf8");
         return sitemapMetadata(html, item.url);
       } catch (error) {
         serializationError = error;

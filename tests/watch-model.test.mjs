@@ -27,7 +27,7 @@ function link(id, overrides = {}) {
     uid: `link-${id}`,
     locale: "en",
     updatedAt: "2026-10-13T10:00:00Z",
-    alternatePaths: { en: `/en/tech-watch/links/link-${id}/` },
+    alternatePaths: { en: `/en/tech-watch/links/link-${id}` },
     title: `Link ${id}`,
     summary: "A useful technical resource.",
     url: `https://example.com/${id}`,
@@ -115,8 +115,8 @@ test("pagination and bilingual archive paths stay aligned", () => {
   );
   assert.equal(paginateLinks(data.links, 1).items.length, 30);
   assert.equal(paginateLinks(data.links, 2).items.length, 1);
-  assert.equal(watchPath("fr", 2, "react"), "/veille/tags/react/page/2/");
-  assert.equal(watchPath("en", 2, "react"), "/en/tech-watch/tags/react/page/2/");
+  assert.equal(watchPath("fr", 2, "react"), "/veille/tags/react/page/2");
+  assert.equal(watchPath("en", 2, "react"), "/en/tech-watch/tags/react/page/2");
 });
 
 test("English copy is selected only through the master's published translation ID", () => {
@@ -141,7 +141,7 @@ test("localized slugs are paired by Prismic IDs and keep document-specific conte
   assert.equal(data.en.links[0].title, "English title");
   assert.equal(data.en.links[0].id, "en-doc");
   assert.equal(data.en.links[0].updatedAt, "2026-10-14T12:00:00Z");
-  const paths = { fr: "/veille/liens/article-francais/", en: "/en/tech-watch/links/english-article/" };
+  const paths = { fr: "/veille/liens/article-francais", en: "/en/tech-watch/links/english-article" };
   assert.deepEqual(data.fr.links[0].alternatePaths, paths);
   assert.deepEqual(data.en.links[0].alternatePaths, paths);
   assert.equal(watchLinkTarget(data.fr.links[0], "en"), paths.en);
@@ -183,6 +183,14 @@ test("published Prismic UIDs with consecutive hyphens are preserved", () => {
   const uid = "argo-cd-autopilot--structurer-un-depot-gitops";
   const data = buildWatchData([topic], [], [link("legacy", { uid, locale: "fr" })]);
   assert.equal(data.links[0].uid, uid);
-  assert.equal(watchLinkPath("fr", uid), `/veille/liens/${uid}/`);
+  assert.equal(watchLinkPath("fr", uid), `/veille/liens/${uid}`);
   assert.throws(() => buildWatchData([topic], [], [link("bad", { uid: "../bad" })]), /Invalid curated link UID/);
+});
+
+test("watch URLs omit trailing slashes on indexes, archives and details", () => {
+  assert.equal(watchPath("fr"), "/veille");
+  assert.equal(watchPath("en"), "/en/tech-watch");
+  assert.equal(watchPath("fr", 2), "/veille/page/2");
+  assert.equal(watchPath("en", 1, "react"), "/en/tech-watch/tags/react");
+  assert.equal(watchLinkPath("fr", "mon-lien"), "/veille/liens/mon-lien");
 });

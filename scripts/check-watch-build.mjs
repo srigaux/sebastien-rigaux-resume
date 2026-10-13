@@ -7,17 +7,17 @@ const origin = "https://sebastien.rigaux.be";
 const xml = await readFile(new URL("sitemap-0.xml", dist), "utf8");
 const sitemap = new Map([...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(([, entry]) => [entry.match(/<loc>(.*?)<\/loc>/)?.[1], entry]));
 assert.ok(sitemap.size > 0, "Missing sitemap URLs");
-assert.ok([...sitemap.keys()].every((url) => !url.includes(".md") && !url.endsWith("/fr/")), "Exports and redirects must stay outside the sitemap");
+assert.ok([...sitemap.keys()].every((url) => !url.includes(".md") && !url.endsWith("/fr") && (url === `${origin}/` || !url.endsWith("/"))), "Exports and redirects must stay outside the sitemap");
 const metadata = new Map();
 let count = 0;
 let singleLanguage = 0;
 for (const base of ["veille/liens/", "en/tech-watch/links/"]) {
-  for (const directory of await readdir(new URL(base, dist), { withFileTypes: true })) {
-    if (!directory.isDirectory()) continue;
-    const path = `${base}${directory.name}/`;
+  for (const file of await readdir(new URL(base, dist), { withFileTypes: true })) {
+    if (!file.isFile() || !file.name.endsWith(".html")) continue;
+    const path = `${base}${file.name.slice(0, -5)}`;
     const url = `${origin}/${path}`;
-    const html = await readFile(new URL(`${path}index.html`, dist), "utf8");
-    const md = await readFile(new URL(`${path}index.md`, dist), "utf8");
+    const html = await readFile(new URL(`${path}.html`, dist), "utf8");
+    const md = await readFile(new URL(`${path}.md`, dist), "utf8");
     const seo = sitemapMetadata(html, url);
     assert.ok(seo, `Missing self-canonical: ${url}`);
     assert.ok(sitemap.has(url), `Missing sitemap entry: ${url}`);
@@ -33,7 +33,7 @@ for (const base of ["veille/liens/", "en/tech-watch/links/"]) {
       assert.ok(entry.includes(`hreflang="${lang}" href="${alternate}"`), `Sitemap/HTML alternate mismatch: ${url}`);
       assert.ok(md.includes(alternate) || lang === "x-default", `Missing Markdown translation: ${url}`);
     }
-    assert.ok(html.includes(`href="${url}index.md"`), `Missing Markdown alternate: ${url}`);
+    assert.ok(html.includes(`href="${url}.md"`), `Missing Markdown alternate: ${url}`);
     assert.ok(html.includes(`href="${origin}/llms.txt"`), `Missing llms.txt relation: ${url}`);
     assert.ok(md.startsWith("# ") && md.includes(url), `Missing Markdown title/canonical: ${url}`);
     const schemas = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
@@ -53,19 +53,38 @@ for (const [url, seo] of metadata) {
     assert.ok(metadata.get(alternate.url).links.some((target) => target.url === url), `Nonreciprocal translation: ${url}`);
   }
 }
+// Every canonical watch page, including topic archives and pagination, has a
+// sibling Markdown file. No generated internal HTML link should add a slash.
+let watchPages = 0;
+for (const [url] of sitemap) {
+  const path = new URL(url).pathname;
+  const file = path === "/" ? "index.html" : `${path.slice(1)}.html`;
+  const html = await readFile(new URL(file, dist), "utf8");
+  for (const [, href] of html.matchAll(/href="([^"#]+)"/g)) {
+    if (href.startsWith("/") && !href.startsWith("//")) {
+      const target = new URL(href.replace(/&amp;/g, "&"), origin).pathname;
+      assert.ok(target === "/" || !target.endsWith("/"), `Trailing slash in internal link: ${url} → ${href}`);
+    }
+  }
+  if (path === "/veille" || path.startsWith("/veille/") || path === "/en/tech-watch" || path.startsWith("/en/tech-watch/")) {
+    await readFile(new URL(`${path.slice(1)}.md`, dist), "utf8");
+    assert.ok(html.includes(`href="${url}.md"`), `Missing sibling Markdown alternate: ${url}`);
+    watchPages++;
+  }
+}
 const llms = await readFile(new URL("llms.txt", dist), "utf8");
-for (const base of ["veille/", "en/tech-watch/"]) {
-  const index = await readFile(new URL(`${base}index.md`, dist), "utf8");
-  assert.ok(llms.includes(`${origin}/${base}index.md`), `Missing LLM index: ${base}`);
+for (const base of ["veille", "en/tech-watch"]) {
+  const index = await readFile(new URL(`${base}.md`, dist), "utf8");
+  assert.ok(llms.includes(`${origin}/${base}.md`), `Missing LLM index: ${base}`);
   const htmlPaths = new Set([...index.matchAll(/\]\(<(https:\/\/[^>]+)>\)/g)].map(([, url]) => url));
   assert.equal([...htmlPaths].filter((url) => metadata.has(url)).length, [...metadata.values()].filter((seo) => seo.links.find(({ lang }) => lang === "x-default")?.url === seo.url).length,
     `Incomplete selection index: ${base}`);
   for (const url of htmlPaths) {
-    if (url.endsWith("/index.md")) assert.ok(metadata.has(url.slice(0, -"index.md".length)), `Missing Markdown target: ${url}`);
+    if (url.endsWith(".md")) assert.ok(metadata.has(url.slice(0, -".md".length)), `Missing Markdown target: ${url}`);
   }
 }
 for (const name of ["fr.md", "en.md", "llms-full.txt"]) {
   const text = await readFile(new URL(name, dist), "utf8");
   assert.ok(text.length > 500 && !text.includes("<SYSTEM>"), `Invalid CV export: ${name}`);
 }
-console.log(`Verified ${count} curated HTML/Markdown pages (${singleLanguage} single-language), reciprocal translations, ${sitemap.size} sitemap URLs, LLM indexes and CV exports.`);
+console.log(`Verified ${count} curated HTML/Markdown pages (${singleLanguage} single-language), reciprocal translations, ${sitemap.size} sitemap URLs, ${watchPages} sibling watch Markdown exports, LLM indexes and CV exports.`);

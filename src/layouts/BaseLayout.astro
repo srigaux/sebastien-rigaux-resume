@@ -1,6 +1,6 @@
 ---
 import { Font } from "astro:assets";
-import { getRelativeLocaleUrl } from "astro:i18n";
+import { localeHomePath, pageMarkdownPath } from "@/lib/urls";
 import type { Locale, Person } from "@/types";
 import printStyles from "@/styles/print.css?url";
 import "@/styles/global.css";
@@ -29,9 +29,9 @@ const {
   modifiedAt,
 } = Astro.props;
 const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
-const canonical = new URL(canonicalPath ?? getRelativeLocaleUrl(locale), site).href;
-const languagePaths = alternatePaths ?? { fr: getRelativeLocaleUrl("fr"), en: getRelativeLocaleUrl("en") };
-const markdownUrl = (markdownPath || person) ? new URL(markdownPath ?? `/${locale}.md`, site).href : undefined;
+const canonical = new URL(canonicalPath ?? localeHomePath(locale), site).href;
+const languagePaths = alternatePaths ?? { fr: localeHomePath("fr"), en: localeHomePath("en") };
+const markdownUrl = (markdownPath || person) ? new URL(markdownPath ?? pageMarkdownPath(localeHomePath(locale)), site).href : undefined;
 const llmsUrl = new URL("/llms.txt", site).href;
 const imageUrl = new URL(`/og-image-${locale}.png`, site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;

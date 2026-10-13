@@ -7,7 +7,8 @@
     "#watch-markdown": "./src/lib/watch-markdown.ts",
     "#teams-send": "./.agents/skills/curate-prismic-link/scripts/teams-send.mjs",
     "#watch-model": "./src/lib/watch-model.ts",
-    "#site-sitemap": "./src/integrations/site-sitemap.mjs"
+    "#site-sitemap": "./src/integrations/site-sitemap.mjs",
+    "#site-urls": "./src/lib/urls.ts"
   },
   "version": "0.0.1",
   "engines": {

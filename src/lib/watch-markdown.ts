@@ -1,5 +1,7 @@
+import { pageMarkdownPath } from "#site-urls";
 import MarkdownIt from "markdown-it";
 import type { Locale } from "@/types";
+import type { WatchPageProps } from "@/lib/watch-pages";
 import { watchLinkPath, watchLinkTarget, watchPath, type WatchLink } from "#watch-model";
 
 const markdown = new MarkdownIt({ html: false, linkify: false, breaks: false });
@@ -56,11 +58,29 @@ export function watchIndexMarkdown(locale: Locale, links: WatchLink[], site: URL
     mdLink(locale === "fr" ? "Index HTML" : "HTML index", new URL(watchPath(locale), site).href),
     ...links.map((link) => {
       const path = watchLinkTarget(link, locale);
-      return `- ${mdLink(link.title, new URL(path, site).href)} — ${link.selectedOn} · ${mdLink("Markdown", new URL(`${path}index.md`, site).href)}\n  ${link.summary.replace(/\n/g, " ")}`;
+      return `- ${mdLink(link.title, new URL(path, site).href)} — ${link.selectedOn} · ${mdLink("Markdown", new URL(pageMarkdownPath(path), site).href)}\n  ${link.summary.replace(/\n/g, " ")}`;
     }),
   ].join("\n\n") + "\n";
 }
 
 export function markdownResponse(content: string): Response {
   return new Response(content, { headers: { "Content-Type": "text/markdown; charset=utf-8" } });
+}
+
+export function watchArchiveMarkdown(props: WatchPageProps, site: URL): string {
+  const { locale, topic, links, page, totalPages } = props;
+  const title = locale === "fr" ? "Veille technologique" : "Tech watch";
+  const path = watchPath(locale, page, topic?.uid);
+  return [
+    `# ${escapeText(topic ? `${topic.name} · ${title}` : title)}`,
+    mdLink(locale === "fr" ? "Source canonique" : "Canonical source", new URL(path, site).href),
+    ...(topic?.description ? [topic.description] : []),
+    ...links.map((link) => {
+      const target = watchLinkTarget(link, locale);
+      return `## ${mdLink(link.title, new URL(target, site).href)}\n\n${link.summary}\n\n${link.selectedOn} · ${mdLink("Markdown", new URL(pageMarkdownPath(target), site).href)} · ${mdLink(locale === "fr" ? "Ressource originale" : "Original resource", link.url)}`;
+    }),
+    ...(totalPages > 1 ? [`Page ${page} / ${totalPages}`] : []),
+    ...(page > 1 ? [mdLink(locale === "fr" ? "Précédent" : "Previous", new URL(watchPath(locale, page - 1, topic?.uid), site).href)] : []),
+    ...(page < totalPages ? [mdLink(locale === "fr" ? "Suivant" : "Next", new URL(watchPath(locale, page + 1, topic?.uid), site).href)] : []),
+  ].join("\n\n") + "\n";
 }

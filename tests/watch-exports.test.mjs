@@ -1,11 +1,12 @@
+import { pageMarkdownPath, localeHomePath } from "#site-urls";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { sitemapMetadata } from "#site-sitemap";
-import { markdownResponse, summaryText, watchIndexMarkdown, watchLinkMarkdown } from "#watch-markdown";
+import { markdownResponse, summaryText, watchIndexMarkdown, watchLinkMarkdown, watchArchiveMarkdown } from "#watch-markdown";
 
 const site = new URL("https://sebastien.rigaux.be");
-const fr = "/veille/liens/un-outil/";
-const en = "/en/tech-watch/links/a-tool/";
+const fr = "/veille/liens/un-outil";
+const en = "/en/tech-watch/links/a-tool";
 const link = {
   id: "doc-fr", uid: "un-outil", locale: "fr", textLanguage: "fr", title: "Un outil [utile]",
   summary: "Un **outil** pour [React](https://react.dev/) et `TypeScript`.",
@@ -28,13 +29,13 @@ test("Markdown exports preserve the summary, metadata, canonical and actual tran
 test("Markdown indexes link to the available page and export when translation is absent", () => {
   const onlyFrench = { ...link, alternatePaths: { fr } };
   const text = watchIndexMarkdown("en", [onlyFrench], site);
-  assert.ok(text.includes(`${site.origin}${fr}index.md`));
+  assert.ok(text.includes(`${site.origin}${fr}.md`));
   assert.ok(!text.includes(en));
   assert.ok(!watchLinkMarkdown(onlyFrench, site).includes(en));
 });
 
 function html(extra = "", translations = `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}"><link href="${site.origin}${en}" hreflang="en" rel="alternate">`) {
-  return `<html><head><link rel="canonical" href="${site.origin}${fr}">${translations}<link rel="alternate" type="text/markdown" href="${site.origin}${fr}index.md"><meta name="last-modified" content="${link.updatedAt}">${extra}</head><body></body></html>`;
+  return `<html><head><link rel="canonical" href="${site.origin}${fr}">${translations}<link rel="alternate" type="text/markdown" href="${site.origin}${fr}.md"><meta name="last-modified" content="${link.updatedAt}">${extra}</head><body></body></html>`;
 }
 
 test("sitemap reuses actual HTML language links and modification date, excluding Markdown alternates", () => {
@@ -49,4 +50,21 @@ test("sitemap excludes redirects, noindex pages and noncanonical URLs", () => {
   assert.equal(sitemapMetadata(html('<meta name="robots" content="noindex, follow">'), `${site.origin}${fr}`), undefined);
   assert.equal(sitemapMetadata(html('<meta http-equiv="refresh" content="0; url=/">'), `${site.origin}${fr}`), undefined);
   assert.equal(sitemapMetadata(html(), `${site.origin}/other/`), undefined);
+});
+
+test("every watch URL has a direct .md counterpart, including archives and pagination", () => {
+  const text = watchArchiveMarkdown({ locale: "fr", links: [link], topics: link.topics, topic: link.topics[0], page: 2, totalPages: 3 }, site);
+  assert.ok(text.includes("https://sebastien.rigaux.be/veille/tags/react/page/2"));
+  assert.ok(text.includes("https://sebastien.rigaux.be/veille/tags/react/page/3"));
+  assert.ok(text.includes(`${site.origin}${fr}.md`));
+  assert.ok(!text.includes("/index.md"));
+});
+
+test("Markdown URLs append .md, with the existing French root export", () => {
+  assert.equal(localeHomePath("fr"), "/");
+  assert.equal(localeHomePath("en"), "/en");
+  assert.equal(pageMarkdownPath("/"), "/fr.md");
+  assert.equal(pageMarkdownPath("/en"), "/en.md");
+  assert.equal(pageMarkdownPath("/veille/liens/mon-lien"), "/veille/liens/mon-lien.md");
+  assert.equal(pageMarkdownPath("/veille/liens/mon-lien/"), "/veille/liens/mon-lien.md");
 });

@@ -1,6 +1,6 @@
 # CV de Sébastien Rigaux
 
-Site statique bilingue construit avec Astro 7, React et Tailwind CSS 4. Le contenu du CV se trouve directement dans les composants Astro de `src/components/`. Les pages `/` (français) et `/en/` partagent la même mise en page.
+Site statique bilingue construit avec Astro 7, React et Tailwind CSS 4. Le contenu du CV se trouve directement dans les composants Astro de `src/components/`. Les pages `/` (français) et `/en` partagent la même mise en page.
 
 ## Développement
 
@@ -27,13 +27,13 @@ Le build génère également `llms.txt`, `fr.md`, `en.md` et `llms-full.txt` à 
 
 ## Publication
 
-Le workflow `.github/workflows/deploy.yml` publie `master` sur GitHub Pages. Dans les paramètres du dépôt, sélectionner **GitHub Actions** comme source Pages. `public/CNAME` configure le domaine `sebastien.rigaux.be` ; le DNS doit pointer vers GitHub Pages. Lors de la bascule, retirer ce domaine personnalisé de l'ancien dépôt Pages avant de l'activer sur ce dépôt. Vérifier ensuite `/`, `/en/`, le certificat HTTPS et le sitemap. L'ancienne URL `/fr/` redirige immédiatement vers `/` au moyen d'une page HTML statique ; GitHub Pages ne fournit pas de redirection HTTP 301 pour ce cas. La checklist de mise en ligne et de suivi SEO se trouve dans [`SEO_CHECKLIST.md`](SEO_CHECKLIST.md).
+Le workflow `.github/workflows/deploy.yml` publie `master` sur GitHub Pages. Dans les paramètres du dépôt, sélectionner **GitHub Actions** comme source Pages. `public/CNAME` configure le domaine `sebastien.rigaux.be` ; le DNS doit pointer vers GitHub Pages. Lors de la bascule, retirer ce domaine personnalisé de l'ancien dépôt Pages avant de l'activer sur ce dépôt. Vérifier ensuite `/`, `/en`, le certificat HTTPS et le sitemap. L'ancienne URL `/fr/` redirige immédiatement vers `/` au moyen d'une page HTML statique ; GitHub Pages ne fournit pas de redirection HTTP 301 pour ce cas. La checklist de mise en ligne et de suivi SEO se trouve dans [`SEO_CHECKLIST.md`](SEO_CHECKLIST.md).
 
 Le site est statique : l'âge et les années d'expérience sont calculés au build et rafraîchis au chargement par un petit script. Le CV reste lisible sans JavaScript.
 
 ## Veille technologique
 
-La rubrique `/veille/` et sa version anglaise `/en/tech-watch/` lisent le dépôt Prismic `bd7d5fa0` pendant le build. Le CV reste dans les composants Astro. Les nouvelles fiches `curated_link` sont liées en traductions `fr-be` / `en-us` : chaque page affiche son titre et son bref résumé dans sa langue. Les anciennes fiches sans traduction gardent leur texte anglais sur les deux pages. Le champ `source_language` (EN/FR) décrit la langue du lien original et s'affiche discrètement sur la carte lorsqu'il est renseigné. `summary` contient du Markdown léger affiché sans HTML brut. Une fiche ouvre directement son URL d'origine. Les archives de topics publiés sont sous `/tags/<slug>/`, avec 30 liens par page et un tri par `selected_on` décroissant. Le `uid` technique des fiches `curated_link` n'est jamais utilisé dans une URL du site.
+La rubrique `/veille` et sa version anglaise `/en/tech-watch` lisent le dépôt Prismic `bd7d5fa0` pendant le build. Le CV reste dans les composants Astro. Les nouvelles fiches `curated_link` sont liées en traductions `fr-be` / `en-us` : chaque page affiche son titre et son bref résumé dans sa langue. Les anciennes fiches sans traduction gardent leur texte anglais sur les deux pages. Le champ `source_language` (EN/FR) décrit la langue du lien original et s'affiche discrètement sur la carte lorsqu'il est renseigné. `summary` contient du Markdown léger affiché sans HTML brut. Une fiche ouvre directement son URL d'origine. Les archives de topics publiés sont sous `/tags/<slug>/`, avec 30 liens par page et un tri par `selected_on` décroissant. Les UID Prismic propres à chaque langue servent aux permaliens `/veille/liens/{uid-fr}` et `/en/tech-watch/links/{uid-en}`. Les relations de traduction Prismic déterminent le sélecteur de langue et les `hreflang`.
 
 Les modèles `curated_link`, `topic` et `discovery_source` se trouvent dans `prismic-models/`. Ce petit projet auxiliaire permet d'utiliser la CLI Prismic, qui ne prend pas encore Astro en charge pour le Type Builder. Modifier les modèles avec `npx prismic` depuis ce dossier, puis enregistrer les modèles dans Git avant `npx prismic push`. Les `uid` des topics et des sources sont des slugs ASCII uniques en kebab-case ; garder le même slug lorsque le nom affiché change. Si un slug d'archive doit changer, ajouter une redirection depuis l'ancien.
 
@@ -41,4 +41,4 @@ Le vocabulaire proposé est dans [`docs/tech-watch-seed.json`](docs/tech-watch-s
 
 Le skill [`curate-prismic-link`](.agents/skills/curate-prismic-link/SKILL.md) traite une URL et une note facultative avec Context.dev, rédige les deux versions et les envoie en brouillons liés dans une migration release Prismic. Définir `CONTEXT_DEV_API_KEY` et `PRISMIC_WRITE_TOKEN` dans l'environnement ou dans `.env.local` (ignoré par Git). Le script d'envoi propose un aperçu sans écriture par défaut ; `--write` crée les brouillons, sans les publier.
 
-Le workflow GitHub Pages reconstruit le site toutes les quatre heures et reste déclenchable manuellement. Si Prismic ne répond pas, le build échoue et aucun nouveau déploiement ne remplace la version en ligne. Les PDF et exports Markdown restent réservés au CV.
+Le workflow GitHub Pages reconstruit le site toutes les quatre heures et reste déclenchable manuellement. Si Prismic ne répond pas, le build échoue et aucun nouveau déploiement ne remplace la version en ligne. Les PDF concernent le CV ; la veille expose aussi des exports Markdown, accessibles en ajoutant `.md` aux URL HTML sans slash final. Voir [`docs/tech-watch-permalinks.md`](docs/tech-watch-permalinks.md) pour les routes et vérifications.

@@ -1,5 +1,5 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
+import { localeHomePath } from "@/lib/urls";
 import { EllipsisVertical } from "@lucide/astro";
 import Logo from "@/assets/logo-animated.svg";
 import ThemeToggle from "@/components/ThemeToggle.astro";
@@ -16,9 +16,9 @@ interface Props {
 
 const { locale, firstName, lastName, page = "cv", languagePaths } = Astro.props;
 const isWatch = page === "watch";
-const homePath = getRelativeLocaleUrl(locale);
-const frenchPath = languagePaths?.fr ?? getRelativeLocaleUrl("fr");
-const englishPath = languagePaths?.en ?? getRelativeLocaleUrl("en");
+const homePath = localeHomePath(locale);
+const frenchPath = languagePaths?.fr ?? localeHomePath("fr");
+const englishPath = languagePaths?.en ?? localeHomePath("en");
 const nav = {
   fr: {
     about: "À propos",

@@ -1,8 +1,10 @@
 // @ts-check
 import { existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdtemp, mkdir, copyFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadEnvFile } from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { defineConfig, fontProviders } from "astro/config";
 import react from "@astrojs/react";
 import siteSitemap from "#site-sitemap";
@@ -19,17 +21,17 @@ export default defineConfig({
   integrations: [
     react(),
     siteSitemap(),
-    astroLlmsTxtWithRootPageFix({
+    astroLlmsTxtForFileBuild({
       title: "Sébastien Rigaux — CV et veille / Résumé and tech watch",
       description:
         "CV bilingue et veille technologique de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
       details:
-        "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en/).",
+        "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en).",
       notes:
         "Contenu généré automatiquement à partir des pages publiques du CV et des sélections de veille ; les pages HTML restent les sources canoniques.",
       optionalLinks: [
-        { label: "Veille technologique — index Markdown", url: "https://sebastien.rigaux.be/veille/index.md", description: "Toutes les sélections, leurs permaliens et leurs versions Markdown." },
-        { label: "Tech watch — Markdown index", url: "https://sebastien.rigaux.be/en/tech-watch/index.md", description: "All selected resources, their permalinks and Markdown versions." },
+        { label: "Veille technologique — index Markdown", url: "https://sebastien.rigaux.be/veille.md", description: "Toutes les sélections, leurs permaliens et leurs versions Markdown." },
+        { label: "Tech watch — Markdown index", url: "https://sebastien.rigaux.be/en/tech-watch.md", description: "All selected resources, their permalinks and Markdown versions." },
       ],
       docSet: [
         {
@@ -61,7 +63,7 @@ export default defineConfig({
     pdf({
       pages: {
         "/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
-        "/en/": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
+        "/en": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
       },
       baseOptions: {
         throwOnFail: true,
@@ -111,29 +113,39 @@ export default defineConfig({
     },
   ],
   output: "static",
-  trailingSlash: "always",
+  trailingSlash: "never",
+  build: { format: "file" },
   vite: {
     plugins: [tailwindcss()],
   },
 });
 
 /**
- * Fixes the root page pathname for Astro LLMs TXT integration.
+ * Adapts the directory-only Astro LLMs TXT integration to a file-based build.
  *
  * @param {Parameters<typeof astroLlmsTxt>[0]} options
  */
-function astroLlmsTxtWithRootPageFix(options) {
+function astroLlmsTxtForFileBuild(options) {
   const integration = astroLlmsTxt(options);
   const onBuildDone = integration.hooks["astro:build:done"];
-  // Astro 7 reports the root page as an empty pathname. This integration
-  // matches route globs, so present it as "/" when generating Markdown.
+  // The LLM integration expects directory/index.html output. Adapt only the
+  // two CV inputs in a temporary directory; the public build stays file-based.
   integration.hooks["astro:build:done"] = async (context) => {
-    await onBuildDone?.({
-      ...context,
-      pages: context.pages.map((page) =>
-        page.pathname === "" ? { ...page, pathname: "/" } : page,
-      ),
-    });
+    const temporary = await mkdtemp(join(tmpdir(), "astro-llms-"));
+    const temporaryDir = pathToFileURL(`${temporary}/`);
+    try {
+      await mkdir(new URL("en/", temporaryDir));
+      await Promise.all([
+        copyFile(new URL("index.html", context.dir), new URL("index.html", temporaryDir)),
+        copyFile(new URL("en.html", context.dir), new URL("en/index.html", temporaryDir)),
+      ]);
+      await onBuildDone?.({ ...context, dir: temporaryDir, pages: [{ pathname: "/" }, { pathname: "en/" }] });
+      for (const name of ["llms.txt", "fr.md", "en.md", "llms-full.txt"]) {
+        await copyFile(new URL(name, temporaryDir), new URL(name, context.dir));
+      }
+    } finally {
+      await rm(temporary, { recursive: true, force: true });
+    }
 
     // The package wraps descriptions in <SYSTEM>, which reads like a prompt
     // instruction in a public document. Keep each export as ordinary Markdown
@@ -145,11 +157,11 @@ function astroLlmsTxtWithRootPageFix(options) {
       ],
       [
         "en.md",
-        "Canonical source: [English résumé](https://sebastien.rigaux.be/en/)",
+        "Canonical source: [English résumé](https://sebastien.rigaux.be/en)",
       ],
       [
         "llms-full.txt",
-        "Sources canoniques : [français](https://sebastien.rigaux.be/) · [English](https://sebastien.rigaux.be/en/)",
+        "Sources canoniques : [français](https://sebastien.rigaux.be/) · [English](https://sebastien.rigaux.be/en)",
       ],
     ];
     for (const [name, source] of exports) {
