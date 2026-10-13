@@ -26,6 +26,7 @@ export default function siteSitemap() {
   let directory;
   let serializationError;
   const integration = sitemap({
+    xslURL: "/xml-sitemap.xsl",
     filter: (page) => {
       const path = new URL(page).pathname;
       return !path.includes(".md") && (["/", "/en", "/veille", "/en/tech-watch"].includes(path) ||
