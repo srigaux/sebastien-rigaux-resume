@@ -1,6 +1,11 @@
 {
   "name": "astro",
   "type": "module",
+  "imports": {
+    "#curate-scrape": "./.agents/skills/curate-prismic-link/scripts/scrape.mjs",
+    "#curate-send": "./.agents/skills/curate-prismic-link/scripts/send-prismic.mjs",
+    "#watch-markdown": "./src/lib/watch-markdown.ts"
+  },
   "version": "0.0.1",
   "engines": {
     "node": ">=22.12.0"
@@ -24,6 +29,7 @@
     "@types/react-dom": "^19.3.0",
     "astro": "^7.3.7",
     "astro-pdf": "^1.10.1",
+    "markdown-it": "^15.0.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
@@ -35,6 +41,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@types/markdown-it": "^14.2.0",
     "@types/three": "^0.186.0",
     "tailwindcss-motion": "^1.1.1",
     "typescript": "^6.0.3"

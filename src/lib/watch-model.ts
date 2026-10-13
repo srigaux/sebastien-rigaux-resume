@@ -35,6 +35,8 @@ export type WatchLink = {
   publishedOn?: string;
   firstPublishedAt: string;
   format: WatchFormat;
+  sourceLanguage?: "EN" | "FR";
+  textLanguage: "en" | "fr";
   credit?: string;
   discoveredVia?: WatchSource;
   topics: WatchTopic[];
@@ -51,6 +53,15 @@ export type WatchLinkDraft = Omit<
 };
 
 export type WatchData = { links: WatchLink[]; topics: WatchTopic[] };
+
+export function findPublishedTranslation<T extends { id: string }>(
+  master: { alternate_languages: { id: string; lang: string }[] },
+  locale: string,
+  translations: Map<string, T>,
+): T | undefined {
+  const id = master.alternate_languages.find((item) => item.lang === locale)?.id;
+  return id ? translations.get(id) : undefined;
+}
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -132,6 +143,12 @@ export function buildWatchData(
     }
     if (!WATCH_FORMATS.includes(draft.format)) {
       throw new Error(`Invalid format for curated link: ${draft.id}`);
+    }
+    if (draft.sourceLanguage && !["EN", "FR"].includes(draft.sourceLanguage)) {
+      throw new Error(`Invalid source language for curated link: ${draft.id}`);
+    }
+    if (draft.textLanguage !== "en" && draft.textLanguage !== "fr") {
+      throw new Error(`Invalid text language for curated link: ${draft.id}`);
     }
     requireDate(draft.selectedOn, `selected_on for ${draft.id}`);
     if (draft.publishedOn) requireDate(draft.publishedOn, `published_on for ${draft.id}`);

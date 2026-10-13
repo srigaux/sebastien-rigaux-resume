@@ -1,0 +1,4 @@
+interface:
+  display_name: "Curate link to Prismic"
+  short_description: "Draft bilingual tech-watch links from a URL"
+  default_prompt: "Use $curate-prismic-link to add this URL to my tech watch with a concise French and English overview."

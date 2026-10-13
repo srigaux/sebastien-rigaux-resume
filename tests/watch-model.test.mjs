@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   buildWatchData,
+  findPublishedTranslation,
   isCleanSlug,
   paginateLinks,
   watchPath,
@@ -26,6 +27,7 @@ function link(id, overrides = {}) {
     selectedOn: "2026-10-12",
     firstPublishedAt: "2026-10-12T10:00:00Z",
     format: "Article",
+    textLanguage: "en",
     topicIds: [topic.id],
     ...overrides,
   };
@@ -108,4 +110,13 @@ test("pagination and bilingual archive paths stay aligned", () => {
   assert.equal(paginateLinks(data.links, 2).items.length, 1);
   assert.equal(watchPath("fr", 2, "react"), "/veille/tags/react/page/2/");
   assert.equal(watchPath("en", 2, "react"), "/en/tech-watch/tags/react/page/2/");
+});
+
+test("English copy is selected only through the master's published translation ID", () => {
+  const english = { id: "en-1", title: "English SEO title" };
+  const other = { id: "en-other", title: "Unrelated title" };
+  const translations = new Map([english, other].map((item) => [item.id, item]));
+  assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "en-1", lang: "en-us" }] }, "en-us", translations), english);
+  assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "en-1", lang: "en-us" }] }, "fr-be", translations), undefined);
+  assert.equal(findPublishedTranslation({ alternate_languages: [{ id: "draft-1", lang: "en-us" }] }, "en-us", translations), undefined);
 });

@@ -12,7 +12,7 @@ export type WatchPageProps = {
 };
 
 export async function getWatchStaticPaths(locale: Locale) {
-  const { links, topics } = await getWatchData();
+  const { links, topics } = await getWatchData(locale);
   const paths: { params: { path?: string }; props: WatchPageProps }[] = [];
   const append = (items: WatchLink[], topic?: WatchTopic) => {
     const count = Math.max(1, Math.ceil(items.length / WATCH_PAGE_SIZE));
