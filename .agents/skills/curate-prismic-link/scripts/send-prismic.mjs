@@ -46,7 +46,7 @@ function copy(value, language) {
   const title = typeof value.title === "string" ? value.title.trim() : "";
   const summary = typeof value.summary === "string" ? value.summary.trim() : "";
   if (title.length < 12 || title.length > 110 || /[\r\n<>]/.test(title)) throw new Error(`Invalid ${language} title`);
-  if (summary.length < 40 || summary.length > 500 || summary.split(/\s+/).length > 90 || /[\r\n]|<[^>]*>|!\[|(^|\s)(#{1,6}|[-*])\s/.test(summary)) {
+  if (summary.length < 40 || summary.length > 800 || summary.split(/\s+/).length > 140 || /[\r\n]|<[^>]*>|!\[|^\s*(?:#{1,6}\s|[-*•]\s|\d+[.)]\s)/.test(summary)) {
     throw new Error(`Invalid ${language} summary: use one short Markdown paragraph`);
   }
   return { title, summary };
@@ -83,8 +83,32 @@ export function validateDraft(raw) {
   };
 }
 
-function uid(url, language) {
-  return `link-${createHash("sha256").update(duplicateKey(url)).digest("hex").slice(0, 16)}-${language}`;
+export function slugFromTitle(value) {
+  const slug = String(value)
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120)
+    .replace(/-+$/g, "");
+  if (!slug) throw new Error("Title cannot produce a Prismic UID");
+  return slug;
+}
+
+function uniqueTitleUid(title, url, used) {
+  const base = slugFromTitle(title);
+  if (!used.has(base)) {
+    used.add(base);
+    return base;
+  }
+  const suffix = createHash("sha256").update(duplicateKey(url)).digest("hex").slice(0, 6);
+  let result = `${base}-${suffix}`;
+  let counter = 2;
+  while (used.has(result)) result = `${base}-${suffix}-${counter++}`;
+  used.add(result);
+  return result;
 }
 
 function assetFilename(url, fallback) {
@@ -95,7 +119,7 @@ function asset(migration, url, fallback, alt) {
   return url ? migration.createAsset(url, assetFilename(url, fallback), { alt }) : undefined;
 }
 
-export function prepareMigration(draft, { topics, sources, migration = prismic.createMigration() }) {
+export function prepareMigration(draft, { topics, sources, usedUids = {}, migration = prismic.createMigration() }) {
   const topicByUid = new Map(topics.map((doc) => [doc.uid, doc]));
   const topicDocs = draft.topics.map((topicUid) => {
     const doc = topicByUid.get(topicUid);
@@ -120,9 +144,13 @@ export function prepareMigration(draft, { topics, sources, migration = prismic.c
     ...(image ? { image } : {}),
     ...(siteIcon ? { site_icon: siteIcon } : {}),
   };
+  const usedByLanguage = {
+    fr: new Set(usedUids.fr ?? []),
+    en: new Set(usedUids.en ?? []),
+  };
   const document = (language, content) => ({
     type: "curated_link",
-    uid: uid(draft.url, language),
+    uid: uniqueTitleUid(content.title, draft.url, usedByLanguage[language]),
     lang: language === "fr" ? "fr-be" : "en-us",
     data: {
       ...shared,
@@ -154,7 +182,14 @@ export async function sendDraft(draft, { writeToken = process.env.PRISMIC_WRITE_
     return typeof existing === "string" && duplicateKey(existing) === duplicateKey(draft.url);
   });
   if (duplicate) throw new Error(`Curated link already exists in Prismic: ${duplicate.id}`);
-  const { migration, french, english } = prepareMigration(draft, { topics, sources });
+  const { migration, french, english } = prepareMigration(draft, {
+    topics,
+    sources,
+    usedUids: {
+      fr: frenchLinks.map((doc) => doc.uid),
+      en: englishLinks.map((doc) => doc.uid),
+    },
+  });
   let count = 0;
   await client.migrate(migration, {
     reporter(event) {

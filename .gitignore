@@ -23,3 +23,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Private import state and editorial drafts
+.local/
+
+docs/teams-history.json

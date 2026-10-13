@@ -3,7 +3,7 @@ import { readFile, rm } from "node:fs/promises";
 import { dirname } from "node:path";
 import test from "node:test";
 import { extractScrapeResult, scrape } from "#curate-scrape";
-import { duplicateKey, prepareMigration, sendDraft, validateDraft } from "#curate-send";
+import { duplicateKey, prepareMigration, sendDraft, slugFromTitle, validateDraft } from "#curate-send";
 import { renderSummaryMarkdown } from "#watch-markdown";
 
 const rawDraft = {
@@ -55,12 +55,14 @@ test("scrape result requires readable Markdown", async () => {
   await assert.rejects(extractScrapeResult({ url: "https://example.com/", markdown: { success: false, data: null } }), /usable Markdown/);
 });
 
-test("draft validation keeps only a concise bilingual overview", () => {
+test("draft validation accepts a fuller prose overview and rejects list summaries", () => {
   const draft = validateDraft(rawDraft);
   assert.equal(draft.sourceLanguage, "EN");
   assert.equal(draft.publishedOn, "2026-09-28");
   assert.match(draft.selectedOn, /^\d{4}-\d{2}-\d{2}$/);
-  assert.throws(() => validateDraft({ ...rawDraft, fr: { ...rawDraft.fr, summary: "A".repeat(501) } }), /summary/);
+  assert.throws(() => validateDraft({ ...rawDraft, fr: { ...rawDraft.fr, summary: "A".repeat(801) } }), /summary/);
+  assert.throws(() => validateDraft({ ...rawDraft, fr: { ...rawDraft.fr, summary: "• One artificial bullet item that should be plain prose instead." } }), /summary/);
+  assert.doesNotThrow(() => validateDraft({ ...rawDraft, fr: { ...rawDraft.fr, summary: `${rawDraft.fr.summary} Ce passage ajoute un détail utile. **À retenir** : les styles compilés peuvent aussi être vérifiés avec \`Storybook\`.` } }));
   assert.throws(() => validateDraft({ ...rawDraft, sourceLanguage: "DE" }), /sourceLanguage/);
   assert.equal(duplicateKey("https://example.com/a?utm_source=x#section"), "https://example.com/a");
 });
@@ -86,6 +88,8 @@ test("migration stages a French master and a linked English translation", () => 
   assert.equal(created[0].document.data.summary[0].text, draft.fr.summary);
   assert.equal(created[1].document.data.summary[0].text, draft.en.summary);
   assert.equal(created[0].document.data.topics.length, 2);
+  assert.equal(created[0].document.uid, slugFromTitle(draft.fr.title));
+  assert.equal(created[1].document.uid, slugFromTitle(draft.en.title));
 });
 
 test("published duplicate prevents a Prismic write", async () => {
@@ -119,12 +123,15 @@ test("direct sender prepares two linked drafts and never publishes them", async 
   const result = await sendDraft(validateDraft(rawDraft), { writeToken: "test-key", clientFactory: () => client });
   assert.equal(migrated, true);
   assert.equal(result.status, "migration-release-draft");
-  assert.notEqual(result.uids.fr, result.uids.en);
+  assert.equal(result.uids.fr, slugFromTitle(rawDraft.fr.title));
+  assert.equal(result.uids.en, slugFromTitle(rawDraft.en.title));
 });
 
 test("summary Markdown renders inline formatting without HTML injection", () => {
-  const html = renderSummaryMarkdown("Read **the guide** and [details](https://example.com). <script>alert(1)</script> [bad](javascript:alert(1))");
+  const html = renderSummaryMarkdown("Read **the guide**, *carefully*, with `inline code` and [details](https://example.com). <script>alert(1)</script> [bad](javascript:alert(1))");
   assert.match(html, /<strong>the guide<\/strong>/);
+  assert.match(html, /<em>carefully<\/em>/);
+  assert.match(html, /<code>inline code<\/code>/);
   assert.match(html, /href="https:\/\/example.com"/);
   assert.match(html, /&lt;script&gt;/);
   assert.ok(!html.includes("<script>"));

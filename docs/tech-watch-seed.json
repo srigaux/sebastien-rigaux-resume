@@ -58,6 +58,16 @@
     { "uid": "tooling", "name": "Tooling" },
     { "uid": "releases", "name": "Releases" },
     { "uid": "github-actions", "name": "GitHub Actions" }
+,
+    { "uid": "forms", "name": "Forms", "description": "Conception, validation et intégration de formulaires, questionnaires et parcours de saisie." },
+    { "uid": "vue", "name": "Vue", "description": "Framework Vue, bibliothèques et pratiques de développement de son écosystème." },
+    { "uid": "self-hosting", "name": "Self-hosting", "description": "Déploiement et exploitation de services sur une infrastructure sous son contrôle." },
+    { "uid": "seo", "name": "SEO", "description": "Indexation, métadonnées, données structurées et outils d’audit du référencement." },
+    { "uid": "ui-ux", "name": "UI/UX", "description": "Conception d’interfaces, interactions, prototypage et expérience utilisateur." },
+    { "uid": "maps", "name": "Maps", "description": "Cartes web, géolocalisation et génération de représentations cartographiques." },
+    { "uid": "local-first", "name": "Local-first", "description": "Applications réactives conservant les données localement avec persistance et synchronisation." },
+    { "uid": "i18n", "name": "Internationalization", "description": "Traduction, localisation et gestion des langues dans les applications." },
+    { "uid": "tailwind-css", "name": "Tailwind CSS", "description": "Styles utilitaires, plugins et composants utilisant Tailwind CSS." }
   ],
   "discoverySources": [
     { "uid": "the-ai-report", "name": "The AI Report", "url": "https://newsletter.theaireport.ai/subscribe?ref=Grq6dx6Wxk" },

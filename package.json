@@ -4,7 +4,8 @@
   "imports": {
     "#curate-scrape": "./.agents/skills/curate-prismic-link/scripts/scrape.mjs",
     "#curate-send": "./.agents/skills/curate-prismic-link/scripts/send-prismic.mjs",
-    "#watch-markdown": "./src/lib/watch-markdown.ts"
+    "#watch-markdown": "./src/lib/watch-markdown.ts",
+    "#teams-send": "./.agents/skills/curate-prismic-link/scripts/teams-send.mjs"
   },
   "version": "0.0.1",
   "engines": {
