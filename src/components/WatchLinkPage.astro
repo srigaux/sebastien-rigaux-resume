@@ -9,11 +9,11 @@ import type { Locale } from "@/types";
 interface Props { locale: Locale; link: WatchLink }
 const { locale, link } = Astro.props;
 const t = locale === "fr" ? {
-  watch: "Veille technologique", original: "Consulter la ressource originale", selected: "Sélectionné le",
+  markdown: "Version Markdown de cette page", watch: "Veille technologique", original: "Consulter la ressource originale", selected: "Sélectionné le",
   published: "Publication de la ressource", updated: "Mise à jour de la fiche", credit: "Crédit",
   discovered: "Repéré via", topics: "Sujets", back: "Retour à la veille", sourceLanguage: "Langue de la source",
 } : {
-  watch: "Tech watch", original: "Open the original resource", selected: "Selected on",
+  markdown: "Markdown version of this page", watch: "Tech watch", original: "Open the original resource", selected: "Selected on",
   published: "Resource publication", updated: "Entry updated", credit: "Credit",
   discovered: "Found via", topics: "Topics", back: "Back to tech watch", sourceLanguage: "Source language",
 };
@@ -74,5 +74,16 @@ const schema = {
     </article>
     <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, "\\u003c")} />
   </main>
-  <footer class="border-t border-rule"><div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12"><p>Sébastien Rigaux</p><a href={watchPath(locale)} class="text-accent hover:underline">{t.back}</a></div></footer>
+  <footer class="border-t border-rule">
+    <div class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 md:grid-cols-[1fr_auto_1fr] lg:px-12">
+      <p class="col-start-1 row-start-1">Sébastien Rigaux</p>
+      <a
+        href={pageMarkdownPath(path)}
+        aria-label={t.markdown}
+        type="text/markdown"
+        class="col-span-2 row-start-2 justify-self-center text-xs text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline md:col-span-1 md:col-start-2 md:row-start-1"
+      >Markdown</a>
+      <a href={watchPath(locale)} class="col-start-2 row-start-1 justify-self-end text-accent hover:underline md:col-start-3">{t.back}</a>
+    </div>
+  </footer>
 </BaseLayout>
