@@ -75,7 +75,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/rich-text
 	 */
 	title: prismic.RichTextField;
-	
+
 	/**
 	 * Summary field in *Curated Link*
 	 *
@@ -86,7 +86,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/rich-text
 	 */
 	summary: prismic.RichTextField;
-	
+
 	/**
 	 * Url field in *Curated Link*
 	 *
@@ -97,7 +97,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/link
 	 */
 	url: prismic.LinkField<string, string, unknown, prismic.FieldState, never>;
-	
+
 	/**
 	 * Selected On field in *Curated Link*
 	 *
@@ -108,7 +108,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/date
 	 */
 	selected_on: prismic.DateField;
-	
+
 	/**
 	 * Published On field in *Curated Link*
 	 *
@@ -119,7 +119,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/date
 	 */
 	published_on: prismic.DateField;
-	
+
 	/**
 	 * Format field in *Curated Link*
 	 *
@@ -130,7 +130,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/select
 	 */
 	format: prismic.SelectField<"Article" | "Video" | "Repository" | "Release" | "Documentation" | "Tool" | "Other">;
-	
+
 	/**
 	 * Credit field in *Curated Link*
 	 *
@@ -141,7 +141,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	credit: prismic.KeyTextField;
-	
+
 	/**
 	 * Discovered Via field in *Curated Link*
 	 *
@@ -152,7 +152,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/content-relationship
 	 */
 	discovered_via: prismic.ContentRelationshipField<"discovery_source">;
-	
+
 	/**
 	 * Topics field in *Curated Link*
 	 *
@@ -163,7 +163,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/repeatable-group
 	 */
 	topics: prismic.GroupField<Simplify<CuratedLinkDocumentDataTopicsItem>>;
-	
+
 	/**
 	 * Image field in *Curated Link*
 	 *
@@ -174,7 +174,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/image
 	 */
 	image: prismic.ImageField<never>;
-	
+
 	/**
 	 * Site Icon field in *Curated Link*
 	 *
@@ -185,6 +185,17 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/image
 	 */
 	site_icon: prismic.ImageField<never>;
+
+	/**
+	 * Source Language field in *Curated Link*
+	 *
+	 * - **Field Type**: Select
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: curated_link.source_language
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/select
+	 */
+	source_language: prismic.SelectField<"EN" | "FR">;
 }
 
 /**
@@ -212,7 +223,7 @@ interface DiscoverySourceDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	name: prismic.KeyTextField;
-	
+
 	/**
 	 * Url field in *Discovery Source*
 	 *
@@ -223,7 +234,7 @@ interface DiscoverySourceDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/link
 	 */
 	url: prismic.LinkField<string, string, unknown, prismic.FieldState, never>;
-	
+
 	/**
 	 * Icon field in *Discovery Source*
 	 *
@@ -261,7 +272,7 @@ interface TopicDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	name: prismic.KeyTextField;
-	
+
 	/**
 	 * Description field in *Topic*
 	 *
@@ -291,15 +302,15 @@ declare module "@prismicio/client" {
 	interface CreateClient {
 		(repositoryNameOrEndpoint: string, options?: prismic.ClientConfig): prismic.Client<AllDocumentTypes>;
 	}
-	
+
 	interface CreateWriteClient {
 		(repositoryNameOrEndpoint: string, options: prismic.WriteClientConfig): prismic.WriteClient<AllDocumentTypes>;
 	}
-	
+
 	interface CreateMigration {
 		(): prismic.Migration<AllDocumentTypes>;
 	}
-	
+
 	namespace Content {
 		export type {
 			CuratedLinkDocument,

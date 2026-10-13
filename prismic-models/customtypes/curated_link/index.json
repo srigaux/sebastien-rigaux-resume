@@ -102,6 +102,16 @@
           "label": "Site Icon"
         },
         "type": "Image"
+      },
+      "source_language": {
+        "config": {
+          "label": "Source Language",
+          "options": [
+            "EN",
+            "FR"
+          ]
+        },
+        "type": "Select"
       }
     }
   },
