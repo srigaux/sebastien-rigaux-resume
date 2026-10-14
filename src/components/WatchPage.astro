@@ -94,6 +94,14 @@ const schema = {
     },
   ],
 };
+// Give the hero a 100 ms head start before revealing the first links.
+// Only these four links stagger, from tablet upwards.
+const linkDelays = [
+  "motion-delay-[100ms]",
+  "motion-delay-[100ms] md:motion-delay-[160ms]",
+  "motion-delay-[100ms] md:motion-delay-[220ms]",
+  "motion-delay-[100ms] md:motion-delay-[280ms]",
+];
 const formatIcons = { Article: FileText, Video, Repository: GitFork, Release: Rocket, Documentation: BookOpen, Tool: Wrench, Other: Ellipsis } satisfies Record<WatchFormat, typeof FileText>;
 const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 ---
@@ -101,7 +109,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
 <BaseLayout locale={locale} title={title} description={description} canonicalPath={path} alternatePaths={alternatePaths} markdownPath={pageMarkdownPath(path)} previousPath={previousPath} nextPath={nextPath}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={alternatePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
-      {page === 1 ? <section class="pt-14 sm:pt-20 lg:pt-24">
+      {page === 1 ? <section no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none pt-14 sm:pt-20 lg:pt-24">
         <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
         <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <p class="text-base font-semibold tracking-tight text-accent">{topic ? t.title : t.selectedLabel}</p>
@@ -109,7 +117,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
         </div>
         <h1 class="max-w-5xl break-words font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">{topic ? topic.name : t.title}</h1>
         <p class="mt-7 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
-      </section> : <header class="pt-10 sm:pt-12 lg:pt-14">
+      </section> : <header no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none pt-10 sm:pt-12 lg:pt-14">
         {topic && <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <p class="text-base font-semibold tracking-tight text-accent">{t.title}</p>
           <a href={watchPath(locale)} class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline">← {t.all}</a>
@@ -124,12 +132,12 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
         <section aria-label={topic?.name || t.all} class="min-w-0">
           {links.length === 0 && <p class="border-t border-rule py-12 text-muted">{t.empty}</p>}
           <div class="divide-y divide-rule">
-            {links.map((link) => {
+            {links.map((link, index) => {
               const icon = link.siteIcon || link.discoveredVia?.icon;
               const FormatIcon = formatIcons[link.format];
               const sourceLanguageTitle = locale === "fr" ? `Langue de la source : ${link.sourceLanguage === "EN" ? "anglais" : "français"}` : `Source language: ${link.sourceLanguage === "FR" ? "French" : "English"}`;
               const monogram = new URL(link.url).hostname.replace(/^www\./, "").charAt(0).toUpperCase();
-              return <article class="relative isolate py-8 sm:py-10">
+              return <article no-intersect class:list={["intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none relative isolate py-8 sm:py-10", linkDelays[index]]}>
                 <div>
                     <div class="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                       <time datetime={link.selectedOn} aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}>{dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}</time>
@@ -154,7 +162,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
               </article>;
             })}
           </div>
-          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold">
+          {totalPages > 1 && <nav no-intersect aria-label="Pagination" class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold">
             {previousPath ? <a href={previousPath} rel="prev" class="inline-flex min-h-11 items-center justify-self-start text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"><span aria-hidden="true">←&nbsp;</span>{t.previous}</a> : <span />}
             <span class="whitespace-nowrap text-muted md:hidden" aria-label={`${t.page} ${page} ${t.of} ${totalPages}`}>{page} / {totalPages}</span>
             <ol class="hidden items-center gap-1 md:flex">
@@ -167,7 +175,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
           </nav>}
         </section>
 
-        {topics.length > 0 && <aside class="lg:pt-0" aria-label={t.topics}>
+        {topics.length > 0 && <aside no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none self-start lg:pt-0" aria-label={t.topics}>
           <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t.topics}</h2>
           <div aria-hidden="true" class="mb-6 mt-5 h-0.5 w-12 -rotate-12 bg-accent"></div>
           <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">

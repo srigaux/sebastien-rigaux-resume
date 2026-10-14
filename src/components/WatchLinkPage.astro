@@ -49,32 +49,32 @@ const schema = {
 <BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={pageMarkdownPath(path)} modifiedAt={link.updatedAt} socialImage={link.image} previousPath={previousLink && watchLinkTarget(previousLink, locale)} nextPath={nextLink && watchLinkTarget(nextLink, locale)}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={languagePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
-    <nav aria-label={locale === "fr" ? "Fil d’Ariane" : "Breadcrumb"} class="mb-10 text-sm text-muted">
+    <nav no-intersect aria-label={locale === "fr" ? "Fil d’Ariane" : "Breadcrumb"} class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mb-10 text-sm text-muted">
       <a href={watchPath(locale)} class="inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline">← {t.back}</a>
     </nav>
     <article class="max-w-4xl">
       <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
-      <p class="mb-4 text-base font-semibold text-accent">{t.watch} · {link.format}</p>
-      <h1 class="break-words font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold leading-[1.12] tracking-[-0.035em] text-ink">{link.title}</h1>
-      <div class="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+      <p no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mb-4 text-base font-semibold text-accent">{t.watch} · {link.format}</p>
+      <h1 no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none break-words font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold leading-[1.12] tracking-[-0.035em] text-ink">{link.title}</h1>
+      <div no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
         <span>{t.selected} <time datetime={link.selectedOn}>{date(link.selectedOn)}</time></span>
         {link.sourceLanguage && <span>{t.sourceLanguage} : {link.sourceLanguage}</span>}
       </div>
-      <p class="mt-9 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl [&_a]:break-words [&_a]:underline [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" set:html={renderSummaryMarkdown(link.summary)} />
-      {link.image && <figure class="mt-9"><img src={link.image.url} alt={link.image.alt} width={link.image.width} height={link.image.height} loading="lazy" class="h-auto max-h-[32rem] w-full object-contain" /></figure>}
-      <a href={link.url} target="_blank" rel="noopener noreferrer" class="mt-9 inline-flex min-h-11 items-center gap-2 border border-accent px-5 py-3 text-base font-semibold text-accent underline-offset-4 hover:bg-accent/10 hover:underline">{t.original} <span aria-hidden="true">↗</span></a>
-      <p class="mt-3 break-all text-sm text-muted">{new URL(link.url).hostname}</p>
-      <dl class="mt-10 grid gap-4 border-t border-rule pt-8 text-sm text-muted sm:grid-cols-2">
+      <p no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl [&_a]:break-words [&_a]:underline [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" set:html={renderSummaryMarkdown(link.summary)} />
+      {link.image && <figure no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9"><img src={link.image.url} alt={link.image.alt} width={link.image.width} height={link.image.height} loading="lazy" class="h-auto max-h-[32rem] w-full object-contain" /></figure>}
+      <a no-intersect href={link.url} target="_blank" rel="noopener noreferrer" class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9 inline-flex min-h-11 items-center gap-2 border border-accent px-5 py-3 text-base font-semibold text-accent underline-offset-4 hover:bg-accent/10 hover:underline">{t.original} <span aria-hidden="true">↗</span></a>
+      <p no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-3 break-all text-sm text-muted">{new URL(link.url).hostname}</p>
+      <dl no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-10 grid gap-4 border-t border-rule pt-8 text-sm text-muted sm:grid-cols-2">
         {link.publishedOn && <div><dt class="font-semibold text-ink">{t.published}</dt><dd class="mt-1"><time datetime={link.publishedOn}>{date(link.publishedOn)}</time></dd></div>}
         <div><dt class="font-semibold text-ink">{t.updated}</dt><dd class="mt-1"><time datetime={link.updatedAt}>{date(link.updatedAt)}</time></dd></div>
         {link.credit && <div><dt class="font-semibold text-ink">{t.credit}</dt><dd class="mt-1">{link.credit}</dd></div>}
         {link.discoveredVia && <div><dt class="font-semibold text-ink">{t.discovered}</dt><dd class="mt-1"><a href={link.discoveredVia.url} target="_blank" rel="noopener noreferrer" class="underline decoration-rule hover:text-accent">{link.discoveredVia.name}</a></dd></div>}
       </dl>
-      <section class="mt-9" aria-label={t.topics}>
+      <section no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9" aria-label={t.topics}>
         <h2 class="text-sm font-semibold text-ink">{t.topics}</h2>
         <div class="mt-3 flex flex-wrap gap-2">{link.topics.map((topic) => <a href={watchPath(locale, 1, topic.uid)} class="inline-flex min-h-11 items-center border border-rule px-3 py-2 text-sm text-muted hover:border-accent hover:text-accent">{topic.name}</a>)}</div>
       </section>
-      {(previousLink || nextLink) && <nav aria-label={t.navigation} class="mt-12 grid gap-6 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10">
+      {(previousLink || nextLink) && <nav no-intersect aria-label={t.navigation} class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-12 grid gap-6 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10">
         {previousLink && <a href={watchLinkTarget(previousLink, locale)} rel="prev" class="group min-w-0 py-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
           <span class="block text-sm text-muted"><span aria-hidden="true">← </span>{t.previous}</span>
           <span class="mt-2 block break-words text-base font-semibold leading-relaxed text-ink group-hover:text-accent group-hover:underline">{previousLink.title}</span>

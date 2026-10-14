@@ -155,16 +155,5 @@ const footerLinkClass = "text-muted underline-offset-4 hover:text-accent hover:u
       >
     </div>
   </footer>
-  <script>
-    import { Observer } from "tailwindcss-intersect/observer";
 
-    const startObserver = () => Observer.start();
-
-    document.addEventListener("astro:page-load", startObserver);
-    if (document.readyState === "loading")
-      document.addEventListener("DOMContentLoaded", startObserver, {
-        once: true,
-      });
-    else startObserver();
-  </script>
 </BaseLayout>

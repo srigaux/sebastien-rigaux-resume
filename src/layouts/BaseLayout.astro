@@ -324,5 +324,17 @@ const structuredData = person && JSON.stringify({
   </head>
   <body>
     <slot />
+  <script>
+    import { Observer } from "tailwindcss-intersect/observer";
+
+    const startObserver = () => Observer.start();
+
+    document.addEventListener("astro:page-load", startObserver);
+    if (document.readyState === "loading")
+      document.addEventListener("DOMContentLoaded", startObserver, {
+        once: true,
+      });
+    else startObserver();
+  </script>
   </body>
 </html>
