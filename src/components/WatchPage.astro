@@ -179,7 +179,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
           <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t.topics}</h2>
           <div aria-hidden="true" class="mb-6 mt-5 h-0.5 w-12 -rotate-12 bg-accent"></div>
           <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">
-            {topics.map((item) => <a href={watchPath(locale, 1, item.uid)} aria-current={topic?.uid === item.uid ? "page" : undefined} class:list={["inline-block px-2 py-1.5 text-sm no-underline transition-colors lg:block", topic?.uid === item.uid ? "border-l-2 border-accent font-semibold text-accent" : "border-l-2 border-transparent text-muted hover:text-accent"]}>{item.name}</a>)}
+            {topics.map((item) => <a href={watchPath(locale, 1, item.uid)} aria-current={topic?.uid === item.uid ? "page" : undefined} class:list={["inline-block border px-2 py-1.5 text-sm no-underline transition-colors lg:block lg:border-0 lg:border-l-2", topic?.uid === item.uid ? "border-accent bg-accent/10 font-semibold text-accent lg:bg-transparent" : "border-transparent text-muted hover:text-accent"]}>{item.name}</a>)}
           </div>
         </aside>}
       </div>
