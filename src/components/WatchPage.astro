@@ -14,7 +14,6 @@ const t = {
   fr: {
     title: "Veille technologique",
     selectedLabel: "Liens sélectionnés",
-    linksFor: "Liens sur",
     intro: "Une sélection personnelle de liens, outils et idées que je souhaite garder et partager avec mes équipes.",
     all: "Tous les liens",
     topics: "Explorer par sujet",
@@ -23,7 +22,6 @@ const t = {
     next: "Suivant",
     page: "Page",
     of: "sur",
-    firstPage: "Première page",
     source: "Repéré via",
     external: "Ouvrir le lien original",
     selected: "Sélectionné le",
@@ -32,7 +30,6 @@ const t = {
   en: {
     title: "Tech watch",
     selectedLabel: "Selected links",
-    linksFor: "Links about",
     intro: "A personal selection of links, tools, and ideas I want to keep and share with my teams.",
     all: "All links",
     topics: "Explore topics",
@@ -41,7 +38,6 @@ const t = {
     next: "Next",
     page: "Page",
     of: "of",
-    firstPage: "First page",
     source: "Found via",
     external: "Open original link",
     selected: "Selected on",
@@ -58,8 +54,9 @@ const baseDescription = topic
 const description = page > 1 ? `${baseDescription} ${t.page} ${page} ${t.of} ${totalPages}.` : baseDescription;
 const previousPath = page > 1 ? watchPath(locale, page - 1, topic?.uid) : undefined;
 const nextPath = page < totalPages ? watchPath(locale, page + 1, topic?.uid) : undefined;
-const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
-  .filter((number) => totalPages <= 10 || number === 1 || number === totalPages || Math.abs(number - page) <= 2);
+// Keep the endpoints and one neighbor on each side: at most five page links.
+const pageNumbers = [...new Set([1, page - 1, page, page + 1, totalPages])]
+  .filter((number) => number >= 1 && number <= totalPages).sort((a, b) => a - b);
 const intro = topic?.description || (topic
   ? locale === "fr" ? `Mes liens sélectionnés autour de ${topic.name}.` : `My selected links about ${topic.name}.`
   : t.intro);
@@ -104,23 +101,29 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
 <BaseLayout locale={locale} title={title} description={description} canonicalPath={path} alternatePaths={alternatePaths} markdownPath={pageMarkdownPath(path)} previousPath={previousPath} nextPath={nextPath}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={alternatePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
-      <section class="border-b border-rule pb-16 pt-14 sm:pt-20 lg:pb-20 lg:pt-24">
+      {page === 1 ? <section class="pt-14 sm:pt-20 lg:pt-24">
         <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"></div>
-        <p class="mb-4 text-base font-semibold tracking-tight text-accent">{topic ? t.title : t.selectedLabel}</p>
-        <h1 class="max-w-5xl font-display text-[clamp(2.75rem,7vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink">{topic ? topic.name : t.title}</h1>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+          <p class="text-base font-semibold tracking-tight text-accent">{topic ? t.title : t.selectedLabel}</p>
+          {topic && <a href={watchPath(locale)} class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline">← {t.all}</a>}
+        </div>
+        <h1 class="max-w-5xl break-words font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">{topic ? topic.name : t.title}</h1>
         <p class="mt-7 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
-      </section>
+      </section> : <header class="pt-10 sm:pt-12 lg:pt-14">
+        {topic && <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+          <p class="text-base font-semibold tracking-tight text-accent">{t.title}</p>
+          <a href={watchPath(locale)} class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline">← {t.all}</a>
+        </div>}
+        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <h1 class="break-words font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{topic?.name || t.title}</h1>
+        <p class="shrink-0 text-sm text-muted">{t.page} {page} {t.of} {totalPages}</p>
+        </div>
+      </header>}
 
-      <div class="grid gap-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16 lg:pt-20">
+      <div class:list={["grid gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16", page === 1 ? "pt-8 sm:pt-10 lg:pt-12" : "pt-6 sm:pt-8"]}>
         <section aria-label={topic?.name || t.all} class="min-w-0">
-          <div class="mb-6 flex items-baseline justify-between gap-4">
-            <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{topic ? `${t.linksFor} ${topic.name}` : t.all}</h2>
-            {totalPages > 1 && <span class="text-sm text-muted">{t.page} {page} {t.of} {totalPages}</span>}
-          </div>
-          {topic && <a href={watchPath(locale)} class="mb-6 mr-4 inline-block text-sm font-medium text-accent hover:underline">← {t.all}</a>}
-          {page > 1 && <a href={watchPath(locale, 1, topic?.uid)} class="mb-6 inline-block text-sm font-medium text-accent hover:underline">{t.firstPage}</a>}
           {links.length === 0 && <p class="border-t border-rule py-12 text-muted">{t.empty}</p>}
-          <div class="divide-y divide-rule border-t border-rule">
+          <div class="divide-y divide-rule">
             {links.map((link) => {
               const icon = link.siteIcon || link.discoveredVia?.icon;
               const FormatIcon = formatIcons[link.format];
@@ -135,9 +138,9 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
                       <span aria-hidden="true">·</span>
                     <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="pointer-events-auto relative z-10 inline-block text-xs text-muted underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
                     </div>
-                    <h3 class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang={link.textLanguage}>
+                    <h2 class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang={link.textLanguage}>
                       {icon ? <img src={icon.url} alt="" width="24" height="24" loading="lazy" class="pointer-events-none mr-2 inline-block relative -top-0.5 size-6 object-contain align-middle" /> : <span aria-hidden="true" class="pointer-events-none mr-2 relative -top-0.5 inline-flex size-6 items-center justify-center rounded-full bg-accent align-middle font-sans text-sm font-bold text-paper">{monogram}</span>}<ExternalLink href={link.url} newTab stretched aria-label={`${link.title} — ${t.external}`} class="text-ink hover:text-accent">{link.title}</ExternalLink>
-                    </h3>
+                    </h2>
                     <p class="pointer-events-none mt-3 max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
                     <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
                       {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="pointer-events-auto relative z-10 border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
@@ -151,13 +154,16 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
               </article>;
             })}
           </div>
-          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm font-semibold">
-            {previousPath && <a href={previousPath} rel="prev" class="inline-flex min-h-11 items-center px-3 text-accent hover:underline">← {t.previous}</a>}
+          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold">
+            {previousPath ? <a href={previousPath} rel="prev" class="inline-flex min-h-11 items-center justify-self-start text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"><span aria-hidden="true">←&nbsp;</span>{t.previous}</a> : <span />}
+            <span class="whitespace-nowrap text-muted md:hidden" aria-label={`${t.page} ${page} ${t.of} ${totalPages}`}>{page} / {totalPages}</span>
+            <ol class="hidden items-center gap-1 md:flex">
             {pageNumbers.map((number, index) => <>
-              {index > 0 && number > pageNumbers[index - 1] + 1 && <span aria-hidden="true" class="px-1 text-muted">…</span>}
-              <a href={watchPath(locale, number, topic?.uid)} aria-label={`${t.page} ${number}`} aria-current={number === page ? "page" : undefined} class:list={["inline-flex min-h-11 min-w-11 items-center justify-center border px-2 hover:border-accent hover:text-accent", number === page ? "border-accent text-accent" : "border-rule text-muted"]}>{number}</a>
+              {index > 0 && number > pageNumbers[index - 1] + 1 && <li aria-hidden="true" class="px-1 text-muted">…</li>}
+              <li><a href={watchPath(locale, number, topic?.uid)} aria-label={`${t.page} ${number}`} aria-current={number === page ? "page" : undefined} class:list={["inline-flex min-h-11 min-w-11 items-center justify-center border px-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent hover:border-accent hover:text-accent", number === page ? "border-accent text-accent" : "border-rule text-muted"]}>{number}</a></li>
             </>)}
-            {nextPath && <a href={nextPath} rel="next" class="inline-flex min-h-11 items-center px-3 text-accent hover:underline">{t.next} →</a>}
+            </ol>
+            {nextPath ? <a href={nextPath} rel="next" class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t.next}<span aria-hidden="true">&nbsp;→</span></a> : <span />}
           </nav>}
         </section>
 

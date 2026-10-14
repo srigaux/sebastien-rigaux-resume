@@ -94,6 +94,14 @@ for (const [url] of sitemap) {
       assert.equal(collection?.url, url, `Missing CollectionPage: ${url}`);
       assert.equal(collection.mainEntity["@id"], list?.["@id"], `Invalid collection/list relationship: ${url}`);
       const pageNumber = Number(path.match(/\/page\/(\d+)$/)?.[1] ?? 1);
+      assert.equal((html.match(/<h1\b/g) ?? []).length, 1, `Expected one primary heading: ${url}`);
+      const paginationHtml = html.match(/<nav aria-label="Pagination"[\s\S]*?<\/nav>/)?.[0] ?? "";
+      const pageLinks = [...paginationHtml.matchAll(/aria-label="Page (\d+)"/g)].map(([, number]) => Number(number));
+      assert.ok(pageLinks.length <= 5, `Too many numbered pagination links: ${url}`);
+      if (paginationHtml) {
+        assert.ok(pageLinks.includes(1) && pageLinks.includes(pageNumber), `Missing first/current page in pagination: ${url}`);
+        assert.equal((paginationHtml.match(/aria-current="page"/g) ?? []).length, 1, `Expected one current page: ${url}`);
+      }
       const firstPage = `${origin}${path.replace(/\/page\/\d+$/, "")}`;
       assert.ok(html.includes(`href="${new URL(firstPage).pathname}"`), `Missing link to collection start: ${url}`);
       if (pageNumber > 1) {
