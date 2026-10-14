@@ -12,9 +12,11 @@ interface Props {
   href: string;
   class?: string;
   newTab?: boolean;
+  stretched?: boolean;
+  "aria-label"?: string;
 }
 
-const { href, class: className, newTab = false } = Astro.props;
+const { href, class: className, newTab = false, stretched = false, "aria-label": ariaLabel } = Astro.props;
 const hostname = href.startsWith("https://")
   ? new URL(href).hostname.replace(/^www\./, "")
   : "";
@@ -32,22 +34,21 @@ const Icon = href.startsWith("mailto:")
   : href.startsWith("tel:")
     ? Phone
     : (BrandIcon ?? ArrowUpRight);
+const indicatorClass = "pointer-events-none absolute bottom-[0.18em] start-[calc(100%+0.25em)] inline-flex -translate-x-[0.15em] translate-y-[0.15em] opacity-0 transition-[opacity,translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:transition-none";
+const underlineClass = "relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none";
 ---
 
 <a
   href={href}
+  aria-label={ariaLabel}
   target={newTab ? "_blank" : undefined}
   rel={newTab ? "noopener noreferrer" : undefined}
   class:list={[
-    "group relative no-underline before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] hover:before:origin-left hover:before:scale-x-100 focus-visible:before:origin-left focus-visible:before:scale-x-100 motion-reduce:before:transition-none after:absolute after:-inset-x-1 after:-inset-y-2 after:content-['']",
+    "group no-underline",
+    !stretched && "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] hover:before:origin-left hover:before:scale-x-100 focus-visible:before:origin-left focus-visible:before:scale-x-100 motion-reduce:before:transition-none",
+    stretched ? "after:absolute after:inset-0 after:z-0 after:content-['']" : "relative after:absolute after:-inset-x-1 after:-inset-y-2 after:content-['']",
     className,
   ]}
 >
-  <slot />
-  <span
-    class="pointer-events-none absolute bottom-[0.18em] start-[calc(100%+0.25em)] inline-flex -translate-x-[0.15em] translate-y-[0.15em] opacity-0 transition-[opacity,translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 motion-reduce:translate-x-0 motion-reduce:translate-y-0 motion-reduce:transition-none"
-    aria-hidden="true"
-  >
-    <Icon class="size-[1.2em]" />
-  </span>
+  {stretched ? <span class={underlineClass}><slot /><span class={indicatorClass} aria-hidden="true"><Icon class="size-[1.2em]" /></span></span> : <><slot /><span class={indicatorClass} aria-hidden="true"><Icon class="size-[1.2em]" /></span></>}
 </a>

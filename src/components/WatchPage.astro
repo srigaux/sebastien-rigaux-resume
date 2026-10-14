@@ -1,6 +1,9 @@
 ---
+import { FileText, Video, GitFork, Rocket, BookOpen, Wrench, Ellipsis } from "@lucide/astro";
+import type { WatchFormat } from "@/lib/watch-model";
 import { pageMarkdownPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import ExternalLink from "@/components/ExternalLink.astro";
 import Header from "@/components/Header.astro";
 import { WATCH_PAGE_SIZE, watchPath, watchLinkTarget } from "@/lib/watch-model";
 import { renderSummaryMarkdown } from "@/lib/watch-markdown";
@@ -74,6 +77,7 @@ const schema = {
     },
   ],
 };
+const formatIcons = { Article: FileText, Video, Repository: GitFork, Release: Rocket, Documentation: BookOpen, Tool: Wrench, Other: Ellipsis } satisfies Record<WatchFormat, typeof FileText>;
 const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 ---
 
@@ -98,32 +102,30 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
           <div class="divide-y divide-rule border-t border-rule">
             {links.map((link) => {
               const icon = link.siteIcon || link.discoveredVia?.icon;
+              const FormatIcon = formatIcons[link.format];
+              const sourceLanguageTitle = locale === "fr" ? `Langue de la source : ${link.sourceLanguage === "EN" ? "anglais" : "français"}` : `Source language: ${link.sourceLanguage === "FR" ? "French" : "English"}`;
               const monogram = new URL(link.url).hostname.replace(/^www\./, "").charAt(0).toUpperCase();
-              return <article class="py-8 sm:py-10">
-                <div class="flex gap-4 sm:gap-5">
-                  <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden border border-rule bg-ink/5 text-lg font-semibold text-accent">
-                    {icon ? <img src={icon.url} alt="" loading="lazy" class="size-8 object-contain" /> : <span aria-hidden="true">{monogram}</span>}
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+              return <article class="relative isolate py-8 sm:py-10">
+                <div>
+                    <div class="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                       <time datetime={link.selectedOn} aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}>{dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}</time>
-                      <span aria-hidden="true">·</span><span>{link.format}</span>
-                      {link.sourceLanguage && <><span aria-hidden="true">·</span><span class="border border-rule px-1.5 py-0.5 font-semibold tracking-wide" aria-label={locale === "fr" ? `Langue de la source : ${link.sourceLanguage}` : `Source language: ${link.sourceLanguage}`}>{link.sourceLanguage}</span></>}
+                      <span aria-hidden="true">·</span><span class="inline-flex items-center gap-1.5"><FormatIcon size={14} class="shrink-0" aria-hidden="true" />{link.format}</span>
+                      {link.sourceLanguage && link.sourceLanguage.toLowerCase() !== locale && <><span aria-hidden="true">·</span><span class="border border-rule px-1.5 py-0.5 font-semibold tracking-wide" title={sourceLanguageTitle} aria-label={sourceLanguageTitle}>{link.sourceLanguage}</span></>}
+                      <span aria-hidden="true">·</span>
+                    <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="pointer-events-auto relative z-10 inline-block text-xs text-muted underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
                     </div>
-                    <h3 class="font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang={link.textLanguage}>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`${link.title} — ${t.external}`} class="text-ink no-underline decoration-accent decoration-2 underline-offset-4 hover:text-accent hover:underline">{link.title} <span aria-hidden="true" class="inline-block text-sm text-accent">↗</span></a>
+                    <h3 class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang={link.textLanguage}>
+                      {icon ? <img src={icon.url} alt="" width="24" height="24" loading="lazy" class="pointer-events-none mr-2 inline-block relative -top-0.5 size-6 object-contain align-middle" /> : <span aria-hidden="true" class="pointer-events-none mr-2 relative -top-0.5 inline-flex size-6 items-center justify-center rounded-full bg-accent align-middle font-sans text-sm font-bold text-paper">{monogram}</span>}<ExternalLink href={link.url} newTab stretched aria-label={`${link.title} — ${t.external}`} class="text-ink hover:text-accent">{link.title}</ExternalLink>
                     </h3>
-                    <p class="mt-3 max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
-                    <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="mt-3 inline-block text-xs text-muted underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
-                    <div class="mt-4 flex flex-wrap items-center gap-2">
-                      {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
+                    <p class="pointer-events-none mt-3 max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
+                    <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
+                      {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="pointer-events-auto relative z-10 border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
                     </div>
-                    {(link.credit || link.discoveredVia) && <p class="mt-4 text-xs text-muted">
+                    {(link.credit || link.discoveredVia) && <p class="pointer-events-none relative z-10 mt-4 text-xs text-muted">
                       {link.credit && <span lang="en">{link.credit}</span>}
                       {link.credit && link.discoveredVia && <span aria-hidden="true"> · </span>}
-                      {link.discoveredVia && <span>{t.source} <a href={link.discoveredVia.url} target="_blank" rel="noopener noreferrer" class="underline decoration-rule hover:text-accent">{link.discoveredVia.name}</a></span>}
+                      {link.discoveredVia && <span>{t.source} <a href={link.discoveredVia.url} target="_blank" rel="noopener noreferrer" class="pointer-events-auto relative z-10 underline decoration-rule hover:text-accent">{link.discoveredVia.name}</a></span>}
                     </p>}
-                  </div>
                 </div>
               </article>;
             })}
