@@ -23,6 +23,7 @@ const t = {
     next: "Suivant",
     page: "Page",
     of: "sur",
+    firstPage: "Première page",
     source: "Repéré via",
     external: "Ouvrir le lien original",
     selected: "Sélectionné le",
@@ -40,6 +41,7 @@ const t = {
     next: "Next",
     page: "Page",
     of: "of",
+    firstPage: "First page",
     source: "Found via",
     external: "Open original link",
     selected: "Selected on",
@@ -49,23 +51,41 @@ const t = {
 const path = watchPath(locale, page, topic?.uid);
 const alternatePaths = { fr: watchPath("fr", page, topic?.uid), en: watchPath("en", page, topic?.uid) };
 const heading = topic ? `${topic.name} · ${t.title}` : t.title;
-const description = topic
+const title = page > 1 ? `${heading} · ${t.page} ${page}` : heading;
+const baseDescription = topic
   ? `${topic.name}: ${locale === "fr" ? "liens sélectionnés par Sébastien Rigaux" : "links selected by Sébastien Rigaux"}.`
   : t.intro;
+const description = page > 1 ? `${baseDescription} ${t.page} ${page} ${t.of} ${totalPages}.` : baseDescription;
+const previousPath = page > 1 ? watchPath(locale, page - 1, topic?.uid) : undefined;
+const nextPath = page < totalPages ? watchPath(locale, page + 1, topic?.uid) : undefined;
+const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
+  .filter((number) => totalPages <= 10 || number === 1 || number === totalPages || Math.abs(number - page) <= 2);
 const intro = topic?.description || (topic
   ? locale === "fr" ? `Mes liens sélectionnés autour de ${topic.name}.` : `My selected links about ${topic.name}.`
   : t.intro);
 const site = Astro.site!;
 const canonical = new URL(path, site).href;
+const breadcrumbs = [
+  { name: t.title, path: watchPath(locale) },
+  ...(topic ? [{ name: topic.name, path: watchPath(locale, 1, topic.uid) }] : []),
+  ...(page > 1 ? [{ name: `${t.page} ${page}`, path }] : []),
+];
 const schema = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "CollectionPage", "@id": `${canonical}#webpage`, url: canonical,
-      name: heading, description, inLanguage: locale,
+      name: title, description, inLanguage: locale,
       isPartOf: { "@id": new URL("/#website", site).href },
       mainEntity: { "@id": `${canonical}#links` },
+      ...(breadcrumbs.length > 1 && { breadcrumb: { "@id": `${canonical}#breadcrumb` } }),
     },
+    ...(breadcrumbs.length > 1 ? [{
+      "@type": "BreadcrumbList", "@id": `${canonical}#breadcrumb`,
+      itemListElement: breadcrumbs.map((entry, index) => ({
+        "@type": "ListItem", position: index + 1, name: entry.name, item: new URL(entry.path, site).href,
+      })),
+    }] : []),
     {
       "@type": "ItemList", "@id": `${canonical}#links`, numberOfItems: links.length,
       itemListOrder: "https://schema.org/ItemListOrderDescending",
@@ -81,7 +101,7 @@ const formatIcons = { Article: FileText, Video, Repository: GitFork, Release: Ro
 const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 ---
 
-<BaseLayout locale={locale} title={heading} description={description} canonicalPath={path} alternatePaths={alternatePaths} markdownPath={pageMarkdownPath(path)}>
+<BaseLayout locale={locale} title={title} description={description} canonicalPath={path} alternatePaths={alternatePaths} markdownPath={pageMarkdownPath(path)} previousPath={previousPath} nextPath={nextPath}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={alternatePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
       <section class="border-b border-rule pb-16 pt-14 sm:pt-20 lg:pb-20 lg:pt-24">
@@ -97,7 +117,8 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
             <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{topic ? `${t.linksFor} ${topic.name}` : t.all}</h2>
             {totalPages > 1 && <span class="text-sm text-muted">{t.page} {page} {t.of} {totalPages}</span>}
           </div>
-          {topic && <a href={watchPath(locale)} class="mb-6 inline-block text-sm font-medium text-accent hover:underline">← {t.all}</a>}
+          {topic && <a href={watchPath(locale)} class="mb-6 mr-4 inline-block text-sm font-medium text-accent hover:underline">← {t.all}</a>}
+          {page > 1 && <a href={watchPath(locale, 1, topic?.uid)} class="mb-6 inline-block text-sm font-medium text-accent hover:underline">{t.firstPage}</a>}
           {links.length === 0 && <p class="border-t border-rule py-12 text-muted">{t.empty}</p>}
           <div class="divide-y divide-rule border-t border-rule">
             {links.map((link) => {
@@ -130,10 +151,13 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
               </article>;
             })}
           </div>
-          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 flex items-center justify-between text-sm font-semibold">
-            {page > 1 ? <a href={watchPath(locale, page - 1, topic?.uid)} class="text-accent hover:underline">← {t.previous}</a> : <span />}
-            <span class="text-muted">{page} / {totalPages}</span>
-            {page < totalPages ? <a href={watchPath(locale, page + 1, topic?.uid)} class="text-accent hover:underline">{t.next} →</a> : <span />}
+          {totalPages > 1 && <nav aria-label="Pagination" class="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm font-semibold">
+            {previousPath && <a href={previousPath} rel="prev" class="inline-flex min-h-11 items-center px-3 text-accent hover:underline">← {t.previous}</a>}
+            {pageNumbers.map((number, index) => <>
+              {index > 0 && number > pageNumbers[index - 1] + 1 && <span aria-hidden="true" class="px-1 text-muted">…</span>}
+              <a href={watchPath(locale, number, topic?.uid)} aria-label={`${t.page} ${number}`} aria-current={number === page ? "page" : undefined} class:list={["inline-flex min-h-11 min-w-11 items-center justify-center border px-2 hover:border-accent hover:text-accent", number === page ? "border-accent text-accent" : "border-rule text-muted"]}>{number}</a>
+            </>)}
+            {nextPath && <a href={nextPath} rel="next" class="inline-flex min-h-11 items-center px-3 text-accent hover:underline">{t.next} →</a>}
           </nav>}
         </section>
 

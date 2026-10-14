@@ -60,6 +60,17 @@ for (const [url] of sitemap) {
   const path = new URL(url).pathname;
   const file = path === "/" ? "index.html" : `${path.slice(1)}.html`;
   const html = await readFile(new URL(file, dist), "utf8");
+  assert.ok(/<meta name="robots" content="max-image-preview:large"/.test(html), `Large image previews are not allowed: ${url}`);
+  const head = html.match(/<head[\s>][\s\S]*?<\/head>/i)?.[0] ?? "";
+  const headNavigation = [...head.matchAll(/<link rel="(prev|next)" href="([^"]+)"/g)]
+    .map(([, rel, target]) => [rel, target]).sort();
+  const visibleNavigation = [...html.matchAll(/<a href="([^"]+)" rel="(prev|next)"/g)]
+    .map(([, target, rel]) => [rel, new URL(target, origin).href]).sort();
+  assert.deepEqual(headNavigation, visibleNavigation, `Head/visible navigation mismatch: ${url}`);
+  for (const [, target] of headNavigation) {
+    assert.notEqual(target, url, `Navigation points to itself: ${url}`);
+    assert.ok(sitemap.has(target), `Navigation target is not an indexable page: ${target}`);
+  }
   for (const [, href] of html.matchAll(/href="([^"#]+)"/g)) {
     if (href.startsWith("/") && !href.startsWith("//")) {
       const target = new URL(href.replace(/&amp;/g, "&"), origin).pathname;
@@ -82,6 +93,20 @@ for (const [url] of sitemap) {
       const list = schemas.find((node) => node["@type"] === "ItemList");
       assert.equal(collection?.url, url, `Missing CollectionPage: ${url}`);
       assert.equal(collection.mainEntity["@id"], list?.["@id"], `Invalid collection/list relationship: ${url}`);
+      const pageNumber = Number(path.match(/\/page\/(\d+)$/)?.[1] ?? 1);
+      const firstPage = `${origin}${path.replace(/\/page\/\d+$/, "")}`;
+      assert.ok(html.includes(`href="${new URL(firstPage).pathname}"`), `Missing link to collection start: ${url}`);
+      if (pageNumber > 1) {
+        assert.ok(html.match(/<title>(.*?)<\/title>/)?.[1].includes(`Page ${pageNumber}`), `Missing page number in title: ${url}`);
+        assert.ok(headNavigation.some(([rel]) => rel === "prev"), `Missing previous page: ${url}`);
+      }
+      if (path.includes("/tags/") || pageNumber > 1) {
+        const breadcrumb = schemas.find((node) => node["@type"] === "BreadcrumbList");
+        assert.equal(collection.breadcrumb?.["@id"], breadcrumb?.["@id"], `Missing collection breadcrumb: ${url}`);
+        assert.ok(breadcrumb?.itemListElement.length >= 2, `Incomplete collection breadcrumb: ${url}`);
+        assert.equal(breadcrumb.itemListElement.at(-1).item, url, `Breadcrumb does not end on this page: ${url}`);
+        for (const entry of breadcrumb.itemListElement) assert.ok(sitemap.has(entry.item), `Unknown breadcrumb target: ${entry.item}`);
+      }
       const visibleLinks = [...html.matchAll(/href="([^"<>]+)" aria-label="Perm(?:alien|alink) :/g)].map(([, path]) => new URL(path, origin).href);
       assert.equal(list.numberOfItems, visibleLinks.length, `ItemList count differs from visible links: ${url}`);
       assert.deepEqual(list.itemListElement.map((entry) => entry.item.url), visibleLinks, `ItemList URLs/order differ from visible links: ${url}`);

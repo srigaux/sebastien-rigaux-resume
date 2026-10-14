@@ -6,16 +6,18 @@ import { watchLinkPath, watchLinkTarget, watchPath, type WatchLink } from "@/lib
 import { renderSummaryMarkdown, summaryText } from "@/lib/watch-markdown";
 import type { Locale } from "@/types";
 
-interface Props { locale: Locale; link: WatchLink }
-const { locale, link } = Astro.props;
+interface Props { locale: Locale; link: WatchLink; previousLink?: WatchLink; nextLink?: WatchLink }
+const { locale, link, previousLink, nextLink } = Astro.props;
 const t = locale === "fr" ? {
   markdown: "Version Markdown de cette page", watch: "Veille technologique", original: "Consulter la ressource originale", selected: "Sélectionné le",
   published: "Publication de la ressource", updated: "Mise à jour de la fiche", credit: "Crédit",
   discovered: "Repéré via", topics: "Sujets", back: "Retour à la veille", sourceLanguage: "Langue de la source",
+  navigation: "Parcourir les liens de la veille", previous: "Lien précédent", next: "Lien suivant",
 } : {
   markdown: "Markdown version of this page", watch: "Tech watch", original: "Open the original resource", selected: "Selected on",
   published: "Resource publication", updated: "Entry updated", credit: "Credit",
   discovered: "Found via", topics: "Topics", back: "Back to tech watch", sourceLanguage: "Source language",
+  navigation: "Browse tech watch links", previous: "Previous link", next: "Next link",
 };
 const path = watchLinkPath(locale, link.uid);
 const languagePaths = { fr: watchLinkTarget(link, "fr"), en: watchLinkTarget(link, "en") };
@@ -44,7 +46,7 @@ const schema = {
   ],
 };
 ---
-<BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={pageMarkdownPath(path)} modifiedAt={link.updatedAt} socialImage={link.image}>
+<BaseLayout locale={locale} title={link.title} description={description} canonicalPath={path} alternatePaths={link.alternatePaths} markdownPath={pageMarkdownPath(path)} modifiedAt={link.updatedAt} socialImage={link.image} previousPath={previousLink && watchLinkTarget(previousLink, locale)} nextPath={nextLink && watchLinkTarget(nextLink, locale)}>
   <Header locale={locale} firstName="Sébastien" lastName="Rigaux" page="watch" languagePaths={languagePaths} />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
     <nav aria-label={locale === "fr" ? "Fil d’Ariane" : "Breadcrumb"} class="mb-10 text-sm text-muted">
@@ -72,6 +74,16 @@ const schema = {
         <h2 class="text-sm font-semibold text-ink">{t.topics}</h2>
         <div class="mt-3 flex flex-wrap gap-2">{link.topics.map((topic) => <a href={watchPath(locale, 1, topic.uid)} class="inline-flex min-h-11 items-center border border-rule px-3 py-2 text-sm text-muted hover:border-accent hover:text-accent">{topic.name}</a>)}</div>
       </section>
+      {(previousLink || nextLink) && <nav aria-label={t.navigation} class="mt-12 grid gap-6 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10">
+        {previousLink && <a href={watchLinkTarget(previousLink, locale)} rel="prev" class="group min-w-0 py-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+          <span class="block text-sm text-muted"><span aria-hidden="true">← </span>{t.previous}</span>
+          <span class="mt-2 block break-words text-base font-semibold leading-relaxed text-ink group-hover:text-accent group-hover:underline">{previousLink.title}</span>
+        </a>}
+        {nextLink && <a href={watchLinkTarget(nextLink, locale)} rel="next" class="group min-w-0 py-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:col-start-2 sm:text-right">
+          <span class="block text-sm text-muted">{t.next}<span aria-hidden="true"> →</span></span>
+          <span class="mt-2 block break-words text-base font-semibold leading-relaxed text-ink group-hover:text-accent group-hover:underline">{nextLink.title}</span>
+        </a>}
+      </nav>}
     </article>
     <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, "\\u003c")} />
   </main>

@@ -35,7 +35,8 @@ export async function getWatchStaticPaths(locale: Locale) {
 
 export async function getWatchLinkStaticPaths(locale: Locale) {
   const { links } = await getWatchData(locale);
-  return links.filter((link) => link.locale === locale).map((link) => ({
-    params: { uid: link.uid }, props: { locale, link },
-  }));
+  return links.flatMap((link, index) => link.locale === locale ? [{
+    params: { uid: link.uid },
+    props: { locale, link, previousLink: links[index - 1], nextLink: links[index + 1] },
+  }] : []);
 }

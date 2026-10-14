@@ -15,6 +15,8 @@ interface Props {
   alternatePaths?: Partial<Record<Locale, string>>;
   markdownPath?: string;
   modifiedAt?: string;
+  previousPath?: string;
+  nextPath?: string;
   socialImage?: { url: string; alt: string; width?: number; height?: number };
 }
 
@@ -28,6 +30,8 @@ const {
   alternatePaths,
   markdownPath,
   modifiedAt,
+  previousPath,
+  nextPath,
   socialImage,
 } = Astro.props;
 const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
@@ -287,7 +291,10 @@ const structuredData = person && JSON.stringify({
       <meta name="robots" content="noindex, follow" />
     ) : (
       <>
+        <meta name="robots" content="max-image-preview:large" />
         <link rel="canonical" href={canonical} />
+        {previousPath && <link rel="prev" href={new URL(previousPath, site).href} />}
+        {nextPath && <link rel="next" href={new URL(nextPath, site).href} />}
         {Object.entries(languagePaths).map(([lang, path]) => <link rel="alternate" hreflang={lang} href={new URL(path, site).href} />)}
         <link rel="alternate" hreflang="x-default" href={new URL(languagePaths.fr ?? languagePaths.en ?? canonical, site).href} />
         {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}

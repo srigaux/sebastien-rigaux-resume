@@ -33,6 +33,34 @@ Chaque index, archive thématique et page de pagination expose un `CollectionPag
 
 Les dimensions des images Prismic sont conservées et rendues sur les fiches pour réserver leur place avant chargement. Les métadonnées Open Graph et Twitter utilisent l'image de la ressource lorsqu'elle existe, sinon l'image de marque du site dans la langue de la page. Ces balises ne garantissent ni une indexation ni un résultat enrichi.
 
+## Navigation et SEO — 14 octobre 2026
+
+Les fiches proposent les liens précédent et suivant dans l'ordre de la veille (`selected_on` décroissant, puis date de première publication et identifiant). La navigation respecte les chemins réellement publiés, avec repli vers l'autre langue si nécessaire. Les mêmes cibles sont déclarées dans le `<head>` et dans les liens visibles avec `rel="prev"` / `rel="next"`. Les extrémités n'ont que le voisin disponible ; la navigation ne boucle pas.
+
+Ces relations sont aussi présentes sur les index et archives paginés. Google ne les utilise plus dans le `<head>` ; elles sont conservées pour les autres consommateurs. Le maillage repose sur de vrais liens HTML, les numéros de page et un retour vers la première page de la collection. Jusqu'à dix pages, tous les numéros sont affichés ; au-delà, les extrémités et les voisins sont conservés. Chaque page garde sa propre canonical. À partir de la page 2, le titre et la description indiquent le numéro de page pour distinguer les résultats ; Google accepte aussi des titres identiques dans une série paginée.
+
+Les archives thématiques et pages paginées disposent d'un `BreadcrumbList` lié au `CollectionPage`. Toutes les pages indexables autorisent les grands aperçus d'images via `max-image-preview:large` ; les pages `noindex` conservent leur exclusion. Cette autorisation ne garantit ni un grand aperçu ni une présence dans Discover.
+
+Le validateur du build vérifie la concordance des voisins entre le `<head>` et les liens visibles, leur présence dans le sitemap, le retour à la première page, les numéros dans les titres et les cibles des fils d'Ariane, en plus des contrôles existants.
+
+Références : [pagination Google](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading), [directives robots](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag), [fils d'Ariane](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb).
+
+### Actions à terminer sur l'hébergement et dans Search Console
+
+Vérifications publiques effectuées le 14 octobre 2026 avec `curl -I` ; elles décrivent le déploiement en ligne, pas le nouveau build local :
+
+- `/en/` et `/veille/` renvoient `404`. Configurer les redirections permanentes des anciennes URL avec slash vers les URL sans slash, en préservant les paramètres et la racine `/`. Vérifier aussi les anciennes archives et fiches après activation.
+- `/fr` renvoie `200`, avec le mécanisme de redirection HTML existant. Ajouter une redirection HTTP permanente vers `/`.
+- `/veille.html` renvoie `200`. Consolider les variantes `.html` par une redirection permanente vers la même URL sans extension, en excluant `/404.html` et en traitant `/index.html` vers `/`. Vérifier ensuite l'absence de boucle avec GitHub Pages.
+- `/veille.md` renvoie `200` sans en-tête `Link` canonical. Activer les règles Cloudflare décrites ci-dessous, puis contrôler également les autres exports.
+- `/robots.txt` renvoie `200` avec `Cache-Control: max-age=31536000`. Réduire la durée de cache navigateur pour ce fichier et purger le cache après une modification.
+- Une fiche inconnue (`/veille/liens/seo-audit-missing-20261014`) renvoie bien `404` : conserver ce statut.
+- Le client HTTP Python a reçu des `403` sur ces contrôles alors que `curl` a obtenu les statuts ci-dessus. Ce constat ne prouve pas un blocage de Googlebot. Vérifier les robots reconnus dans Cloudflare et utiliser le test d'URL en direct de Search Console pour confirmer leur accès.
+
+Après déploiement, soumettre `https://sebastien.rigaux.be/sitemap-index.xml` dans Google Search Console et Bing Webmaster Tools, puis inspecter une fiche FR, sa traduction EN, une fiche sans traduction, une archive et une page 2. Contrôler les exclusions d'indexation, la canonical choisie par Google et les Core Web Vitals. Aucun accès à ces comptes ni mesure de trafic ou de performance réelle n'a été effectué pendant cette modification.
+
+Pour améliorer le classement au-delà de ces réglages techniques, enrichir progressivement les résumés existants avec des observations personnelles utiles (raison de la sélection, contexte d'utilisation ou limites vérifiées) et les descriptions des sujets. Ne pas inventer d'expérience, attribuer le contenu original au curateur ou générer du texte seulement pour allonger les fiches. Le contenu Prismic n'a pas été modifié par cette optimisation. Voir les [recommandations de Google sur le contenu utile](https://developers.google.com/search/docs/fundamentals/creating-helpful-content).
+
 ## Canonical HTTP des exports Markdown — activation Cloudflare
 
 Le fichier [cloudflare-markdown-canonicals.json](cloudflare-markdown-canonicals.json) contient trois règles de modification des en-têtes de réponse : CV français, CV anglais et veille. Elles ajoutent `Link: <URL HTML>; rel="canonical"` sans écraser les autres relations `Link`. Elles ne modifient ni les URL ni le corps des exports. Les paramètres de requête sont ignorés dans la canonical, et `llms-full.txt` reste hors de ces règles car il rassemble plusieurs pages.
