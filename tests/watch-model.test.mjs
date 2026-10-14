@@ -113,8 +113,13 @@ test("pagination and bilingual archive paths stay aligned", () => {
     [],
     Array.from({ length: 31 }, (_, index) => link(String(index + 1))),
   );
-  assert.equal(paginateLinks(data.links, 1).items.length, 30);
-  assert.equal(paginateLinks(data.links, 2).items.length, 1);
+  assert.equal(paginateLinks(data.links, 1).items.length, 20);
+  assert.equal(paginateLinks(data.links, 2).items.length, 11);
+  assert.equal(paginateLinks(data.links, 1).totalPages, 2);
+  assert.deepEqual(
+    [...paginateLinks(data.links, 1).items, ...paginateLinks(data.links, 2).items],
+    data.links,
+  );
   assert.equal(watchPath("fr", 2, "react"), "/veille/tags/react/page/2");
   assert.equal(watchPath("en", 2, "react"), "/en/tech-watch/tags/react/page/2");
 });

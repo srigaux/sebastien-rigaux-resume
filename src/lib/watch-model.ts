@@ -1,6 +1,6 @@
 import type { Locale } from "@/types";
 
-export const WATCH_PAGE_SIZE = 30;
+export const WATCH_PAGE_SIZE = 20;
 export const WATCH_FORMATS = [
   "Article",
   "Video",
