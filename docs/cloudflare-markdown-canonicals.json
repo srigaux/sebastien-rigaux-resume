@@ -1,0 +1,52 @@
+{
+  "name": "Markdown HTML canonicals",
+  "kind": "zone",
+  "phase": "http_response_headers_transform",
+  "rules": [
+    {
+      "ref": "markdown_cv_fr",
+      "description": "markdown_cv_fr",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path eq \"/fr.md\")",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "link": {
+            "operation": "add",
+            "value": "<https://sebastien.rigaux.be/>; rel=\"canonical\""
+          }
+        }
+      },
+      "enabled": true
+    },
+    {
+      "ref": "markdown_cv_en",
+      "description": "markdown_cv_en",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path eq \"/en.md\")",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "link": {
+            "operation": "add",
+            "value": "<https://sebastien.rigaux.be/en>; rel=\"canonical\""
+          }
+        }
+      },
+      "enabled": true
+    },
+    {
+      "ref": "markdown_watch",
+      "description": "Canonical HTML for tech watch Markdown exports",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and ends_with(http.request.uri.path, \".md\") and (http.request.uri.path in {\"/veille.md\" \"/en/tech-watch.md\"} or starts_with(http.request.uri.path, \"/veille/\") or starts_with(http.request.uri.path, \"/en/tech-watch/\")))",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "link": {
+            "operation": "add",
+            "expression": "concat(\"<https://sebastien.rigaux.be\", substring(http.request.uri.path, 0, -3), \">; rel=\\\"canonical\\\"\")"
+          }
+        }
+      },
+      "enabled": true
+    }
+  ]
+}

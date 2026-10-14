@@ -69,6 +69,28 @@ for (const [url] of sitemap) {
   if (path === "/veille" || path.startsWith("/veille/") || path === "/en/tech-watch" || path.startsWith("/en/tech-watch/")) {
     await readFile(new URL(`${path.slice(1)}.md`, dist), "utf8");
     assert.ok(html.includes(`href="${url}.md"`), `Missing sibling Markdown alternate: ${url}`);
+    assert.ok(/property="og:image" content="https:\/\//.test(html), `Missing social image: ${url}`);
+    assert.ok(/name="twitter:image" content="https:\/\//.test(html), `Missing Twitter image: ${url}`);
+    if (metadata.has(url)) {
+      for (const [, figure] of html.matchAll(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g)) {
+        assert.ok(/width="[1-9]\d*(?:\.\d+)?"/.test(figure) && /height="[1-9]\d*(?:\.\d+)?"/.test(figure), `Missing intrinsic image dimensions: ${url}`);
+      }
+    } else {
+      const schemas = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+        .flatMap(([, json]) => JSON.parse(json)["@graph"] ?? []);
+      const collection = schemas.find((node) => node["@type"] === "CollectionPage");
+      const list = schemas.find((node) => node["@type"] === "ItemList");
+      assert.equal(collection?.url, url, `Missing CollectionPage: ${url}`);
+      assert.equal(collection.mainEntity["@id"], list?.["@id"], `Invalid collection/list relationship: ${url}`);
+      const visibleLinks = [...html.matchAll(/href="([^"<>]+)" aria-label="Perm(?:alien|alink) :/g)].map(([, path]) => new URL(path, origin).href);
+      assert.equal(list.numberOfItems, visibleLinks.length, `ItemList count differs from visible links: ${url}`);
+      assert.deepEqual(list.itemListElement.map((entry) => entry.item.url), visibleLinks, `ItemList URLs/order differ from visible links: ${url}`);
+      for (const [index, entry] of list.itemListElement.entries()) {
+        assert.ok(metadata.has(entry.item.url), `Unknown ItemList target: ${entry.item.url}`);
+        assert.equal(entry.item.inLanguage, new URL(entry.item.url).pathname.startsWith("/en/") ? "en" : "fr");
+        if (index) assert.equal(entry.position, list.itemListElement[index - 1].position + 1);
+      }
+    }
     watchPages++;
   }
 }

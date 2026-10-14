@@ -15,6 +15,7 @@ interface Props {
   alternatePaths?: Partial<Record<Locale, string>>;
   markdownPath?: string;
   modifiedAt?: string;
+  socialImage?: { url: string; alt: string; width?: number; height?: number };
 }
 
 const {
@@ -27,13 +28,19 @@ const {
   alternatePaths,
   markdownPath,
   modifiedAt,
+  socialImage,
 } = Astro.props;
 const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
 const canonical = new URL(canonicalPath ?? localeHomePath(locale), site).href;
 const languagePaths = alternatePaths ?? { fr: localeHomePath("fr"), en: localeHomePath("en") };
 const markdownUrl = (markdownPath || person) ? new URL(markdownPath ?? pageMarkdownPath(localeHomePath(locale)), site).href : undefined;
 const llmsUrl = new URL("/llms.txt", site).href;
-const imageUrl = new URL(`/og-image-${locale}.png`, site).href;
+const shareImage = socialImage ?? {
+  url: new URL(`/og-image-${locale}.png`, site).href,
+  width: 1200, height: 630,
+  alt: locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead",
+};
+const imageUrl = new URL(shareImage.url, site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
 const personId = new URL("/#person", site).href;
 const websiteId = new URL("/#website", site).href;
@@ -293,17 +300,17 @@ const structuredData = person && JSON.stringify({
         <meta property="og:title" content={fullTitle} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        {person && <meta property="og:image" content={imageUrl} />}
-        {person && <meta property="og:image:type" content="image/png" />}
-        {person && <meta property="og:image:width" content="1200" />}
-        {person && <meta property="og:image:height" content="630" />}
-        {person && <meta property="og:image:alt" content={locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead"} />}
-        <meta name="twitter:card" content={person ? "summary_large_image" : "summary"} />
+        <meta property="og:image" content={imageUrl} />
+        {!socialImage && <meta property="og:image:type" content="image/png" />}
+        {shareImage.width && <meta property="og:image:width" content={String(shareImage.width)} />}
+        {shareImage.height && <meta property="og:image:height" content={String(shareImage.height)} />}
+        <meta property="og:image:alt" content={shareImage.alt} />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:creator" content="@rigauxse" />
         <meta name="twitter:title" content={fullTitle} />
         <meta name="twitter:description" content={description} />
-        {person && <meta name="twitter:image" content={imageUrl} />}
-        {person && <meta name="twitter:image:alt" content={locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead"} />}
+        <meta name="twitter:image" content={imageUrl} />
+        <meta name="twitter:image:alt" content={shareImage.alt} />
         {structuredData && <script type="application/ld+json" set:html={structuredData} />}
       </>
     )}

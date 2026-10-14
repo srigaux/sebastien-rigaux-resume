@@ -6,7 +6,7 @@ import type {
   DiscoverySourceDocument,
   TopicDocument,
 } from "@prismic-models/prismicio-types";
-import { buildLocalizedWatchData, type WatchData, type WatchImage, type WatchTranslationDraft, type WatchSource, type WatchTopic } from "@/lib/watch-model";
+import { buildLocalizedWatchData, normalizeWatchImage as image, type WatchData, type WatchTranslationDraft, type WatchSource, type WatchTopic } from "@/lib/watch-model";
 
 const client = prismic.createClient(config.repositoryName);
 let cached: Promise<Record<Locale, WatchData>> | undefined;
@@ -15,11 +15,6 @@ function webUrl(field: unknown): string {
   return field && typeof field === "object" && "url" in field && typeof field.url === "string"
     ? field.url
     : "";
-}
-
-function image(field: unknown): WatchImage | undefined {
-  if (!field || typeof field !== "object" || !("url" in field) || typeof field.url !== "string") return;
-  return { url: field.url, alt: "alt" in field && typeof field.alt === "string" ? field.alt : "" };
 }
 
 function relationId(field: unknown): string | undefined {

@@ -12,7 +12,22 @@ export const WATCH_FORMATS = [
 ] as const;
 
 export type WatchFormat = (typeof WATCH_FORMATS)[number];
-export type WatchImage = { url: string; alt: string };
+export type WatchImage = { url: string; alt: string; width?: number; height?: number };
+
+/** Preserve intrinsic dimensions supplied by Prismic; never invent a ratio. */
+export function normalizeWatchImage(field: unknown): WatchImage | undefined {
+  if (!field || typeof field !== "object" || !("url" in field) || typeof field.url !== "string" || !field.url) return;
+  const image: WatchImage = { url: field.url, alt: "alt" in field && typeof field.alt === "string" ? field.alt : "" };
+  if ("dimensions" in field && field.dimensions && typeof field.dimensions === "object") {
+    const dims = field.dimensions;
+    if ("width" in dims && "height" in dims && typeof dims.width === "number" && typeof dims.height === "number"
+      && Number.isFinite(dims.width) && Number.isFinite(dims.height) && dims.width > 0 && dims.height > 0) {
+      image.width = dims.width;
+      image.height = dims.height;
+    }
+  }
+  return image;
+}
 export type WatchTopic = {
   id: string;
   uid: string;

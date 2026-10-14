@@ -194,3 +194,15 @@ test("watch URLs omit trailing slashes on indexes, archives and details", () => 
   assert.equal(watchPath("en", 1, "react"), "/en/tech-watch/tags/react");
   assert.equal(watchLinkPath("fr", "mon-lien"), "/veille/liens/mon-lien");
 });
+
+// Invalid CMS dimensions must not produce an invented or unusable aspect ratio.
+test("Prismic image dimensions survive normalization only as a valid pair", async () => {
+  const { normalizeWatchImage } = await import("#watch-model");
+  assert.deepEqual(normalizeWatchImage({ url: "https://images.example/photo", alt: "Photo", dimensions: { width: 1200, height: 800 } }),
+    { url: "https://images.example/photo", alt: "Photo", width: 1200, height: 800 });
+  for (const dimensions of [{ width: 0, height: 10 }, { width: Infinity, height: 10 }, { width: 10 }, { width: "10", height: 10 }]) {
+    assert.deepEqual(normalizeWatchImage({ url: "https://images.example/photo", dimensions }), { url: "https://images.example/photo", alt: "" });
+  }
+  assert.equal(normalizeWatchImage(null), undefined);
+  assert.equal(normalizeWatchImage({ url: "" }), undefined);
+});
