@@ -1,7 +1,7 @@
 ---
-import { FileText, Video, GitFork, Rocket, BookOpen, Wrench, Ellipsis } from "@lucide/astro";
+import { FileText, Video, GitFork, Rocket, BookOpen, Wrench, Ellipsis, Rss } from "@lucide/astro";
 import type { WatchFormat } from "@/lib/watch-model";
-import { pageMarkdownPath } from "@/lib/urls";
+import { pageMarkdownPath, watchRssPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import Header from "@/components/Header.astro";
@@ -127,6 +127,10 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
         <p class="shrink-0 text-sm text-muted">{t.page} {page} {t.of} {totalPages}</p>
         </div>
       </header>}
+
+      <a href={watchRssPath(locale)} class="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent">
+        <Rss size={18} aria-hidden="true" />{locale === "fr" ? "S’abonner" : "Subscribe"}<span class="sr-only"> RSS</span>
+      </a>
 
       <div class:list={["grid gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16", page === 1 ? "pt-8 sm:pt-10 lg:pt-12" : "pt-6 sm:pt-8"]}>
         <section aria-label={topic?.name || t.all} class="min-w-0">

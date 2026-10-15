@@ -1,6 +1,6 @@
 ---
 import { Font } from "astro:assets";
-import { localeHomePath, pageMarkdownPath } from "@/lib/urls";
+import { localeHomePath, pageMarkdownPath, watchRssPath } from "@/lib/urls";
 import type { Locale, Person } from "@/types";
 import printStyles from "@/styles/print.css?url";
 import "@/styles/global.css";
@@ -283,6 +283,7 @@ const structuredData = person && JSON.stringify({
     <meta name="description" content={description} />
     {person && <meta name="author" content={`${person.firstName} ${person.lastName}`} />}
     <title>{fullTitle}</title>
+    <link rel="alternate" type="application/rss+xml" title={locale === "fr" ? "Veille technologique — RSS" : "Tech watch — RSS"} href={new URL(watchRssPath(locale), site).href} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <Font cssVariable="--font-plex-sans" preload={[{ weight: 400, style: "normal", subset: "latin" }]} />
     <Font cssVariable="--font-sora" preload={[{ weight: 700, style: "normal", subset: "latin" }]} />
