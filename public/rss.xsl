@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:media="http://search.yahoo.com/mrss/" exclude-result-prefixes="media">
   <xsl:output method="html" encoding="UTF-8" indent="yes" doctype-system="about:legacy-compat"/>
   <xsl:template match="/rss">
     <xsl:variable name="fr" select="starts-with(channel/language, 'fr')"/>
@@ -42,6 +42,7 @@
           .entries li { padding-block: 1.5rem; border-top: 1px solid var(--rule); }
           h2 { margin: .5rem 0; font-size: clamp(1.2rem, 3vw, 1.5rem); line-height: 1.35; }
           h2 a { text-decoration: none; }
+          .entry-image { display: block; width: 100%; max-width: 42rem; height: auto; margin-block: 1rem; }
           .summary { max-width: 72ch; margin: 0; color: var(--muted); overflow-wrap: anywhere; }
           .topics { margin: .75rem 0 0; font-size: .875rem; color: var(--muted); }
         </style>
@@ -66,6 +67,7 @@
               <li>
                 <span class="date"><xsl:value-of select="pubDate"/></span>
                 <h2><a href="{link}"><xsl:value-of select="title"/></a></h2>
+                <xsl:if test="media:thumbnail"><img class="entry-image" src="{media:thumbnail/@url}" alt="{media:description}" loading="lazy"><xsl:if test="media:thumbnail/@width and media:thumbnail/@height"><xsl:attribute name="width"><xsl:value-of select="media:thumbnail/@width"/></xsl:attribute><xsl:attribute name="height"><xsl:value-of select="media:thumbnail/@height"/></xsl:attribute></xsl:if></img></xsl:if>
                 <p class="summary"><xsl:value-of select="description"/></p>
                 <xsl:if test="category"><p class="topics"><xsl:for-each select="category"><xsl:if test="position() > 1"> · </xsl:if><xsl:value-of select="."/></xsl:for-each></p></xsl:if>
               </li>
