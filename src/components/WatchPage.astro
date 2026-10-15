@@ -117,6 +117,9 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
         </div>
         <h1 class="max-w-5xl break-words font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">{topic ? topic.name : t.title}</h1>
         <p class="mt-7 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
+      <a href={watchRssPath(locale)} class="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent">
+        <Rss size={18} aria-hidden="true" />{locale === "fr" ? "S’abonner" : "Subscribe"}<span class="sr-only"> RSS</span>
+      </a>
       </section> : <header no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none pt-10 sm:pt-12 lg:pt-14">
         {topic && <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
           <p class="text-base font-semibold tracking-tight text-accent">{t.title}</p>
@@ -126,11 +129,10 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
           <h1 class="break-words font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{topic?.name || t.title}</h1>
         <p class="shrink-0 text-sm text-muted">{t.page} {page} {t.of} {totalPages}</p>
         </div>
-      </header>}
-
       <a href={watchRssPath(locale)} class="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent">
         <Rss size={18} aria-hidden="true" />{locale === "fr" ? "S’abonner" : "Subscribe"}<span class="sr-only"> RSS</span>
       </a>
+      </header>}
 
       <div class:list={["grid gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16", page === 1 ? "pt-8 sm:pt-10 lg:pt-12" : "pt-6 sm:pt-8"]}>
         <section aria-label={topic?.name || t.all} class="min-w-0">
