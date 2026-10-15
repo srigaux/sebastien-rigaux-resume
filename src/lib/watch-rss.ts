@@ -2,6 +2,7 @@ import rss from "@astrojs/rss";
 import type { Locale } from "@/types";
 import { getWatchData } from "@/lib/watch-prismic";
 import { watchLinkTarget } from "@/lib/watch-model";
+import { watchRssPath } from "@/lib/urls";
 import { summaryText } from "@/lib/watch-markdown";
 
 export async function watchRss(locale: Locale, site: URL) {
@@ -13,7 +14,9 @@ export async function watchRss(locale: Locale, site: URL) {
       : "The latest links, tools, and ideas selected by Sébastien Rigaux.",
     site,
     trailingSlash: false,
-    customData: `<language>${locale}</language>`,
+    stylesheet: "/rss.xsl",
+    xmlns: { atom: "http://www.w3.org/2005/Atom" },
+    customData: `<language>${locale}</language><atom:link href="${new URL(watchRssPath(locale), site).href}" rel="self" type="application/rss+xml" />`,
     items: links.slice(0, 50).map((link) => ({
       title: link.title,
       description: summaryText(link.summary),
