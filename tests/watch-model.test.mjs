@@ -97,16 +97,6 @@ test("selection date orders links, with stable order within a day", () => {
   assert.deepEqual(data.links.map(({ id }) => id), ["later", "earlier", "older-day"]);
 });
 
-test("tracking parameters do not create duplicate public links", () => {
-  assert.throws(
-    () => buildWatchData([topic], [], [
-      link("one", { url: "https://example.com/article?utm_source=email" }),
-      link("two", { url: "https://example.com/article" }),
-    ]),
-    /Duplicate curated link URL/,
-  );
-});
-
 test("pagination and bilingual archive paths stay aligned", () => {
   const data = buildWatchData(
     [topic],

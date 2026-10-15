@@ -177,11 +177,6 @@ export async function sendDraft(draft, { writeToken = process.env.PRISMIC_WRITE_
     client.getAllByType("curated_link", { lang: "fr-be" }),
     client.getAllByType("curated_link", { lang: "en-us" }),
   ]);
-  const duplicate = [...frenchLinks, ...englishLinks].find((doc) => {
-    const existing = doc.data.url?.url;
-    return typeof existing === "string" && duplicateKey(existing) === duplicateKey(draft.url);
-  });
-  if (duplicate) throw new Error(`Curated link already exists in Prismic: ${duplicate.id}`);
   const { migration, french, english } = prepareMigration(draft, {
     topics,
     sources,

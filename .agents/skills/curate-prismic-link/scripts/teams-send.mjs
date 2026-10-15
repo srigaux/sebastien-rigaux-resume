@@ -4,15 +4,13 @@ import { resolve } from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import * as prismic from '@prismicio/client';
-import { validateDraft, prepareMigration, duplicateKey } from '#curate-send';
+import { validateDraft, prepareMigration } from '#curate-send';
 export function validateHistoricalDraft(raw, entry) {
  if (!raw.selectedOn || raw.selectedOn !== entry.selectedOn) throw new Error('Historical selectedOn must match the first Teams date');
  return validateDraft(raw);
 }
 export function assertWriteReady(entry) {
  if (entry.status !== 'ready') throw new Error('Entry must be editorially reviewed and ready');
- const c=entry.duplicateCheck;
- if (!c || !c.complete || c.matches.length || c.url !== entry.draft.canonicalUrl || Date.now()-Date.parse(c.checkedAt)>3600000) throw new Error('A recent exhaustive connector duplicate check is required');
  if (entry.documents?.length) throw new Error('Partial documents require remote reconciliation before retry');
 }
 export function draftTopicLinks(registry) {
@@ -55,7 +53,6 @@ async function main(){
   for(const staged of m.entries.filter(e=>e.status==='staged'))for(const doc of staged.documents||[])if(doc.uid&&doc.lang)existing.push({uid:doc.uid,lang:doc.lang});
   const topics=[...publishedTopics,...draftTopicLinks(m.topicRegistry||[])];
   for(const entry of m.entries.filter(e=>e.status==='ready').slice(0,Number(limitArg))){
-   if(existing.some(d=>d.data.url?.url && duplicateKey(d.data.url.url)===duplicateKey(entry.draft.canonicalUrl))){entry.status='existing';save();continue;}
    try {await stageEntry(entry,{client,topics,sources,existing,save});console.log(JSON.stringify({key:entry.key,status:entry.status,documents:entry.documents}));}
    catch(error){console.log(JSON.stringify({key:entry.key,status:entry.status,error:error.message}));break;}
   }

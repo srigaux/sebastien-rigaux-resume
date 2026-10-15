@@ -92,19 +92,6 @@ test("migration stages a French master and a linked English translation", () => 
   assert.equal(created[1].document.uid, slugFromTitle(draft.en.title));
 });
 
-test("published duplicate prevents a Prismic write", async () => {
-  let migrated = false;
-  const client = {
-    getRepository: async () => ({ languages: [{ id: "fr-be", is_master: true }, { id: "en-us", is_master: false }] }),
-    getAllByType: async (type) => type === "curated_link"
-      ? [{ id: "existing", data: { url: { url: "https://example.com/blog/design-sync/" } } }]
-      : [],
-    migrate: async () => { migrated = true; },
-  };
-  await assert.rejects(sendDraft(validateDraft(rawDraft), { writeToken: "test-key", clientFactory: () => client }), /already exists/);
-  assert.equal(migrated, false);
-});
-
 test("direct sender prepares two linked drafts and never publishes them", async () => {
   let migrated = false;
   const client = {

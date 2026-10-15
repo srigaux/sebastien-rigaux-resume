@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {validateHistoricalDraft,assertWriteReady,draftTopicLinks,stageEntry} from '#teams-send';
 import {slugFromTitle} from '#curate-send';
 const raw={canonicalUrl:'https://example.com/a',selectedOn:'2023-05-01',sourceLanguage:'EN',format:'Article',topics:['react','forms'],fr:{title:'Des formulaires React fiables',summary:'Un guide pratique de validation des formulaires React avec des exemples de gestion des erreurs.'},en:{title:'Build reliable React forms',summary:'A practical guide to validating React forms with examples of handling input errors.'}};
-const entry=()=>({selectedOn:raw.selectedOn,status:'ready',draft:raw,duplicateCheck:{complete:true,matches:[],url:raw.canonicalUrl,checkedAt:new Date().toISOString()}});
+const entry=()=>({selectedOn:raw.selectedOn,status:'ready',draft:raw});
 test('historical dates are mandatory and never replaced by today',()=>{
  assert.throws(()=>validateHistoricalDraft({...raw,selectedOn:undefined},entry()),/Historical/);
  assert.throws(()=>validateHistoricalDraft({...raw,selectedOn:'2026-10-13'},entry()),/Historical/);
@@ -13,11 +13,9 @@ test('draft topics can be linked without publication',()=>{
  const links=draftTopicLinks([{uid:'forms',id:'unpublished-topic'}]);
  assert.deepEqual(links,[{uid:'forms',link_type:'Document',id:'unpublished-topic'}]);
 });
-test('unchecked and partially written entries cannot be blindly retried',()=>{
+test('partially written entries cannot be blindly retried',()=>{
  assert.doesNotThrow(()=>assertWriteReady(entry()));
- assert.throws(()=>assertWriteReady({...entry(),duplicateCheck:undefined}),/duplicate/);
  assert.throws(()=>assertWriteReady({...entry(),documents:[{id:'partial'}]}),/reconciliation/);
- assert.throws(()=>assertWriteReady({...entry(),duplicateCheck:{...entry().duplicateCheck,matches:['existing']}}),/duplicate/);
 });
 test('a migration failure persists assigned IDs and requires reconciliation',async()=>{
  const e=entry();let saves=0;

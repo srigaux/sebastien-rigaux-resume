@@ -112,15 +112,6 @@ function normalizedWebUrl(value: string, field: string): string {
   return url.href;
 }
 
-function duplicateKey(value: string): string {
-  const url = new URL(value);
-  url.hash = "";
-  for (const key of [...url.searchParams.keys()]) {
-    if (key.toLowerCase().startsWith("utm_")) url.searchParams.delete(key);
-  }
-  return url.href.replace(/\/$/, "");
-}
-
 export function buildWatchData(
   topics: WatchTopic[],
   sources: WatchSource[],
@@ -153,7 +144,6 @@ export function buildWatchData(
     sourceUids.add(source.uid);
   }
 
-  const seenUrls = new Set<string>();
   const seenPaths = new Set<string>();
   const links = drafts.map(({ topicIds, sourceId, ...draft }) => {
     // Preserve existing Prismic UIDs, including historical consecutive hyphens.
@@ -179,9 +169,7 @@ export function buildWatchData(
     requireDate(draft.selectedOn, `selected_on for ${draft.id}`);
     if (draft.publishedOn) requireDate(draft.publishedOn, `published_on for ${draft.id}`);
     const url = normalizedWebUrl(draft.url, `URL for ${draft.id}`);
-    const key = duplicateKey(url);
-    if (seenUrls.has(key)) throw new Error(`Duplicate curated link URL: ${url}`);
-    seenUrls.add(key);
+
 
     const resolvedTopics = [...new Set(topicIds)].map((id) => {
       const topic = topicById.get(id);
