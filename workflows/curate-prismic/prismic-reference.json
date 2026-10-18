@@ -1,0 +1,424 @@
+{
+  "repository": "bd7d5fa0",
+  "capturedAt": "2026-10-15T20:29:46.987Z",
+  "locales": [
+    {
+      "id": "fr-be",
+      "name": "French - Belgium",
+      "is_master": true
+    },
+    {
+      "id": "en-us",
+      "name": "English - United States",
+      "is_master": false
+    }
+  ],
+  "topics": [
+    {
+      "id": "asznWBIAACoA7mJQ",
+      "uid": "astro",
+      "name": "Astro"
+    },
+    {
+      "id": "asznXxIAACsA7mJe",
+      "uid": "css",
+      "name": "CSS"
+    },
+    {
+      "id": "asznphIAACkA7mMT",
+      "uid": "serverless",
+      "name": "Serverless"
+    },
+    {
+      "id": "asznWhIAACcA7mJX",
+      "uid": "nextjs",
+      "name": "Next.js"
+    },
+    {
+      "id": "asznqRIAACkA7mMc",
+      "uid": "platform-engineering",
+      "name": "Platform Engineering"
+    },
+    {
+      "id": "asznehIAACkA7mKk",
+      "uid": "medusajs",
+      "name": "Medusa.js"
+    },
+    {
+      "id": "aszn7BIAACsA7mPe",
+      "uid": "model-evaluation",
+      "name": "Model Evaluation"
+    },
+    {
+      "id": "asznTBIAAC0A7mIq",
+      "uid": "c-sharp",
+      "name": "C#"
+    },
+    {
+      "id": "aszn0RIAAC4A7mOK",
+      "uid": "api-design",
+      "name": "API Design"
+    },
+    {
+      "id": "asznahIAACsA7mKB",
+      "uid": "animation",
+      "name": "Animation"
+    },
+    {
+      "id": "aszoABIAACgA7mQW",
+      "uid": "testing",
+      "name": "Testing"
+    },
+    {
+      "id": "aszncRIAACwA7mKN",
+      "uid": "ssg",
+      "name": "SSG"
+    },
+    {
+      "id": "as6OUREAACwA-4dl",
+      "uid": "local-first",
+      "name": "Local-first",
+      "description": "Applications réactives conservant les données localement avec persistance et synchronisation."
+    },
+    {
+      "id": "asznnRIAAC4A7mLz",
+      "uid": "azure",
+      "name": "Azure"
+    },
+    {
+      "id": "asznzRIAACcA7mN9",
+      "uid": "rest-apis",
+      "name": "REST APIs"
+    },
+    {
+      "id": "asznOxIAACgA7mIO",
+      "uid": "nodejs",
+      "name": "Node.js"
+    },
+    {
+      "id": "asznOBIAACgA7mIG",
+      "uid": "typescript",
+      "name": "TypeScript"
+    },
+    {
+      "id": "as6OTBEAAC0A-4dZ",
+      "uid": "tailwind-css",
+      "name": "Tailwind CSS",
+      "description": "Styles utilitaires, plugins et composants utilisant Tailwind CSS."
+    },
+    {
+      "id": "aszn5RIAACgA7mPO",
+      "uid": "mcp",
+      "name": "MCP"
+    },
+    {
+      "id": "as6OVxEAACwA-4d2",
+      "uid": "seo",
+      "name": "SEO",
+      "description": "Indexation, métadonnées, données structurées et outils d’audit du référencement."
+    },
+    {
+      "id": "asznVRIAACkA7mJG",
+      "uid": "react",
+      "name": "React"
+    },
+    {
+      "id": "asznwRIAACsA7mNo",
+      "uid": "databases",
+      "name": "Databases"
+    },
+    {
+      "id": "asznYRIAACgA7mJl",
+      "uid": "design-systems",
+      "name": "Design Systems"
+    },
+    {
+      "id": "aszn8hIAACkA7mPw",
+      "uid": "workflow-orchestration",
+      "name": "Workflow Orchestration"
+    },
+    {
+      "id": "asznNRIAACoA7mH8",
+      "uid": "javascript",
+      "name": "JavaScript"
+    },
+    {
+      "id": "asznoBIAACcA7mL8",
+      "uid": "aws",
+      "name": "AWS"
+    },
+    {
+      "id": "aszn1xIAAC0A7mOg",
+      "uid": "ai",
+      "name": "AI"
+    },
+    {
+      "id": "as6OWxEAACgA-4eC",
+      "uid": "vue",
+      "name": "Vue",
+      "description": "Framework Vue, bibliothèques et pratiques de développement de son écosystème."
+    },
+    {
+      "id": "asznmhIAACgA7mLo",
+      "uid": "kubernetes",
+      "name": "Kubernetes"
+    },
+    {
+      "id": "aszn2xIAACgA7mOu",
+      "uid": "llms",
+      "name": "LLMs"
+    },
+    {
+      "id": "asznfRIAAC0A7mKs",
+      "uid": "headless-cms",
+      "name": "Headless CMS"
+    },
+    {
+      "id": "aszn7xIAACgA7mPn",
+      "uid": "automation",
+      "name": "Automation"
+    },
+    {
+      "id": "asznjhIAACkA7mLA",
+      "uid": "e-commerce",
+      "name": "E-commerce"
+    },
+    {
+      "id": "asznsRIAACoA7mM1",
+      "uid": "ci-cd",
+      "name": "CI/CD"
+    },
+    {
+      "id": "asznUhIAAC0A7mI-",
+      "uid": "nuget",
+      "name": "NuGet"
+    },
+    {
+      "id": "asznwxIAACwA7mNu",
+      "uid": "graphql",
+      "name": "GraphQL"
+    },
+    {
+      "id": "asznlxIAACwA7mLd",
+      "uid": "docker",
+      "name": "Docker"
+    },
+    {
+      "id": "aszoERIAACoA7mRO",
+      "uid": "github-actions",
+      "name": "GitHub Actions"
+    },
+    {
+      "id": "asznTxIAACcA7mI0",
+      "uid": "dotnet",
+      "name": ".NET"
+    },
+    {
+      "id": "asznoxIAACsA7mMH",
+      "uid": "gcp",
+      "name": "GCP"
+    },
+    {
+      "id": "aszntxIAACcA7mNJ",
+      "uid": "security",
+      "name": "Security"
+    },
+    {
+      "id": "aszn1BIAAC0A7mOV",
+      "uid": "search",
+      "name": "Search"
+    },
+    {
+      "id": "asznkRIAACgA7mLK",
+      "uid": "vercel",
+      "name": "Vercel"
+    },
+    {
+      "id": "as6OVREAACgA-4dx",
+      "uid": "ui-ux",
+      "name": "UI/UX",
+      "description": "Conception d’interfaces, interactions, prototypage et expérience utilisateur."
+    },
+    {
+      "id": "aszoBBIAACgA7mQg",
+      "uid": "developer-experience",
+      "name": "Developer Experience"
+    },
+    {
+      "id": "asznbhIAACwA7mKG",
+      "uid": "ssr",
+      "name": "SSR"
+    },
+    {
+      "id": "as6OUxEAACsA-4dq",
+      "uid": "maps",
+      "name": "Maps",
+      "description": "Cartes web, géolocalisation et génération de représentations cartographiques."
+    },
+    {
+      "id": "aszn_BIAAC0A7mQM",
+      "uid": "software-architecture",
+      "name": "Software Architecture"
+    },
+    {
+      "id": "asznrBIAACsA7mMn",
+      "uid": "infrastructure-as-code",
+      "name": "Infrastructure as Code"
+    },
+    {
+      "id": "aszn3hIAACgA7mO6",
+      "uid": "ai-agents",
+      "name": "AI Agents"
+    },
+    {
+      "id": "asznZxIAAC4A7mJ3",
+      "uid": "web-performance",
+      "name": "Web Performance"
+    },
+    {
+      "id": "asznuhIAACkA7mNS",
+      "uid": "postgresql",
+      "name": "PostgreSQL"
+    },
+    {
+      "id": "aszndhIAAC4A7mKa",
+      "uid": "payload-cms",
+      "name": "Payload CMS"
+    },
+    {
+      "id": "aszndBIAACgA7mKS",
+      "uid": "directus",
+      "name": "Directus"
+    },
+    {
+      "id": "as6OXhEAAC0A-4eL",
+      "uid": "forms",
+      "name": "Forms",
+      "description": "Conception, validation et intégration de formulaires, questionnaires et parcours de saisie."
+    },
+    {
+      "id": "aszn4hIAACcA7mPF",
+      "uid": "rag",
+      "name": "RAG"
+    },
+    {
+      "id": "as6OWREAACcA-4d9",
+      "uid": "self-hosting",
+      "name": "Self-hosting",
+      "description": "Déploiement et exploitation de services sur une infrastructure sous son contrôle."
+    },
+    {
+      "id": "aszntBIAACoA7mM9",
+      "uid": "observability",
+      "name": "Observability"
+    },
+    {
+      "id": "aszoDhIAAC4A7mRC",
+      "uid": "releases",
+      "name": "Releases"
+    },
+    {
+      "id": "aszoChIAACgA7mQ2",
+      "uid": "tooling",
+      "name": "Tooling"
+    },
+    {
+      "id": "aszoBxIAAC4A7mQs",
+      "uid": "open-source",
+      "name": "Open Source"
+    },
+    {
+      "id": "asznlBIAACcA7mLU",
+      "uid": "cloudflare",
+      "name": "Cloudflare"
+    },
+    {
+      "id": "asznvhIAACsA7mNd",
+      "uid": "redis",
+      "name": "Redis"
+    },
+    {
+      "id": "aszn6BIAAC4A7mPX",
+      "uid": "prompt-engineering",
+      "name": "Prompt Engineering"
+    },
+    {
+      "id": "as6OThEAACoA-4dg",
+      "uid": "i18n",
+      "name": "Internationalization",
+      "description": "Traduction, localisation et gestion des langues dans les applications."
+    },
+    {
+      "id": "asznZBIAACwA7mJs",
+      "uid": "accessibility",
+      "name": "Accessibility"
+    },
+    {
+      "id": "aszn9hIAACwA7mP6",
+      "uid": "n8n",
+      "name": "n8n"
+    }
+  ],
+  "sources": [
+    {
+      "id": "aszoKRIAAC0A7mSM",
+      "uid": "kube-today",
+      "name": "Kube Today"
+    },
+    {
+      "id": "aszoQxIAAC4A7mTu",
+      "uid": "javascript-weekly",
+      "name": "JavaScript Weekly"
+    },
+    {
+      "id": "aszoGxIAACsA7mRh",
+      "uid": "the-ai-report",
+      "name": "The AI Report"
+    },
+    {
+      "id": "aszoOhIAAC4A7mTP",
+      "uid": "bytes-dev",
+      "name": "bytes.dev"
+    },
+    {
+      "id": "aszoQBIAACoA7mTg",
+      "uid": "frontend-focus",
+      "name": "Frontend Focus"
+    },
+    {
+      "id": "aszoJRIAACoA7mR_",
+      "uid": "dotnet-blog",
+      "name": ".NET Blog"
+    },
+    {
+      "id": "aszoMxIAACoA7mS1",
+      "uid": "tldr-dev",
+      "name": "TLDR Dev"
+    },
+    {
+      "id": "aszoNhIAACoA7mTB",
+      "uid": "tldr",
+      "name": "TLDR"
+    },
+    {
+      "id": "aszoIhIAACkA7mRy",
+      "uid": "c-sharp-digest",
+      "name": "C# Digest"
+    },
+    {
+      "id": "aszoMBIAAC0A7mSn",
+      "uid": "programming-digest",
+      "name": "Programming Digest"
+    },
+    {
+      "id": "aszoHxIAACgA7mRq",
+      "uid": "tldr-ai",
+      "name": "TLDR AI"
+    },
+    {
+      "id": "aszoLBIAAC4A7mSY",
+      "uid": "learnkube",
+      "name": "LearnKube"
+    }
+  ]
+}
