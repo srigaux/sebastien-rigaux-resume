@@ -154,13 +154,15 @@ Chaque message contenant un nouveau lien entre dans la file. Plusieurs URL dans 
 
 Les doublons sont cherchés parmi les documents **publiés** et les soumissions du bot. Les brouillons créés dans d’autres outils ne sont pas énumérables globalement avec la Content API. Les paramètres de suivi connus et fragments sont ignorés ; les paramètres fonctionnels et les chemins distincts sont conservés.
 
-Le bot présente FR/EN, format, sujets, crédit de l’article, dates, source et fichiers médias. Les images et icônes sont envoyées en documents Telegram pour conserver les octets originaux, y compris SVG/ICO. Les mêmes fichiers R2 sont importés dans Prismic après validation ; les traductions partagent leurs IDs d’assets et possèdent des textes alternatifs localisés.
+Le bot affiche une proposition compacte dans un seul message formaté : titres FR/EN, résumés en citations avec leur Markdown inline, format précédé d’un emoji, sujets, 🔎 source de découverte et ✍️ crédit lorsque identifié, sans ligne de séparation. Le clavier normal contient seulement **🚀 Publier** et **🗑 Annuler**. Les dates, identifiants techniques et textes alternatifs ne sont pas affichés dans cette proposition ; ils restent conservés pour la publication. Les identifiants restent accessibles via `/statut` et dans les erreurs.
+
+L’image est envoyée une seule fois en aperçu photo (ou en fichier si son format n’est pas accepté comme photo). La favicon n’est plus envoyée dans le chat. Les originaux restent dans R2 pour l’import Prismic ; l’aperçu photo Telegram peut être recompressé. Après correction, seuls les textes sont renvoyés avec une courte introduction en italique indiquant la version et les champs réellement modifiés. Une nouvelle image déclenche un nouvel aperçu, tandis qu’un changement de texte ou de source ne renvoie pas l’image précédente.
 
 Si la source n’est pas fournie, choisir la suggestion, ouvrir la liste ou répondre « Aucune ». Une suggestion ne devient jamais une attribution certaine sans choix explicite.
 
-Répondre à la dernière fiche pour donner une nouvelle direction. « valider », « publier » ou « oui » sont acceptés seulement en réponse à sa dernière version ; le bouton **Publier FR + EN** produit le même accord. Une correction ou un changement de source invalide l’accord précédent. Un ancien bouton ou une réponse à une ancienne fiche est refusé.
+Écrire les corrections directement dans le chat, ou répondre à la dernière fiche. « change la source » ouvre le catalogue et `source: JavaScript Weekly` sélectionne une source connue. « sans image » retire l’image. « valider », « publier » ou « oui » sont acceptés seulement en réponse à sa dernière version ; le bouton **🚀 Publier** produit le même accord. Une correction ou un changement de source invalide l’accord précédent. Un ancien bouton ou une réponse à une ancienne fiche est refusé.
 
-Le bouton **Changer l’image** propose les autres images extraites de la page, ainsi qu’une publication sans image. Le choix déclenche une nouvelle proposition à valider.
+Écrire « change l’image » propose les autres images extraites de la page, ainsi qu’une publication sans image. Le choix déclenche une nouvelle proposition à valider.
 
 Un média indisponible doit être retenté ou faire l’objet d’une omission explicite avant validation. Le bot ne copie pas le nom de l’auteur de la page dans les crédits des images : leurs droits/attributions doivent être connus séparément.
 

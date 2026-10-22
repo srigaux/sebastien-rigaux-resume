@@ -89,7 +89,7 @@ export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   kb.text("Aucune source", button(item, "source", "none"));
   const message = await sendText(
     env,
-    `Source de découverte pour ${item.id} — version ${item.state.revision}\nChoisissez une source ou « Aucune ».`,
+    "Source de découverte : choisissez une source ou « Aucune ».",
     kb,
   );
   await remember(new Store(env.DB), item, message.message_id);
@@ -235,7 +235,7 @@ export function createBot(env: Env) {
     const text = message.text ?? message.caption ?? "";
     if (/^\/(start|aide)(?:@\w+)?(?:\s|$)/i.test(text)) {
       await ctx.reply(
-        "Envoyez un lien, accompagné éventuellement d’un commentaire et de « source: nom ». Les fiches sont relues ici avant publication FR + EN. /statut /file /annuler /reprendre",
+        "Envoyez un lien, accompagné éventuellement d’un commentaire et de « source: nom ». Les fiches sont relues ici avant publication FR + EN. Écrivez vos corrections directement, « change l’image » ou « change la source ». /statut /file /annuler /reprendre",
       );
       return;
     }
@@ -312,7 +312,12 @@ export function createBot(env: Env) {
       });
       return;
     }
-    if (item?.state.draft && /^sans image[.!]?$/i.test(text.trim())) {
+    if (
+      item?.state.draft &&
+      /^(?:sans image|(?:retire|supprime|enlève)\s+l['’]image)[.!]?$/i.test(
+        text.trim(),
+      )
+    ) {
       await store.addAction(ctx.update.update_id, item, {
         kind: "image",
         value: "none",

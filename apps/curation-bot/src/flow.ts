@@ -125,6 +125,7 @@ export async function advance(
   const selectedExtraction = s.imageChoice
     ? { ...extraction, imageUrls: [s.imageChoice] }
     : extraction;
+  const imageChanged = s.imagePending;
   if (!s.media || s.imagePending) {
     s.media = await collectMedia(
       env,
@@ -141,7 +142,10 @@ export async function advance(
     s.draft = await retry(step, `${prefix}-generate`, () =>
       generateDraft(env, item, extraction, cats),
     );
-    if (previous) s.revisionNote = revisionChanges(previous, s.draft);
+    if (previous)
+      s.revisionNote =
+        (imageChanged ? "Image modifiée ; " : "") +
+        revisionChanges(previous, s.draft);
     s.needsRevision = false;
     if (s.sourceUid === undefined) s.sourceUid = explicitSource(s.note, cats);
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item);
@@ -276,6 +280,7 @@ export async function applyAction(
           : await loadExtraction(env, item),
         s.media,
       );
+      s.revisionNote = "Médias actualisés.";
       s.revision++;
       s.approvedRevision = undefined;
     }
@@ -309,6 +314,7 @@ export async function applyAction(
       ...s.media.failures.map((f) => f.url),
     ];
     s.media.failures = [];
+    s.revisionNote = "Médias indisponibles omis.";
     s.revision++;
     s.approvedRevision = undefined;
     item.status = "queued";

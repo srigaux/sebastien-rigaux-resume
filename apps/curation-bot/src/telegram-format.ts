@@ -37,7 +37,7 @@ export function telegramMarkdown(value: string): string {
         const name = tags[type];
         const open =
           name === "a"
-            ? `<a href="${escapeHtml(token.attrGet("href") ?? "")}">`
+            ? `<a href="${escapeHtml(String(token.attrGet("href") ?? ""))}">`
             : `<${name}>`;
         stack.push({ name, open });
         return open;
@@ -108,10 +108,12 @@ export function proposalHtml(item: Item, cats: Catalog): string {
     `🇬🇧 <b>${escapeHtml(draft.en.title)}</b>`,
     `<blockquote>${telegramMarkdown(draft.en.summary)}</blockquote>`,
     "",
-    "─────",
     `<b>${formats[draft.format]}</b>`,
     `🏷️ ${topics.join(" · ")}`,
-    `Source : <b>${escapeHtml(source.slice(0, 200))}</b>`,
+    `🔎 Source : <b>${escapeHtml(source.slice(0, 200))}</b>`,
+    ...(draft.credit?.trim()
+      ? [`✍️ Crédit : <b>${escapeHtml(draft.credit.trim())}</b>`]
+      : []),
     ...(s.media?.failures.length
       ? [
           "",

@@ -113,3 +113,96 @@ it("n’enregistre pas une ancienne réponse et déduplique les callbacks", asyn
     (await env.DB.prepare("SELECT * FROM actions").all()).results,
   ).toHaveLength(1);
 });
+
+it("presents a compact photo preview once and sends only formatted text on corrections", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls: { method: string; body?: Record<string, any> }[] = [];
+  let messageId = 1000;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown, init?: RequestInit) => {
+      const method = String(input).split("/").at(-1)!;
+      calls.push({
+        method,
+        body:
+          typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+      });
+      return Response.json({
+        ok: true,
+        result: {
+          message_id: ++messageId,
+          date: 1,
+          chat: { id: 1, type: "private" },
+        },
+      });
+    }),
+  );
+  const item = fixture(),
+    store = new Store(env.DB);
+  item.state.media = {
+    failures: [],
+    image: {
+      key: "test/image",
+      url: "https://example.com/image.png",
+      mime: "image/png",
+      filename: "image.png",
+      size: 3,
+    },
+    icon: {
+      key: "test/icon",
+      url: "https://example.com/favicon.ico",
+      mime: "image/x-icon",
+      filename: "favicon.ico",
+      size: 3,
+    },
+  };
+  await env.BUCKET.put("test/image", new Uint8Array([1, 2, 3]));
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  await present(env, item, cats);
+  expect(item.state.previewImageKey).toBe("test/image");
+  expect((await store.get(item.id)).state.previewImageKey).toBe("test/image");
+  item.state.revision = 2;
+  item.state.revisionNote = "titres modifiés.";
+  item.state.draft!.fr.title = "React : une organisation plus simple";
+  await present(env, item, cats);
+  expect(calls.filter((call) => call.method === "sendPhoto")).toHaveLength(1);
+  expect(calls.filter((call) => call.method === "sendDocument")).toHaveLength(
+    0,
+  );
+  const messages = calls.filter((call) => call.method === "sendMessage");
+  expect(messages).toHaveLength(2);
+  expect(messages[1].body).toMatchObject({
+    parse_mode: "HTML",
+    text: expect.stringContaining("<i>Version 2 — titres modifiés.</i>"),
+  });
+  expect(
+    messages[1]
+      .body!.reply_markup.inline_keyboard.flat()
+      .map((b: { text: string }) => b.text),
+  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+  const rows = await env.DB.prepare(
+    "SELECT revision FROM messages WHERE item_id=? ORDER BY message_id",
+  )
+    .bind(item.id)
+    .all<{ revision: number }>();
+  expect(rows.results.map((row) => row.revision)).toEqual([1, 1, 2]);
+});
+
+it("opens source and image menus from messages without adding review buttons", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    item = fixture();
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  await handleUpdate(env, update(401, "Change l’image"));
+  await handleUpdate(env, update(402, "Change la source"));
+  const rows = await env.DB.prepare(
+    "SELECT payload FROM actions ORDER BY update_id",
+  ).all<{ payload: string }>();
+  expect(rows.results.map((row) => JSON.parse(row.payload).kind)).toEqual([
+    "images",
+    "sources",
+  ]);
+});
