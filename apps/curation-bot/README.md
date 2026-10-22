@@ -229,3 +229,5 @@ Après configuration et réservation de la migration :
 5. Renvoyer le même lien pour vérifier la demande de confirmation de doublon.
 
 La suite automatisée simule les fournisseurs. Une recette réelle, une livraison webhook ou un déploiement ne sont pas considérés vérifiés sur la seule base de ces tests.
+
+Les reprises qui imposent au moins 30 secondes d’attente affichent leur délai estimé et l’heure de reprise en Europe/Brussels. Avant publication, ce message propose « 🗑 Annuler ». À la reprise, il est remplacé par une indication de reprise et son bouton est retiré. `/annuler` et `/reset` peuvent interrompre un workflow en attente de réessai : l’instance est arrêtée, puis une nouvelle génération traite l’annulation avant toute extraction. Le checkpoint de publication est relu après l’arrêt ; une migration commencée reste protégée et reprend via le journal existant. L’indisponibilité d’une notification d’attente est journalisée sans interrompre le traitement.

@@ -258,3 +258,101 @@ it("recrée une instance après panne en reprenant la fiche persistée et ses ac
     await inspector.dispose();
   }
 });
+
+it("interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appeler le LLM", async () => {
+  const { extraction, repository } = await import("@test/fixtures");
+  const store = new Store(env.DB),
+    item = fixture("u903");
+  item.state.extractionKey = "extractions/u903.json";
+  item.state.checked = [item.state.url];
+  delete item.state.media;
+  await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction));
+  await store.enqueue(item.id, 903, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000);
+  let messageId = 0;
+  const sent: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("api.telegram.org")) {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        if (body.text) sent.push(body.text);
+        return Response.json({
+          ok: true,
+          result: {
+            message_id: ++messageId,
+            date: 1,
+            chat: { id: 1, type: "private" },
+          },
+        });
+      }
+      if (url === "https://example.com/image.png")
+        return new Response("", {
+          status: 429,
+          headers: { "Retry-After": "900" },
+        });
+      if (
+        url.includes("cdn.prismic.io/api/v2") &&
+        !url.includes("documents/search")
+      )
+        return Response.json(repository);
+      throw new Error("Unexpected request during cancellation");
+    }),
+  );
+  const first = await introspectWorkflowInstance(env.CURATION, "u903-g0");
+  const second = await introspectWorkflowInstance(env.CURATION, "u903-g1");
+  try {
+    await env.CURATION.create({
+      id: "u903-g0",
+      params: { id: item.id, generation: 0 },
+    });
+    await first.waitForStepResult({
+      name: "u903/g0-c0/image-0-backoff-0-notify-wait",
+    });
+    expect(sent.some((text) => text.includes("15 minute(s)"))).toBe(true);
+    await store.addAction(905, await store.get(item.id), {
+      kind: "cancel",
+      revision: 1,
+    });
+    await dispatch(env);
+    await second.waitForStatus("complete");
+    const cancelled = await store.get(item.id);
+    expect(cancelled.status).toBe("cancelled");
+    expect(cancelled.active).toBe(0);
+    expect(await store.nextAction(item.id)).toBeUndefined();
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([url]) => String(url).includes("openai")),
+    ).toBe(false);
+  } finally {
+    await first.dispose();
+    await second.dispose();
+  }
+}, 30000);
+
+it("ne termine pas un workflow si la publication a déjà commencé", async () => {
+  const store = new Store(env.DB),
+    item = fixture("u904");
+  item.state.publicationStarted = true;
+  await store.enqueue(item.id, 904, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.addAction(906, item, { kind: "cancel", revision: 1 });
+  const instance = {
+    status: async () => ({ status: "running" }),
+    terminate: vi.fn(),
+    sendEvent: vi.fn(),
+  };
+  const protectedEnv = new Proxy(env, {
+    get: (target, key) =>
+      key === "CURATION"
+        ? { get: async () => instance }
+        : Reflect.get(target, key),
+  }) as Env;
+  await dispatch(protectedEnv);
+  expect(instance.terminate).not.toHaveBeenCalled();
+  expect(instance.sendEvent).toHaveBeenCalled();
+  expect((await store.get(item.id)).active).toBe(1);
+});

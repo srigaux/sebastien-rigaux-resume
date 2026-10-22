@@ -45,6 +45,7 @@ export async function dispatch(env: Env) {
   if (!item) return;
   const id = `${item.id}-g${item.generation}`;
   let instance: WorkflowInstance | undefined;
+  let created = false;
   try {
     instance = await env.CURATION.get(id);
     await instance.status();
@@ -58,8 +59,49 @@ export async function dispatch(env: Env) {
       id,
       params: { id: item.id, generation: item.generation },
     });
+    created = true;
   }
   const status = await instance.status();
+  if (
+    !created &&
+    !item.state.publicationStarted &&
+    (await store.pendingCancellation(item))
+  ) {
+    // A wake event cannot interrupt step.sleep (e.g. a long Retry-After).
+    // Stop the old generation before reading its last publication checkpoint.
+    if (!["errored", "terminated", "complete"].includes(status.status)) {
+      try {
+        await instance.terminate();
+      } catch (error) {
+        const latest = await instance.status();
+        if (!["errored", "terminated", "complete"].includes(latest.status))
+          throw error;
+      }
+    }
+    const stopped = await store.get(item.id);
+    if (!stopped.active || stopped.generation !== item.generation) return;
+    await store.rotate(stopped);
+    const next = await store.get(item.id);
+    if (!next.active) return;
+    const nextId = `${next.id}-g${next.generation}`;
+    log("workflow.cancel_interrupt", {
+      itemId: next.id,
+      workflowId: id,
+      nextWorkflowId: nextId,
+      publicationStarted: !!next.state.publicationStarted,
+    });
+    try {
+      await env.CURATION.create({
+        id: nextId,
+        params: { id: next.id, generation: next.generation },
+      });
+    } catch (error) {
+      // Concurrent cron/webhook dispatches may already have created it.
+      const existing = await env.CURATION.get(nextId);
+      await existing.status();
+    }
+    return;
+  }
   if (["errored", "terminated", "complete"].includes(status.status)) {
     // An unexpected workflow failure/notification error is recoverable from the
     // journal and item checkpoints. No external write bypasses that journal.

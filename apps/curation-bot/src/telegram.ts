@@ -289,6 +289,50 @@ async function ensureReceipt(
     )
     .run();
 }
+export async function retryWaitNotice(
+  env: Env,
+  item: Item,
+  name: string,
+  delayMs?: number,
+) {
+  const store = new Store(env.DB),
+    api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+  const key = `telegram:retry-wait:${item.id}:${name}`;
+  if (delayMs !== undefined) {
+    const minutes = Math.ceil(delayMs / 60_000);
+    const until = new Intl.DateTimeFormat("fr-BE", {
+      timeZone: "Europe/Brussels",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(Date.now() + delayMs));
+    const subject = /image|icon/.test(name)
+      ? "Le serveur du média"
+      : "Le service distant";
+    const text = `⏳ ${subject} demande de patienter avant une nouvelle tentative.\nReprise dans environ ${minutes} minute(s), vers ${until} (heure belge).`;
+    const kb = !item.state.publicationStarted
+      ? new InlineKeyboard().text("🗑 Annuler", button(item, "cancel"))
+      : undefined;
+    await ensureReceipt(store, key, item.id, () =>
+      api.sendMessage(item.chat_id, text, kb ? { reply_markup: kb } : {}),
+    );
+    const receipt = await readReceiptKey(store, key);
+    if (receipt) await remember(store, item, receipt.messageId);
+  } else {
+    const receipt = await readReceiptKey(store, key);
+    if (!receipt) return;
+    try {
+      await api.editMessageText(
+        item.chat_id,
+        receipt.messageId,
+        "🔄 L’attente est terminée, je reprends le traitement.",
+        { reply_markup: { inline_keyboard: [] } },
+      );
+    } catch (error) {
+      if (!isNotModified(error) && !isMissingMessage(error)) throw error;
+    }
+  }
+}
+
 export async function publicationNotice(
   env: Env,
   item: Item,

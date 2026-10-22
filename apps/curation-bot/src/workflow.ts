@@ -14,6 +14,7 @@ import {
   sendActionNotice,
   clearItemButtons,
   publicationNotice,
+  retryWaitNotice,
 } from "@/telegram";
 
 export class CurationWorkflow extends WorkflowEntrypoint<
@@ -38,14 +39,55 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<{ id: string; generation: number }>,
     nativeStep: WorkflowStep,
   ) {
-    const step = observedSteps(nativeStep as unknown as Steps),
-      store = new Store(this.env.DB);
+    const observed = observedSteps(nativeStep as unknown as Steps);
+    const store = new Store(this.env.DB);
+    const step: Steps = {
+      do: observed.do,
+      sleep: async (name, duration) => {
+        const notify = duration >= 30_000 && name.includes("-backoff-");
+        const notice = async (delay?: number) => {
+          try {
+            await retryWaitNotice(
+              this.env,
+              await store.get(event.payload.id),
+              name,
+              delay,
+            );
+          } catch (error) {
+            log("telegram.retry_notice.failed", errorFields(error), "warn");
+          }
+          return true;
+        };
+        if (notify)
+          await observed.do(`${name}-notify-wait`, stepConfig, () =>
+            notice(duration),
+          );
+        await observed.sleep(name, duration);
+        if (notify)
+          await observed.do(`${name}-notify-resumed`, stepConfig, () =>
+            notice(),
+          );
+      },
+    };
     for (let cycle = 0; cycle < 30; cycle++) {
       const prefix = `g${event.payload.generation}-c${cycle}`;
       const item = await step.do(`${prefix}-load`, stepConfig, () =>
         store.get(event.payload.id),
       );
       if (!item.active || item.generation !== event.payload.generation) return;
+      // Cancellation has priority over extraction/media backoffs and generation.
+      // Publication remains protected by the checkpoint written before any SDK write.
+      const cancellation = !item.state.publicationStarted
+        ? await step.do(`${prefix}-cancel-before-work`, stepConfig, () =>
+            store.pendingCancellation(item).then((value) => value ?? null),
+          )
+        : null;
+      if (cancellation) {
+        item.status = "cancelled";
+        delete item.state.error;
+        await this.finish(step, prefix, item, store);
+        return;
+      }
       let cats = { topics: [], sources: [] } as Awaited<
         ReturnType<typeof catalog>
       >;

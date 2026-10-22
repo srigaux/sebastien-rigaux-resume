@@ -71,6 +71,11 @@ export class Store {
           )
           .bind(repository, item.id),
       );
+    statements.push(
+      this.db
+        .prepare("UPDATE actions SET consumed=1 WHERE item_id=? AND consumed=0")
+        .bind(item.id),
+    );
     await this.db.batch(statements);
     item.status = status;
   }
@@ -89,6 +94,17 @@ export class Store {
       )
       .bind(update, item.id, JSON.stringify(action))
       .run();
+  }
+  async pendingCancellation(item: Item) {
+    const row = await this.db
+      .prepare(
+        "SELECT id,payload FROM actions WHERE item_id=? AND consumed=0 AND json_extract(payload,'$.kind')='cancel' AND json_extract(payload,'$.revision')=? ORDER BY id LIMIT 1",
+      )
+      .bind(item.id, item.state.revision)
+      .first<{ id: number; payload: string }>();
+    return row
+      ? { id: row.id, action: JSON.parse(row.payload) as Action }
+      : undefined;
   }
   async nextAction(
     id: string,
