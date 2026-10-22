@@ -56,27 +56,6 @@ const formats: Record<Draft["format"], string> = {
   Tool: "🛠️ Outil",
   Other: "🔎 Ressource",
 };
-export function revisionChanges(previous: Draft, next: Draft): string {
-  const changes: string[] = [];
-  if (
-    previous.fr.title !== next.fr.title ||
-    previous.en.title !== next.en.title
-  )
-    changes.push("titres modifiés");
-  if (
-    previous.fr.summary !== next.fr.summary ||
-    previous.en.summary !== next.en.summary
-  )
-    changes.push("résumés modifiés");
-  if (previous.format !== next.format) changes.push("format modifié");
-  if (
-    [...previous.topics].sort().join("\0") !==
-    [...next.topics].sort().join("\0")
-  )
-    changes.push("sujets modifiés");
-  if (previous.credit !== next.credit) changes.push("crédit modifié");
-  return changes.length ? changes.join(", ") + "." : "Textes inchangés.";
-}
 export function proposalHtml(item: Item, cats: Catalog): string {
   const s = item.state,
     draft = s.draft!;

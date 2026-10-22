@@ -1,9 +1,5 @@
 import { expect, it } from "vitest";
-import {
-  proposalHtml,
-  revisionChanges,
-  telegramMarkdown,
-} from "@/telegram-format";
+import { proposalHtml, telegramMarkdown } from "@/telegram-format";
 import { keyboard } from "@/telegram";
 import { formats } from "@/domain";
 import { cats, draft, fixture } from "@test/fixtures";
@@ -58,22 +54,17 @@ it("does not interpret untrusted HTML or unsafe links and separates code entitie
     "<b>bold </b><code>code</code><b> text</b>",
   );
 });
-it("summarizes actual changes, includes the revision, and maps every format to an emoji", () => {
+it("displays the model revision note with its version, and maps every format to an emoji", () => {
   const item = fixture();
   const next = structuredClone(draft);
   next.fr.title = "React : variantes simplifiées";
   next.en.summary += " An additional detail.";
-  expect(revisionChanges(draft, next)).toBe(
-    "titres modifiés, résumés modifiés.",
-  );
-  expect(revisionChanges(draft, structuredClone(draft))).toBe(
-    "Textes inchangés.",
-  );
   item.state.revision = 2;
-  item.state.revisionNote = revisionChanges(draft, next);
+  item.state.revisionNote =
+    "Titres raccourcis et résumés recentrés sur les usages en équipe.";
   item.state.draft = next;
   expect(proposalHtml(item, cats)).toMatch(
-    /^<i>Version 2 — titres modifiés, résumés modifiés\.<\/i>/,
+    /^<i>Version 2 — Titres raccourcis et résumés recentrés sur les usages en équipe\.<\/i>/,
   );
   for (const format of formats) {
     item.state.draft.format = format;

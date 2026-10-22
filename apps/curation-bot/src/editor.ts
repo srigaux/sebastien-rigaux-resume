@@ -25,6 +25,7 @@ sourceLanguage correspond à la page originale : EN, FR ou null. publishedOn uni
 credit : auteur ou éditeur explicitement identifié, sinon null. creditEvidence : extrait exact du contenu ou des consignes utilisateur attestant ce nom, sinon null. L'auteur extrait des métadonnées est déjà fourni.
 Une source de découverte est un canal de découverte et non nécessairement le site de l'article. sourceSuggestionUid est une suggestion du catalogue justifiée par des indices, ou null si inconnue. Ne la présente jamais comme un fait confirmé.
 imageAlt décrit factuellement l'image proposée dans chaque langue. Ne fabrique pas une image ni son attribution.
+revisionNote : null pour une première proposition (previous est null). Pour une correction, rédige en français une phrase courte de 220 caractères maximum, sans Markdown, HTML, numéro de version ni saut de ligne, décrivant les changements réellement effectués par rapport à previous et leur intention éditoriale. Par exemple : « Titres raccourcis et résumés recentrés sur les usages en équipe. » Ne recopie pas une ancienne note et ne prétends pas avoir appliqué une consigne non suivie. Si rien n'a changé, indique-le simplement. Le code affichera la version séparément.
 Pour une correction, garde les faits et les choix explicites de l'utilisateur ; adapte la proposition à sa direction. Renvoie toujours l'intégralité de la proposition structurée.`;
 
 export async function generateDraft(
@@ -66,6 +67,7 @@ export async function generateDraft(
             text: JSON.stringify({
               user: {
                 note: item.state.note,
+                revision: item.state.revision,
                 instructions: item.state.instructions,
                 selectedOn: item.state.selectedOn,
                 confirmedDiscoverySource: item.state.sourceUid,

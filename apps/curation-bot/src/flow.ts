@@ -1,4 +1,3 @@
-import { revisionChanges } from "@/telegram-format";
 import {
   canonicalFor,
   BotError,
@@ -125,7 +124,6 @@ export async function advance(
   const selectedExtraction = s.imageChoice
     ? { ...extraction, imageUrls: [s.imageChoice] }
     : extraction;
-  const imageChanged = s.imagePending;
   if (!s.media || s.imagePending) {
     s.media = await collectMedia(
       env,
@@ -142,10 +140,7 @@ export async function advance(
     s.draft = await retry(step, `${prefix}-generate`, () =>
       generateDraft(env, item, extraction, cats),
     );
-    if (previous)
-      s.revisionNote =
-        (imageChanged ? "Image modifiée ; " : "") +
-        revisionChanges(previous, s.draft);
+    if (previous) s.revisionNote = s.draft.revisionNote ?? undefined;
     s.needsRevision = false;
     if (s.sourceUid === undefined) s.sourceUid = explicitSource(s.note, cats);
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item);

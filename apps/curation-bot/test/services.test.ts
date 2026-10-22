@@ -76,6 +76,7 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
       body = JSON.parse(String(init.body));
       const proposal = {
         ...draft,
+        revisionNote: "Résumés recentrés sur la lisibilité des composants.",
         credit: "Invented Person",
         creditEvidence: "unsupported",
       };
@@ -106,6 +107,10 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
   );
   const result = await generateDraft(env, item, extraction, cats);
   expect(result.credit).toBeNull();
+  expect(result.revisionNote).toBe(
+    "Résumés recentrés sur la lisibilité des composants.",
+  );
+  expect(JSON.stringify(body)).toContain("changements réellement effectués");
   expect(JSON.stringify(body)).toContain("Insiste sur la lisibilité.");
   expect(JSON.stringify(body)).toContain(extraction.markdown);
   expect(JSON.stringify(body)).toContain(draft.fr.title);

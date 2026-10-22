@@ -39,7 +39,9 @@ export const draftSchema = z.object({
   sourceSuggestionUid: z.string().nullable(),
   sourceSuggestionReason: z.string().max(400).nullable(),
 });
-export type Draft = z.infer<typeof draftSchema>;
+export type Draft = z.infer<typeof draftSchema> & {
+  revisionNote?: string | null;
+};
 export type Entry = { id: string; uid: string; name: string; url?: string };
 export type Catalog = { topics: Entry[]; sources: Entry[] };
 export type Extraction = {
@@ -251,6 +253,12 @@ export function editorialSchema(catalog: Catalog) {
   if (!catalog.topics.length || !catalog.sources.length)
     throw new BotError("Catalogue éditorial vide.");
   return draftSchema.extend({
+    revisionNote: z
+      .string()
+      .min(1)
+      .max(220)
+      .regex(/^[^\r\n]*$/)
+      .nullable(),
     topics: z
       .array(z.enum(catalog.topics.map((entry) => entry.uid)))
       .min(1)
