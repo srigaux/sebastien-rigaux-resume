@@ -83,7 +83,7 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
         id: "resp_test",
         object: "response",
         created_at: 1,
-        model: "gpt-5-mini",
+        model: "gpt-6-luna",
         status: "completed",
         output: [
           {
@@ -109,7 +109,9 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
   expect(JSON.stringify(body)).toContain("Insiste sur la lisibilité.");
   expect(JSON.stringify(body)).toContain(extraction.markdown);
   expect(JSON.stringify(body)).toContain(draft.fr.title);
-  expect(body.model).toBe("gpt-5-mini");
+  expect(body.model).toBe("gpt-6-luna");
+  expect(body.reasoning).toMatchObject({ effort: "none" });
+  expect(body.store).toBe(false);
 });
 it("importe réellement deux médias via le SDK officiel, lie EN à FR et reprend sans duplication", async () => {
   const item = fixture();

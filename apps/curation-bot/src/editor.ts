@@ -1,3 +1,4 @@
+import { log } from "@/observability";
 import { generateText, Output } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
@@ -43,15 +44,12 @@ export async function generateDraft(
     ? new Uint8Array(await imageObject.arrayBuffer())
     : undefined;
   const started = Date.now();
-  console.log(
-    JSON.stringify({
+  log("editorial.start", {
+    itemId: item.id,
       event: "editorial.start",
-      item: item.id,
-      model: env.OPENAI_MODEL || "gpt-5-mini",
-      topicsCount: cats.topics.length,
-      sourcesCount: cats.sources.length,
-    }),
-  );
+    topicsCount: cats.topics.length,
+    sourcesCount: cats.sources.length,
+  });
   const { output } = await generateText({
     model: openai(env.OPENAI_MODEL || "gpt-5-mini"),
     maxRetries: 0,
@@ -92,15 +90,12 @@ export async function generateDraft(
     providerOptions: { openai: { store: false } },
   });
   const draft = assertDraft(output, cats);
-  console.log(
-    JSON.stringify({
-      event: "editorial.complete",
-      item: item.id,
-      durationMs: Date.now() - started,
-      topics: draft.topics,
-      sourceSuggestionUid: draft.sourceSuggestionUid,
-    }),
-  );
+  log("editorial.complete", {
+    itemId: item.id,
+    durationMs: Date.now() - started,
+    topics: draft.topics,
+    sourceSuggestionUid: draft.sourceSuggestionUid,
+  });
   // Attribution must have evidence in the original material or an explicit user
   // correction. A model's unsupported name is never promoted into a credit.
   if (extraction.author && !item.state.instructions.length) {

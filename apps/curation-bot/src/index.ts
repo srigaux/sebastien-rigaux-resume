@@ -1,3 +1,4 @@
+import { errorFields, log, observe, withContext } from "@/observability";
 import type { Update } from "grammy/types";
 import type { Env } from "@/domain";
 import { handleUpdate } from "@/telegram";
@@ -18,16 +19,19 @@ export async function drainInbox(env: Env) {
       .run();
     if (!lease.meta.changes) continue;
     try {
-      await handleUpdate(env, JSON.parse(row.payload) as Update);
+      await withContext({ updateId: row.update_id }, () =>
+        observe("telegram.update", {}, () =>
+          handleUpdate(env, JSON.parse(row.payload) as Update),
+        ),
+      );
       await env.DB.prepare("UPDATE inbox SET processed=1 WHERE update_id=?")
         .bind(row.update_id)
         .run();
     } catch (error) {
-      console.error(
-        JSON.stringify({
-          update: row.update_id,
-          error: error instanceof Error ? error.name : "UnknownError",
-        }),
+      log(
+        "inbox.failed",
+        { updateId: row.update_id, ...errorFields(error) },
+        "error",
       );
       // The lease expires and the cron retries. Inserts/actions are idempotent.
       break;
@@ -45,6 +49,11 @@ export async function dispatch(env: Env) {
     instance = await env.CURATION.get(id);
     await instance.status();
   } catch {
+    log("workflow.create", {
+      itemId: item.id,
+      workflowId: id,
+      generation: item.generation,
+    });
     instance = await env.CURATION.create({
       id,
       params: { id: item.id, generation: item.generation },
@@ -54,6 +63,11 @@ export async function dispatch(env: Env) {
   if (["errored", "terminated", "complete"].includes(status.status)) {
     // An unexpected workflow failure/notification error is recoverable from the
     // journal and item checkpoints. No external write bypasses that journal.
+    log(
+      "workflow.recover",
+      { itemId: item.id, workflowId: id, status: status.status },
+      "warn",
+    );
     await store.rotate(item);
     return;
   }
@@ -106,24 +120,27 @@ export default {
       chat?.type !== "private"
     )
       return new Response("OK");
+    const traceId = crypto.randomUUID();
+    log("telegram.accepted", {
+      traceId,
+      updateId: update.update_id,
+      updateType: "message" in update ? "message" : "callback_query",
+    });
     await env.DB.prepare(
       "INSERT OR IGNORE INTO inbox(update_id,payload,received_at) VALUES(?,?,?)",
     )
       .bind(update.update_id, body, new Date().toISOString())
       .run();
     ctx.waitUntil(
-      dispatch(env).catch((error) =>
-        console.error(
-          JSON.stringify({
-            phase: "dispatch",
-            error: error instanceof Error ? error.name : "UnknownError",
-          }),
+      withContext({ updateId: update.update_id, traceId }, () =>
+        observe("dispatch", {}, () => dispatch(env)).catch((error) =>
+          log("dispatch.failed", errorFields(error), "error"),
         ),
       ),
     );
     return new Response("OK");
   },
   async scheduled(_event: ScheduledController, env: Env) {
-    await dispatch(env);
+    await observe("scheduled.dispatch", {}, () => dispatch(env));
   },
 } satisfies ExportedHandler<Env>;

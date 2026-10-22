@@ -1,3 +1,4 @@
+import { log } from "@/observability";
 import { Api, Bot, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
 import {
@@ -323,6 +324,12 @@ export function createBot(env: Env) {
         },
         new Date(message.date * 1000).toISOString(),
       );
+      log("item.queued", {
+        itemId: `u${ctx.update.update_id}`,
+        updateId: ctx.update.update_id,
+        queued: Boolean(item),
+        urlCount: urls.length,
+      });
       await ctx.reply(
         `Lien enregistré (${`u${ctx.update.update_id}`}).${item ? " Il attend dans la file." : ""}`,
       );

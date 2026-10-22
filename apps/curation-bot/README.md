@@ -38,9 +38,36 @@ Reporter l’URL `https://…trycloudflare.com` obtenue dans `PUBLIC_BOT_URL` de
 
 Le webhook est alors dirigé vers la machine locale : le bot déployé ne reçoit plus les nouveaux messages. D1, R2 et Workflows sont locaux ; les appels Context.dev, OpenAI et Telegram restent réels. Conserver `PUBLISH_ENABLED=false` pour tester sans publication. Envoyer un nouveau lien dans Telegram : une fiche annulée ou présente seulement en production n’est pas reprise dans la base locale.
 
-Les logs sont affichés dans le terminal `pnpm dev`. `editorial.start` indique la fiche, le modèle et la taille des catalogues ; `editorial.complete` indique les sujets choisis et la durée. `editorial.topics.invalid` affiche les sujets proposés et les uid autorisés. Les erreurs de Workflow indiquent la fiche, la phase et le message applicatif. Aucun contenu intégral ni secret n’est journalisé. En production, utiliser `pnpm exec wrangler tail`.
+Les logs sont affichés dans le terminal `pnpm dev`. `editorial.start` indique la fiche, le modèle et la taille des catalogues ; `editorial.complete` indique les sujets choisis et la durée. `editorial.topics.invalid` affiche les sujets proposés et les uid autorisés. Les erreurs de Workflow indiquent la fiche, la phase, le type d’erreur et les emplacements de pile nettoyés. Aucun contenu intégral ni secret n’est journalisé. En production, utiliser `pnpm exec wrangler tail`.
 
 Après le debug, remettre l’adresse du Worker dans `PUBLIC_BOT_URL` et relancer `pnpm telegram:webhook register` pour rétablir la réception en production.
+
+## Observabilité Cloudflare
+
+`wrangler.jsonc` active les Workers Logs persistants à 100 %, les logs d’invocation et l’envoi des source maps. Redéployer pour appliquer cette configuration :
+
+```sh
+pnpm deploy
+pnpm logs
+# JSON pour archivage ou traitement local :
+pnpm logs:json
+```
+
+Dans Cloudflare, ouvrir **Workers & Pages → sebastien-rigaux-curation-bot → Observability → Logs**. Sélectionner la période, puis filtrer le champ `itemId` avec l’identifiant affiché dans Telegram, par exemple `u428354575`. Si le champ n’est pas encore proposé, chercher cet identifiant dans les messages. Filtrer `level=error` pour les erreurs, et `event=retry.failed` pour les tentatives échouées : une erreur rattrapée dans un Workflow ne fait pas nécessairement échouer l’invocation HTTP.
+
+Les événements sont des objets structurés, avec `timestamp`, `service`, `event` et `level`. Selon le contexte : `itemId`, `workflowId`, `generation`, `updateId`, `traceId`, `spanId`, `parentSpanId`, `step`, `durationMs`, `httpStatus`, `providerRequestId`. `traceId` et `spanId` sont des identifiants applicatifs ; le `traceId` logique du Workflow reste identique dans une génération, y compris après reprise. Utiliser `itemId` pour relier les générations et les requêtes Telegram : une attente humaine n’est pas une unique invocation Cloudflare continue.
+
+Parcours à rechercher : `telegram.accepted` → `item.queued` → `workflow.create` → `operation.start` / `operation.complete` pour chaque étape réellement exécutée → `workflow.waiting` → `workflow.action` → `workflow.finished`. Les étapes rejouées depuis le cache durable ne réémettent pas leurs logs d’exécution. Les étapes couvrent catalogue, doublons, extraction, médias, génération, migration, publication et vérification. `retry.failed` donne tentative, caractère temporaire, timeout et identifiant fournisseur disponible ; `retry.scheduled` donne le délai et la prochaine tentative. `operation.failed` conserve le type, le statut HTTP et les lignes de pile utiles, sans le message brut du SDK.
+
+Dans **Workflows → curation → Instances**, ouvrir l’instance correspondant à `workflowId` (`u…-g…`) pour inspecter les étapes persistées et les attentes. Les logs temps réel de `pnpm logs` montrent les événements qui arrivent après son lancement ; l’historique se consulte dans Observability selon la rétention du compte.
+
+### Traces natives et confidentialité
+
+Le code crée aussi des spans natifs via `tracing.enterSpan`, compatibles avec Workers. Ils restent désactivés dans la configuration livrée : la télémétrie automatique Cloudflare enregistre notamment `url.full`, `url.path` et `url.query` des appels sortants. Telegram inclut le token du bot dans le chemin, et certaines lectures Prismic peuvent inclure un token dans la query. Le nettoyage de nos logs ne nettoie pas ces spans automatiques. Ne pas activer `observability.traces.enabled` avant de disposer d’une garantie de masquage ou d’une architecture qui retire ces secrets des URL instrumentées.
+
+Le suivi par spans applicatifs dans les logs est actif immédiatement après déploiement ; ce n’est pas une waterfall native dans l’onglet Traces. Il fonctionne aussi sous `pnpm dev`, sans collecteur externe, SDK supplémentaire ni export des contenus. Nos événements excluent les messages Telegram, prompts, réponses LLM, contenu extrait, en-têtes, tokens et URL complètes. Les attributs natifs personnalisés utilisent les mêmes métadonnées sélectionnées.
+
+Références : [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), [spans personnalisés](https://developers.cloudflare.com/workers/observability/traces/custom-spans/), [attributs automatiques](https://developers.cloudflare.com/workers/observability/traces/spans-and-attributes/).
 
 ## Comptes et secrets
 
@@ -53,7 +80,7 @@ Après le debug, remettre l’adresse du Worker dans `PUBLIC_BOT_URL` et relance
 4. Générer `TELEGRAM_WEBHOOK_SECRET` avec `openssl rand -hex 32`.
 5. Fournir `OPENAI_API_KEY`, `CONTEXT_DEV_API_KEY` et le **write token** `PRISMIC_WRITE_TOKEN`. Un éventuel `PRISMIC_ACCESS_TOKEN` est distinct : il sert à la lecture d’un repository privé.
 
-Ne pas committer `.dev.vars`. La clé OpenAI utilise le modèle `OPENAI_MODEL`, initialement `gpt-5-mini`.
+Ne pas committer `.dev.vars`. La clé OpenAI utilise le modèle `OPENAI_MODEL`, par défaut `gpt-6-luna`, avec un effort de raisonnement `none`.
 
 Le bot vérifie le secret du webhook, l’identifiant utilisateur et celui du chat privé. Les réponses de tiers et les conversations de groupe sont ignorées. Les messages et médias approuvés restent dans D1/R2 ; définir la rétention opérationnelle selon vos besoins, en conservant les fichiers des fiches en attente. Ne pas activer de suppression globale R2 qui effacerait leurs extractions.
 

@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "wrangler dev",
+    "logs": "wrangler tail --format pretty",
+    "logs:json": "wrangler tail --format json",
     "check": "tsc --noEmit",
     "test": "vitest run && node --test scripts/*.node-test.mjs",
     "test:scripts": "node --test scripts/*.node-test.mjs",

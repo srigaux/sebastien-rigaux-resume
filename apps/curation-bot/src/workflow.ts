@@ -1,3 +1,4 @@
+import { errorFields, log, observedSteps, withContext } from "@/observability";
 import {
   WorkflowEntrypoint,
   type WorkflowEvent,
@@ -17,7 +18,21 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     event: WorkflowEvent<{ id: string; generation: number }>,
     nativeStep: WorkflowStep,
   ) {
-    const step = nativeStep as unknown as Steps,
+    return withContext(
+      {
+        itemId: event.payload.id,
+        generation: event.payload.generation,
+        workflowId: `${event.payload.id}-g${event.payload.generation}`,
+        traceId: `${event.payload.id}-g${event.payload.generation}`,
+      },
+      () => this.execute(event, nativeStep),
+    );
+  }
+  private async execute(
+    event: WorkflowEvent<{ id: string; generation: number }>,
+    nativeStep: WorkflowStep,
+  ) {
+    const step = observedSteps(nativeStep as unknown as Steps),
       store = new Store(this.env.DB);
     for (let cycle = 0; cycle < 30; cycle++) {
       const prefix = `g${event.payload.generation}-c${cycle}`;
@@ -34,13 +49,10 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       } catch (error) {
         item.status = "error";
         item.state.error = errorText(error);
-        console.error(
-          JSON.stringify({
-            item: item.id,
-            phase: "advance",
-            message: errorText(error),
-            error: error instanceof Error ? error.name : "UnknownError",
-          }),
+        log(
+          "workflow.failed",
+          { phase: "advance", ...errorFields(error) },
+          "error",
         );
       }
       await step.do(`${prefix}-save`, stepConfig, async () => {
@@ -52,6 +64,10 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         return;
       }
       await step.do(`${prefix}-present`, stepConfig, async () => {
+        log("workflow.state", {
+          status: item.status,
+          revision: item.state.revision,
+        });
         await present(this.env, item, cats);
         return true;
       });
@@ -60,6 +76,11 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       let pending = await step.do(`${prefix}-pending`, stepConfig, () =>
         store.nextAction(item.id).then((v) => v ?? null),
       );
+      if (!pending)
+        log("workflow.waiting", {
+          status: item.status,
+          revision: item.state.revision,
+        });
       for (let wait = 0; !pending && wait < 30; wait++) {
         try {
           await nativeStep.waitForEvent(`${prefix}-wake-${wait}`, {
@@ -81,6 +102,10 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         return;
       }
       try {
+        log("workflow.action", {
+          action: pending.action.kind,
+          revision: item.state.revision,
+        });
         const message = await applyAction(
           this.env,
           step,
@@ -97,13 +122,10 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       } catch (error) {
         item.status = "error";
         item.state.error = errorText(error);
-        console.error(
-          JSON.stringify({
-            item: item.id,
-            phase: "action",
-            message: errorText(error),
-            error: error instanceof Error ? error.name : "UnknownError",
-          }),
+        log(
+          "workflow.failed",
+          { phase: "action", ...errorFields(error) },
+          "error",
         );
       }
       await step.do(`${prefix}-commit-action`, stepConfig, async () => {
@@ -131,6 +153,10 @@ export class CurationWorkflow extends WorkflowEntrypoint<
   }
   private async finish(step: Steps, prefix: string, item: Item, store: Store) {
     await step.do(`${prefix}-notify-finished`, stepConfig, async () => {
+      log("workflow.finished", {
+        status: item.status,
+        documentIds: item.state.publishedIds,
+      });
       await sendText(
         this.env,
         item.status === "done"

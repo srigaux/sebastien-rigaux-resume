@@ -1,3 +1,4 @@
+import { errorFields, log } from "@/observability";
 import { BotError, MediaRejected } from "@/domain";
 export interface Steps {
   do<T>(
@@ -74,14 +75,20 @@ export async function retry<T>(
           };
         } catch (e) {
           const error = classify(e);
-          console.warn(
-            JSON.stringify({
+          log(
+            "retry.failed",
+            {
               operation: name,
               attempt: attempt + 1,
-              requestId: error.requestId,
+              ...errorFields(e),
+              providerRequestId:
+                errorFields(error).providerRequestId ??
+                errorFields(e).providerRequestId,
               timeout: error.timeout,
               retryable: error.retryable,
-            }),
+              exhausted: attempt === 2,
+            },
+            "warn",
           );
           return {
             ok: false as const,
@@ -96,17 +103,26 @@ export async function retry<T>(
     );
     if (result.ok) return result.value;
     if (!result.retryable || attempt === 2) {
+      log(
+        "retry.stopped",
+        {
+          operation: name,
+          attempt: attempt + 1,
+          exhausted: attempt === 2,
+          retryable: result.retryable,
+        },
+        "error",
+      );
       if (result.mediaFilename) throw new MediaRejected(result.mediaFilename);
       throw new BotError(result.message);
     }
     timedOut ||= result.timeout;
-    await step.sleep(
-      `${name}-backoff-${attempt}`,
-      Math.max(
-        result.retryAfter,
-        [5000, 15000][attempt] * (0.8 + random() * 0.4),
-      ),
+    const delayMs = Math.max(
+      result.retryAfter,
+      [5000, 15000][attempt] * (0.8 + random() * 0.4),
     );
+    log("retry.scheduled", { operation: name, attempt: attempt + 2, delayMs });
+    await step.sleep(`${name}-backoff-${attempt}`, delayMs);
   }
   throw new Error("Unreachable");
 }

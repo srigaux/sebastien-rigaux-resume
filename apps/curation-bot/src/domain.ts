@@ -1,3 +1,4 @@
+import { log } from "@/observability";
 import { z } from "zod";
 
 export const formats = [
@@ -264,12 +265,13 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
     new Set(draft.topics).size !== draft.topics.length ||
     draft.topics.some((uid) => !catalog.topics.some((t) => t.uid === uid))
   ) {
-    console.error(
-      JSON.stringify({
-        event: "editorial.topics.invalid",
+    log(
+      "editorial.topics.invalid",
+      {
         proposed: draft.topics,
         allowed: catalog.topics.map((topic) => topic.uid),
-      }),
+      },
+      "error",
     );
     throw new BotError(
       "Le modèle a proposé un sujet inconnu ou répété. Utilisez /reprendre pour réessayer.",

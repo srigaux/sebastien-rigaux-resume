@@ -1,3 +1,4 @@
+import { log } from "@/observability";
 import ContextDev from "context.dev";
 import {
   BotError,
@@ -131,7 +132,15 @@ export async function scrape(
       },
       maxAgeMs: attempt ? 0 : 86_400_000,
     });
-    return extractResult(page);
+    const result = extractResult(page);
+    log("extraction.complete", {
+      providerRequestId: result.requestId,
+      partial: result.partial,
+      imageCount: result.imageUrls.length,
+      hasIcon: Boolean(result.iconUrl),
+      hasAuthor: Boolean(result.author),
+    });
+    return result;
   });
 }
 const MAX_MEDIA = 10 * 1024 * 1024;
