@@ -168,8 +168,8 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       await sendText(
         this.env,
         item.status === "done"
-          ? `Fiche ${item.id} : FR et EN publiés et liés dans Prismic.\nDocuments : ${item.state.publishedIds?.join(", ")}\nLe site apparaîtra après sa prochaine reconstruction.`
-          : `Fiche ${item.id} annulée.`,
+          ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
+          : "🗑️ C’est annulé ! On passe à la suite quand tu veux.",
       );
       return true;
     });

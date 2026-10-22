@@ -215,7 +215,7 @@ export function createBot(env: Env) {
       item = await store.active(env.TELEGRAM_CHAT_ID);
     if (!item || item.id !== id || item.state.revision !== Number(rev)) {
       await ctx.answerCallbackQuery({
-        text: "Cette proposition n’est plus active.",
+        text: "⏳ Cette proposition n’est plus active. Utilise la dernière version.",
       });
       return;
     }
@@ -237,7 +237,7 @@ export function createBot(env: Env) {
       revision: Number(rev),
       value,
     });
-    await ctx.answerCallbackQuery({ text: "Réponse enregistrée." });
+    await ctx.answerCallbackQuery({ text: "👌 C’est noté !" });
   });
   bot.on(["message:text", "message:caption"], async (ctx) => {
     const store = new Store(env.DB),
@@ -258,7 +258,7 @@ export function createBot(env: Env) {
         .all<{ id: string; status: string }>();
       await ctx.reply(
         rows.results.map((r) => `${r.id} : ${r.status}`).join("\n") ||
-          "La file est vide.",
+          "📭 La file est vide. Tu peux m’envoyer un nouveau lien !",
       );
       return;
     }
@@ -266,7 +266,7 @@ export function createBot(env: Env) {
       await ctx.reply(
         item
           ? `${item.id} — ${item.status}, version ${item.state.revision}${item.state.error ? "\n" + item.state.error : ""}`
-          : "Aucune fiche active.",
+          : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
       );
       return;
     }
@@ -277,7 +277,10 @@ export function createBot(env: Env) {
           kind: command === "annuler" ? "cancel" : "resume",
           revision: item.state.revision,
         });
-      else await ctx.reply("Aucune fiche active.");
+      else
+        await ctx.reply(
+          "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
+        );
       return;
     }
     const reply =
@@ -295,7 +298,7 @@ export function createBot(env: Env) {
         item.state.revision !== reply.revision)
     ) {
       await ctx.reply(
-        "Cette proposition n’est plus active. Répondez à la dernière fiche.",
+        "⏳ Cette proposition n’est plus active. Réponds à la dernière version pour continuer.",
       );
       return;
     }
@@ -376,7 +379,9 @@ export function createBot(env: Env) {
         urlCount: urls.length,
       });
       await ctx.reply(
-        `Lien enregistré (${`u${ctx.update.update_id}`}).${item ? " Il attend dans la file." : ""}`,
+        item
+          ? "🔖 Bien reçu ! Ton lien est dans la file, je m’en occupe après la fiche en cours."
+          : "🔖 Bien reçu ! Je prépare ta proposition.",
       );
       return;
     }
@@ -386,7 +391,10 @@ export function createBot(env: Env) {
         revision: item.state.revision,
         text,
       });
-    else await ctx.reply("Envoyez un lien HTTP(S) pour commencer.");
+    else
+      await ctx.reply(
+        "🔗 Envoie-moi un lien HTTP(S) et je te prépare une proposition !",
+      );
   });
   return bot;
 }
