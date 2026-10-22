@@ -179,6 +179,11 @@ export class Store {
           (u) => normalizeUrl(u) === key,
         );
       })
-      .map((row) => `Fiche ${row.id} (${row.status})`);
+      .map((row) => {
+        const state = JSON.parse(row.state) as State;
+        return {
+          title: `${row.status === "done" ? "Déjà sélectionné" : "Déjà dans ta file"} : ${state.draft?.fr.title ?? state.url}`,
+        };
+      });
   }
 }

@@ -116,7 +116,7 @@ export type State = {
   imagePending?: boolean;
   choices?: string[];
   checked?: string[];
-  duplicateMatches?: string[];
+  duplicateMatches?: (string | { title: string; url?: string })[];
   extractionKey?: string;
   media?: MediaSet;
   draft?: Draft;

@@ -25,9 +25,9 @@ describe("inbox, file et verrous D1", () => {
     ).toHaveLength(1);
     const active = (await store.active("1"))!;
     expect(active.id).toBe("u1");
-    expect(await store.duplicates(b, b.state.url)).toContain(
-      "Fiche u1 (queued)",
-    );
+    expect(await store.duplicates(b, b.state.url)).toContainEqual({
+      title: `Déjà dans ta file : ${active.state.draft!.fr.title}`,
+    });
     await store.finish(active, "done");
     expect((await store.claim("1"))?.id).toBe("u2");
   });

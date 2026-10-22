@@ -1,6 +1,6 @@
 import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
-import { escapeHtml, proposalHtml } from "@/telegram-format";
+import { escapeHtml, proposalHtml, duplicateHtml } from "@/telegram-format";
 import { log } from "@/observability";
 import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
@@ -31,7 +31,10 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
         .row(),
     );
   } else if (item.status === "duplicate")
-    kb.text("Continuer quand même", button(item, "continue")).row();
+    kb.text(
+      "✨ Créer une nouvelle proposition",
+      button(item, "continue"),
+    ).row();
   else if (["review", "source"].includes(item.status)) {
     if (item.state.sourceUid == null) {
       const draft = item.state.draft;
@@ -371,11 +374,17 @@ export async function present(env: Env, item: Item, cats: Catalog) {
     messages.push(
       `${header}\nPlusieurs liens ont été trouvés. Lequel faut-il traiter ?\n${s.choices.map((u, i) => `${i + 1}. ${u}`).join("\n")}`,
     );
-  else if (item.status === "duplicate")
-    messages.push(
-      `${header}\nCe lien existe déjà :\n${s.duplicateMatches?.join("\n")}\nContinuer quand même ?`,
+  else if (item.status === "duplicate") {
+    const messageId = await sendProposal(
+      item,
+      cats,
+      api,
+      store,
+      duplicateHtml(item),
     );
-  else if (item.status === "error") {
+    await remember(store, item, messageId);
+    return;
+  } else if (item.status === "error") {
     const messageId = await sendProposal(
       item,
       cats,

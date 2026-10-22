@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { proposalHtml, telegramMarkdown } from "@/telegram-format";
+import {
+  proposalHtml,
+  telegramMarkdown,
+  duplicateHtml,
+} from "@/telegram-format";
 import { keyboard } from "@/telegram";
 import { formats } from "@/domain";
 import { cats, draft, fixture } from "@test/fixtures";
@@ -112,4 +116,28 @@ it("keeps paragraph breaks and inline micro-examples in a single Telegram quotat
   expect(proposalHtml(item, cats)).toContain(
     "<blockquote>Un <b>repository GitHub</b> avec des états explicites.\n\nLa classe <code>flex items-center gap-2</code> rend cet exemple concret.</blockquote>",
   );
+});
+
+it("présente les doublons avec un lien FR échappé et des boutons explicites", () => {
+  const item = fixture();
+  item.status = "duplicate";
+  item.state.duplicateMatches = [
+    {
+      title: "React <Core> & TypeScript",
+      url: "https://sebastien.rigaux.be/veille/liens/react-core",
+    },
+  ];
+  const html = duplicateHtml(item);
+  expect(html).toContain("🔎 <b>Ce lien a déjà été repéré !</b>");
+  expect(html).toContain(
+    '<a href="https://sebastien.rigaux.be/veille/liens/react-core">React &lt;Core&gt; &amp; TypeScript</a>',
+  );
+  expect(html).toContain("Rien ne sera publié sans ta confirmation");
+  const buttons = keyboard(item, cats).inline_keyboard.flat();
+  expect(buttons.map((button) => button.text)).toEqual([
+    "✨ Créer une nouvelle proposition",
+    "🗑 Annuler",
+  ]);
+  item.state.duplicateMatches = ["Ancienne fiche"];
+  expect(duplicateHtml(item)).toContain("Ancienne fiche");
 });

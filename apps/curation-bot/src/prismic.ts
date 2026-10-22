@@ -45,12 +45,12 @@ export async function catalog(env: Env): Promise<Catalog> {
 export async function publishedDuplicates(
   env: Env,
   url: string,
-): Promise<string[]> {
+): Promise<{ title: string; url?: string }[]> {
   const docs = await readClient(env).getAllByType("curated_link", {
     lang: "*",
     fetch: ["curated_link.url", "curated_link.title"],
   });
-  const found = new Map<string, string>();
+  const found = new Map<string, { title: string; url?: string }>();
   for (const doc of docs) {
     try {
       if (normalizeUrl(doc.data.url.url) !== normalizeUrl(url)) continue;
@@ -58,10 +58,28 @@ export async function publishedDuplicates(
         doc.id,
         ...doc.alternate_languages.map((d) => d.id),
       ].sort()[0];
-      found.set(
-        group,
-        `${prismic.asText(doc.data.title) || doc.uid} — Prismic ${doc.id}`,
-      );
+      const french =
+        doc.lang === "fr-be"
+          ? doc
+          : docs.find(
+              (candidate) =>
+                candidate.lang === "fr-be" &&
+                doc.alternate_languages.some(
+                  (translation) => translation.id === candidate.id,
+                ),
+            );
+      const display = french ?? doc;
+      found.set(group, {
+        title:
+          prismic.asText(display.data.title) ||
+          display.uid ||
+          "Un lien déjà sélectionné",
+        ...(french?.uid
+          ? {
+              url: `https://sebastien.rigaux.be/veille/liens/${encodeURIComponent(french.uid)}`,
+            }
+          : {}),
+      });
     } catch {
       /* An unrelated empty legacy URL does not match. */
     }

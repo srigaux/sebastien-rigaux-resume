@@ -2,7 +2,12 @@ import { env } from "cloudflare:test";
 import { expect, it, vi } from "vitest";
 import { collectMedia, scrape } from "@/extract";
 import { generateDraft } from "@/editor";
-import { migrate, publish, verifyPublication } from "@/prismic";
+import {
+  migrate,
+  publish,
+  verifyPublication,
+  publishedDuplicates,
+} from "@/prismic";
 import { cats, draft, extraction, fixture, repository } from "@test/fixtures";
 import { type Steps } from "@/retry";
 const steps = () =>
@@ -196,7 +201,9 @@ it("importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   expect(assetCount).toBe(2);
   expect(creates[1].alternate_language_id).toBe("fr-id");
   expect(puts[0].uid).toBe("react-structurer-les-variantes-des-composants");
-  expect(puts[1].uid).toBe("react-components-organize-styles-with-named-variants");
+  expect(puts[1].uid).toBe(
+    "react-components-organize-styles-with-named-variants",
+  );
   expect(puts[0].data.image.id).toBe(puts[1].data.image.id);
   expect(puts[0].data.site_icon.id).toBe(puts[1].data.site_icon.id);
   expect(puts[0].data.image.dimensions).toEqual({ width: 64, height: 64 });
@@ -333,4 +340,52 @@ it("sends the image before OpenAI and keeps the early preview outside approval t
   expect(
     (await env.DB.prepare("SELECT message_id FROM messages").all()).results,
   ).toEqual([{ message_id: 11 }]);
+});
+
+it("déduplique FR/EN et utilise le permalien FR actuel même si le slug a changé", async () => {
+  const page = (
+    id: string,
+    lang: string,
+    uid: string,
+    title: string,
+    other: string,
+  ) => ({
+    id,
+    lang,
+    uid,
+    type: "curated_link",
+    alternate_languages: [{ id: other }],
+    data: {
+      url: { url: extraction.url },
+      title: [{ type: "heading1", text: title, spans: [] }],
+    },
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown) => {
+      if (!String(input).includes("/documents/search"))
+        return Response.json(repository);
+      expect(new URL(String(input)).searchParams.get("lang")).toBe("*");
+      const results = [
+        page("en-id", "en-us", "english-title", "English title", "fr-id"),
+        page("fr-id", "fr-be", "slug-fr-renomme", "Titre français", "en-id"),
+      ];
+      return Response.json({
+        page: 1,
+        results_per_page: 100,
+        results_size: 2,
+        total_results_size: 2,
+        total_pages: 1,
+        next_page: null,
+        prev_page: null,
+        results,
+      });
+    }),
+  );
+  expect(await publishedDuplicates(env, extraction.url)).toEqual([
+    {
+      title: "Titre français",
+      url: "https://sebastien.rigaux.be/veille/liens/slug-fr-renomme",
+    },
+  ]);
 });

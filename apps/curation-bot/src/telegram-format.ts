@@ -108,3 +108,20 @@ export function proposalHtml(item: Item, cats: Catalog): string {
       : []),
   ].join("\n");
 }
+
+export function duplicateHtml(item: Item): string {
+  const matches = (item.state.duplicateMatches ?? []).map((match) => {
+    if (typeof match === "string") return `• ${escapeHtml(match)}`;
+    const title = escapeHtml(match.title);
+    return match.url && /^https:\/\//i.test(match.url)
+      ? `• <a href="${escapeHtml(match.url)}">${title}</a>`
+      : `• ${title}`;
+  });
+  return [
+    "🔎 <b>Ce lien a déjà été repéré !</b>",
+    matches.join("\n"),
+    "Tu peux consulter la sélection existante ou continuer pour préparer une nouvelle proposition. Rien ne sera publié sans ta confirmation.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
