@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import slugify from "slugify";
 import { log } from "@/observability";
 import { z } from "zod";
 
@@ -225,16 +226,10 @@ export function dateInBrussels(now = new Date()): string {
   );
   return `${p.year}-${p.month}-${p.day}`;
 }
-export function slug(title: string): string {
-  return title
-    .normalize("NFKD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 110)
-    .replace(/-$/, "");
+export function slug(title: string, locale: "fr" | "en" = "fr"): string {
+  return slugify(title, { lower: true, strict: true, trim: true, locale });
 }
+
 export function linksIn(text: string): string[] {
   const found = [...text.matchAll(/https?:\/\/[^\s<>]+/g)].map((match) => {
     let url = match[0].replace(/[.,;]+$/, "");

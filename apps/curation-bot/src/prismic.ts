@@ -287,7 +287,7 @@ export function buildMigration(
   const doc = (lang: "fr" | "en") => ({
     type: "curated_link",
     lang: lang === "fr" ? "fr-be" : "en-us",
-    uid: `${slug(draft[lang].title)}-${item.id}`,
+    uid: slug(draft[lang].title, lang),
     data: {
       ...common,
       title: [

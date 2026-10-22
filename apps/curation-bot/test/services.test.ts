@@ -195,6 +195,8 @@ it("importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   expect(result.ids).toEqual(["fr-id", "en-id"]);
   expect(assetCount).toBe(2);
   expect(creates[1].alternate_language_id).toBe("fr-id");
+  expect(puts[0].uid).toBe("react-structurer-les-variantes-des-composants");
+  expect(puts[1].uid).toBe("react-components-organize-styles-with-named-variants");
   expect(puts[0].data.image.id).toBe(puts[1].data.image.id);
   expect(puts[0].data.site_icon.id).toBe(puts[1].data.site_icon.id);
   expect(puts[0].data.image.dimensions).toEqual({ width: 64, height: 64 });
