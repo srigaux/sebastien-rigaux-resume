@@ -355,7 +355,9 @@ export async function verifyPublication(
   if (!item.state.publishedIds?.length) return false;
   const client = readClient(env);
   const docs = await Promise.all(
-    item.state.publishedIds.map((id) => client.getByID(id).catch(() => null)),
+    item.state.publishedIds.map((id) =>
+      client.getByID(id, { lang: "*" }).catch(() => null),
+    ),
   );
   return docs.every((doc, i) => {
     if (!doc) return false;

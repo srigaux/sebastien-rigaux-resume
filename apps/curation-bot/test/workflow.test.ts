@@ -126,7 +126,10 @@ it("publie après confirmation et attend que les deux traductions soient visible
         const doc = [...docs.values()].find((d) =>
           query.includes(String(d.id)),
         );
-        const results = published && doc ? [doc] : [];
+        // The Content API defaults to the master locale, even for getByID.
+        const locale = new URL(url).searchParams.get("lang") ?? "fr-be";
+        const visible = doc && (locale === "*" || doc.lang === locale);
+        const results = published && visible ? [doc] : [];
         return Response.json({
           page: 1,
           results_per_page: 20,
