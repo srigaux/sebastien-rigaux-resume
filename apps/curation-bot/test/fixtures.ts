@@ -15,6 +15,7 @@ export const cats: Catalog = {
 };
 export const draft: Draft = {
   revisionNote: null,
+  sourceSuggestions: [],
   fr: {
     title: "React : structurer les variantes des composants",
     summary:

@@ -60,12 +60,10 @@ export function proposalHtml(item: Item, cats: Catalog): string {
   const s = item.state,
     draft = s.draft!;
   const source =
-    s.sourceUid === undefined
-      ? "À choisir"
-      : s.sourceUid === null
-        ? "Aucune"
-        : (cats.sources.find((entry) => entry.uid === s.sourceUid)?.name ??
-          s.sourceUid);
+    s.sourceUid == null
+      ? "Aucune"
+      : (cats.sources.find((entry) => entry.uid === s.sourceUid)?.name ??
+        s.sourceUid);
   const topics = draft.topics.map((uid) =>
     escapeHtml(
       (cats.topics.find((entry) => entry.uid === uid)?.name ?? uid).slice(
@@ -98,9 +96,6 @@ export function proposalHtml(item: Item, cats: Catalog): string {
           "",
           "⚠️ Un média est indisponible. Réessayez ou confirmez son omission.",
         ]
-      : []),
-    ...(item.status === "source"
-      ? ["", "Choisissez une source de découverte ou « Aucune »."]
       : []),
   ].join("\n");
 }

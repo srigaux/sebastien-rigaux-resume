@@ -41,6 +41,7 @@ export const draftSchema = z.object({
 });
 export type Draft = z.infer<typeof draftSchema> & {
   revisionNote?: string | null;
+  sourceSuggestions?: { uid: string; reason: string }[];
 };
 export type Entry = { id: string; uid: string; name: string; url?: string };
 export type Catalog = { topics: Entry[]; sources: Entry[] };
@@ -266,6 +267,14 @@ export function editorialSchema(catalog: Catalog) {
     sourceSuggestionUid: z
       .enum(catalog.sources.map((entry) => entry.uid))
       .nullable(),
+    sourceSuggestions: z
+      .array(
+        z.object({
+          uid: z.enum(catalog.sources.map((entry) => entry.uid)),
+          reason: z.string().min(1).max(240),
+        }),
+      )
+      .max(4),
   });
 }
 
@@ -287,6 +296,16 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
       "Le modèle a proposé un sujet inconnu ou répété. Utilisez /reprendre pour réessayer.",
     );
   }
+  if (
+    draft.sourceSuggestions &&
+    (draft.sourceSuggestions.length > 4 ||
+      new Set(draft.sourceSuggestions.map((entry) => entry.uid)).size !==
+        draft.sourceSuggestions.length ||
+      draft.sourceSuggestions.some(
+        (entry) => !catalog.sources.some((source) => source.uid === entry.uid),
+      ))
+  )
+    throw new BotError("Suggestions de sources invalides.");
   if (
     draft.sourceSuggestionUid &&
     !catalog.sources.some((s) => s.uid === draft.sourceSuggestionUid)

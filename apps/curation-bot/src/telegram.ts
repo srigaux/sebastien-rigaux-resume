@@ -30,16 +30,27 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
     );
   } else if (item.status === "duplicate")
     kb.text("Continuer quand même", button(item, "continue")).row();
-  else if (item.status === "source") {
-    const suggestion = cats.sources.find(
-      (s) => s.uid === item.state.draft?.sourceSuggestionUid,
-    );
-    if (suggestion)
-      kb.text(suggestion.name, button(item, "source", suggestion.id)).row();
-    kb.text("Autre source", button(item, "sources"))
-      .text("Aucune", button(item, "source", "none"))
-      .row();
-  } else if (item.status === "review") {
+  else if (["review", "source"].includes(item.status)) {
+    if (item.state.sourceUid == null) {
+      const draft = item.state.draft;
+      const suggestions =
+        draft?.sourceSuggestions ??
+        (draft?.sourceSuggestionUid
+          ? [{ uid: draft.sourceSuggestionUid }]
+          : []);
+      const seen = new Set<string>();
+      for (const suggestion of suggestions) {
+        const source = cats.sources.find(
+          (entry) => entry.uid === suggestion.uid,
+        );
+        if (!source || seen.has(source.uid)) continue;
+        seen.add(source.uid);
+        kb.text(
+          `🔎 Ajouter ${source.name}`,
+          button(item, "source", source.id),
+        ).row();
+      }
+    }
     kb.text("🚀 Publier", button(item, "approve"));
   } else if (item.status === "error") {
     kb.text("Réessayer", button(item, "resume")).row();

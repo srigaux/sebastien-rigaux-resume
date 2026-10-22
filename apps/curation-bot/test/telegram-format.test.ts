@@ -71,3 +71,36 @@ it("displays the model revision note with its version, and maps every format to 
     expect(proposalHtml(item, cats)).toMatch(/<b>[^a-zA-Z<]+ [^<]+<\/b>\n🏷️/);
   }
 });
+
+it("offers ranked optional sources above immediate publication without attributing them", () => {
+  const item = fixture();
+  const catalog = {
+    ...cats,
+    sources: [
+      ...cats.sources,
+      { id: "src-css", uid: "css-weekly", name: "CSS Weekly" },
+    ],
+  };
+  item.state.sourceUid = null;
+  item.state.draft!.sourceSuggestions = [
+    { uid: "css-weekly", reason: "Lien de newsletter explicite" },
+    { uid: "javascript-weekly", reason: "Paramètre de suivi" },
+  ];
+  const rows = keyboard(item, catalog).inline_keyboard;
+  expect(rows.map((row) => row.map((button) => button.text))).toEqual([
+    ["🔎 Ajouter CSS Weekly"],
+    ["🔎 Ajouter JavaScript Weekly"],
+    ["🚀 Publier", "🗑 Annuler"],
+  ]);
+  expect(rows[0][0]).toMatchObject({
+    callback_data: `${item.id}:1:source:src-css`,
+  });
+  expect(proposalHtml(item, catalog)).toContain("🔎 Source : <b>Aucune</b>");
+  expect(item.state.sourceUid).toBeNull();
+  item.state.sourceUid = "css-weekly";
+  expect(
+    keyboard(item, catalog)
+      .inline_keyboard.flat()
+      .map((button) => button.text),
+  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+});

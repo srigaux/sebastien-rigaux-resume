@@ -121,6 +121,8 @@ export async function advance(
     stepConfig,
     () => loadExtraction(env, item),
   );
+  if (s.sourceUid === undefined)
+    s.sourceUid = explicitSource(s.note, cats) ?? null;
   const selectedExtraction = s.imageChoice
     ? { ...extraction, imageUrls: [s.imageChoice] }
     : extraction;
@@ -142,7 +144,6 @@ export async function advance(
     );
     if (previous) s.revisionNote = s.draft.revisionNote ?? undefined;
     s.needsRevision = false;
-    if (s.sourceUid === undefined) s.sourceUid = explicitSource(s.note, cats);
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item);
   }
   if (s.approvedRevision === s.revision) {
@@ -244,7 +245,7 @@ export async function advance(
     item.status = "done";
     return;
   }
-  item.status = s.sourceUid === undefined ? "source" : "review";
+  item.status = "review";
 }
 export async function applyAction(
   env: Env,
@@ -349,7 +350,6 @@ export async function applyAction(
   if (action.kind === "sources" && s.draft) {
     s.showImages = false;
     s.showSources = true;
-    s.sourceUid = undefined;
     s.revision++;
     s.approvedRevision = undefined;
     item.status = "source";
@@ -369,12 +369,14 @@ export async function applyAction(
   }
   if (action.kind === "approve") {
     if (
-      item.status !== "review" ||
+      !["review", "source"].includes(item.status) ||
       !s.draft ||
-      s.sourceUid === undefined ||
       s.media?.failures.length
     )
-      return "La source et les éventuels médias indisponibles doivent être résolus avant validation.";
+      return "Les éventuels médias indisponibles doivent être résolus avant validation.";
+    // Also allow publication of older fiches that were awaiting a source.
+    if (s.sourceUid === undefined) s.sourceUid = null;
+    s.showSources = false;
     s.approvedRevision = s.revision;
     item.status = "queued";
     return;

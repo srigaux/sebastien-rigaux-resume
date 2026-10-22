@@ -10,8 +10,8 @@ import {
 } from "@/domain";
 import { extractResult } from "@/extract";
 import { retry, RemoteError, retryAfter, type Steps } from "@/retry";
-import { explicitSource, applyAction } from "@/flow";
-import { cats, draft, fixture } from "@test/fixtures";
+import { advance, explicitSource, applyAction } from "@/flow";
+import { cats, draft, extraction, fixture } from "@test/fixtures";
 import { env } from "cloudflare:test";
 export function steps() {
   return {
@@ -153,7 +153,7 @@ describe("politique durable de réessai", () => {
   });
 });
 describe("actions attachées à une proposition", () => {
-  it("rejette une ancienne confirmation et exige une source résolue", async () => {
+  it("rejette une ancienne confirmation et autorise la publication sans source", async () => {
     const item = fixture();
     expect(
       await applyAction(env, steps(), "a", item, cats, {
@@ -168,7 +168,8 @@ describe("actions attachées à une proposition", () => {
       kind: "approve",
       revision: 1,
     });
-    expect(item.state.approvedRevision).toBeUndefined();
+    expect(item.state.approvedRevision).toBe(1);
+    expect(item.state.sourceUid).toBeNull();
   });
   it("invalide l’accord lors d’une correction et conserve tous les éléments pour le LLM", async () => {
     const item = fixture();
@@ -242,4 +243,23 @@ it("une canonique ne supprime pas les paramètres fonctionnels", () => {
       "https://example.com/article",
     ),
   ).toBe("https://example.com/article");
+});
+
+it("passe directement en relecture sans source, et conserve une source explicitement fournie", async () => {
+  for (const note of [
+    "https://example.com/article",
+    "source: JavaScript Weekly",
+  ]) {
+    const item = fixture();
+    item.state.sourceUid = undefined;
+    item.state.note = note;
+    item.state.extractionKey = "test/source-optional.json";
+    item.state.checked = [normalizeUrl(item.state.url)];
+    await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction));
+    await advance(env, steps(), "optional-source", item, cats);
+    expect(item.status).toBe("review");
+    expect(item.state.sourceUid).toBe(
+      note.startsWith("source:") ? "javascript-weekly" : null,
+    );
+  }
 });
