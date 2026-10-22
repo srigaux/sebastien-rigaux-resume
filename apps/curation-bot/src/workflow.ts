@@ -8,7 +8,7 @@ import type { Env, Item } from "@/domain";
 import { advance, applyAction, catalog, errorText, stepConfig } from "@/flow";
 import { retry, type Steps } from "@/retry";
 import { Store } from "@/store";
-import { present, sendText } from "@/telegram";
+import { present, sendText, sendActionNotice } from "@/telegram";
 
 export class CurationWorkflow extends WorkflowEntrypoint<
   Env,
@@ -124,7 +124,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         );
         if (message)
           await step.do(`${prefix}-action-notice`, stepConfig, async () => {
-            await sendText(this.env, message);
+            await sendActionNotice(this.env, item, pending!.action, message);
             return true;
           });
       } catch (error) {

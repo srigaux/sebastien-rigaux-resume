@@ -187,7 +187,7 @@ it("presents a compact photo preview once and sends only formatted text on corre
   )
     .bind(item.id)
     .all<{ revision: number }>();
-  expect(rows.results.map((row) => row.revision)).toEqual([1, 1, 2]);
+  expect(rows.results.map((row) => row.revision)).toEqual([1, 2]);
 });
 
 it("opens source and image menus from messages without adding review buttons", async () => {
@@ -205,4 +205,241 @@ it("opens source and image menus from messages without adding review buttons", a
     "images",
     "sources",
   ]);
+});
+
+function receiptApi(mode: "normal" | "deleted" | "network" = "normal") {
+  const calls: { method: string; body: Record<string, any> }[] = [];
+  let serial = 1000;
+  const edited = new Map<string, string>();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown, init?: RequestInit) => {
+      const method = String(input).split("/").at(-1)!;
+      let body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
+      if (method === "editMessageMedia") {
+        const form = await new Request(String(input), init).formData();
+        body = {
+          message_id: Number(form.get("message_id")),
+          media: JSON.parse(String(form.get("media"))),
+        };
+      }
+      calls.push({ method, body });
+      if (method === "getMe")
+        return Response.json({
+          ok: true,
+          result: {
+            id: 999,
+            is_bot: true,
+            first_name: "Bot",
+            username: "curation_test_bot",
+          },
+        });
+      if (method === "sendChatAction")
+        return Response.json({ ok: true, result: true });
+      if (method === "editMessageText" || method === "editMessageMedia") {
+        if (mode === "network") throw new Error("Network disconnected");
+        const key = `${method}:${body.message_id}`;
+        const unchanged = edited.get(key) === JSON.stringify(body);
+        edited.set(key, JSON.stringify(body));
+        if (mode === "deleted" || unchanged)
+          return Response.json({
+            ok: false,
+            error_code: 400,
+            description:
+              mode === "deleted"
+                ? "Bad Request: message to edit not found"
+                : "Bad Request: message is not modified",
+          });
+      }
+      return Response.json({
+        ok: true,
+        result: {
+          message_id: method.startsWith("editMessage")
+            ? body.message_id
+            : ++serial,
+          date: 1,
+          chat: { id: 1, type: "private" },
+          text: body.text,
+        },
+      });
+    }),
+  );
+  return calls;
+}
+
+it("replaces the durable receipt with the proposal, tolerates replay and keeps revisions separate", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi(),
+    store = new Store(env.DB);
+  const incoming = update(501, "https://example.com/article");
+  await handleUpdate(env, incoming);
+  await handleUpdate(env, incoming);
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  expect(
+    (await env.DB.prepare("SELECT * FROM messages").all()).results,
+  ).toHaveLength(0);
+  const item = (await store.claim("1"))!;
+  item.status = "review";
+  item.state.draft = fixture().state.draft;
+  item.state.media = { failures: [] };
+  item.state.sourceUid = null;
+  await present(env, item, cats);
+  const edited = calls.find((call) => call.method === "editMessageText")!;
+  expect(edited.body).toMatchObject({
+    message_id: 1001,
+    parse_mode: "HTML",
+    text: expect.stringContaining("🇫🇷"),
+  });
+  expect(
+    edited.body.reply_markup.inline_keyboard
+      .flat()
+      .map((button: { text: string }) => button.text),
+  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+  await present(env, item, cats); // Telegram already has this exact proposal.
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  expect(
+    (await env.DB.prepare("SELECT message_id,revision FROM messages").all())
+      .results,
+  ).toEqual([{ message_id: 1001, revision: 1 }]);
+  item.state.revision = 2;
+  item.state.revisionNote = "Titres raccourcis.";
+  await present(env, item, cats);
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(2);
+  expect(
+    calls.filter((call) => call.method === "editMessageText"),
+  ).toHaveLength(2);
+  await handleUpdate(env, update(502, "valider", 1001));
+  expect(await store.nextAction(item.id)).toBeUndefined();
+});
+
+it("sends a replacement if the original receipt was deleted", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi("deleted"),
+    store = new Store(env.DB),
+    item = fixture();
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.begin(`telegram:receipt:${item.id}`, item.id, "telegram.receipt");
+  await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 });
+  await present(env, item, cats);
+  expect(calls.map((call) => call.method)).toEqual([
+    "editMessageText",
+    "sendMessage",
+  ]);
+  expect(
+    JSON.parse(
+      (await store.operation(`telegram:receipt:${item.id}`))!.response!,
+    ),
+  ).toEqual({ messageId: 1001, revision: 1 });
+});
+
+it("does not send a duplicate proposal after an edit with an unknown network result", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi("network"),
+    store = new Store(env.DB),
+    item = fixture();
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.begin(`telegram:receipt:${item.id}`, item.id, "telegram.receipt");
+  await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 });
+  await expect(present(env, item, cats)).rejects.toThrow();
+  expect(calls.map((call) => call.method)).toEqual(["editMessageText"]);
+});
+
+it("turns the initial receipt into the image and sends the complete texts separately", async () => {
+  const { present, sendPreview } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi(),
+    store = new Store(env.DB);
+  await handleUpdate(env, update(601, "https://example.com/article"));
+  const item = (await store.claim("1"))!;
+  item.state.media = {
+    failures: [],
+    image: {
+      key: "test/receipt-image",
+      filename: "image.png",
+      mime: "image/png",
+      size: 3,
+      url: "https://example.com/image.png",
+    },
+  };
+  await env.BUCKET.put("test/receipt-image", new Uint8Array([1, 2, 3]));
+  await sendPreview(env, item);
+  const media = calls.find((call) => call.method === "editMessageMedia")!;
+  expect(media.body).toMatchObject({
+    message_id: 1001,
+    media: { type: "photo", parse_mode: "HTML" },
+  });
+  expect(calls.some((call) => call.method === "sendPhoto")).toBe(false);
+  expect(calls.some((call) => call.method === "sendChatAction")).toBe(true);
+  expect(
+    (await env.DB.prepare("SELECT * FROM messages").all()).results,
+  ).toHaveLength(0);
+  // Recover a successful media edit even if the mutable item flag was lost.
+  item.state.previewImageKey = undefined;
+  await sendPreview(env, item);
+  expect(
+    calls.filter((call) => call.method === "editMessageMedia"),
+  ).toHaveLength(1);
+  item.state.draft = fixture().state.draft;
+  item.state.sourceUid = null;
+  item.status = "review";
+  await present(env, item, cats);
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(2);
+  expect(calls.some((call) => call.method === "editMessageText")).toBe(false);
+  expect(
+    (await env.DB.prepare("SELECT message_id,revision FROM messages").all())
+      .results,
+  ).toEqual([{ message_id: 1002, revision: 1 }]);
+  await handleUpdate(env, update(602, "valider", 1001));
+  expect(await store.nextAction(item.id)).toBeUndefined();
+});
+
+it("acknowledges each correction once and replaces that receipt with the new revision", async () => {
+  const { present } = await import("@/telegram");
+  const { applyAction } = await import("@/flow");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi(),
+    store = new Store(env.DB),
+    item = fixture();
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.save(item, "review");
+  const incoming = update(603, "Raccourcis les titres.");
+  await handleUpdate(env, incoming);
+  await handleUpdate(env, incoming);
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  expect(
+    calls.find((call) => call.method === "sendMessage")!.body.text,
+  ).toContain("Je prépare la nouvelle version");
+  const pending = (await store.nextAction(item.id))!;
+  expect(pending.action.receiptKey).toBe(`telegram:revision:${item.id}:603`);
+  expect(
+    (await env.DB.prepare("SELECT * FROM messages").all()).results,
+  ).toHaveLength(0);
+  const step = {
+    do: async (_n: string, _c: unknown, fn: () => Promise<unknown>) => fn(),
+    sleep: async () => {},
+  } as Parameters<typeof applyAction>[1];
+  await applyAction(env, step, "revision", item, cats, pending.action);
+  expect(item.state.revisionReceiptKey).toBe(pending.action.receiptKey);
+  item.state.needsRevision = false;
+  item.state.draft!.fr.title = "React : simplifier les variantes";
+  item.state.revisionNote = "Titres raccourcis.";
+  item.status = "review";
+  await present(env, item, cats);
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  expect(
+    calls.find((call) => call.method === "editMessageText")!.body,
+  ).toMatchObject({
+    message_id: 1001,
+    text: expect.stringContaining("Version 2 — Titres raccourcis."),
+  });
+  expect(
+    (await env.DB.prepare("SELECT message_id,revision FROM messages").all())
+      .results,
+  ).toEqual([{ message_id: 1001, revision: 2 }]);
 });

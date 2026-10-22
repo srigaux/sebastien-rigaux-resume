@@ -1,3 +1,5 @@
+import { sendPreview } from "@/telegram";
+import { withTyping, typingSteps } from "@/telegram-typing";
 import {
   canonicalFor,
   BotError,
@@ -101,7 +103,12 @@ export async function advance(
       await duplicates(env, step, `${prefix}-duplicates-original`, item, s.url)
     )
       return;
-    const extraction = await scrape(env, step, `${prefix}-scrape`, s.url);
+    const extraction = await scrape(
+      env,
+      typingSteps(env, item.chat_id, step),
+      `${prefix}-scrape`,
+      s.url,
+    );
     const key = `extractions/${item.id}.json`;
     await step.do(`${prefix}-store-extraction`, stepConfig, async () => {
       await env.BUCKET.put(key, JSON.stringify(extraction), {
@@ -129,7 +136,7 @@ export async function advance(
   if (!s.media || s.imagePending) {
     s.media = await collectMedia(
       env,
-      step,
+      typingSteps(env, item.chat_id, step),
       `${item.id}/${prefix}`,
       selectedExtraction,
       s.imagePending ? { ...s.media!, image: undefined } : undefined,
@@ -137,10 +144,16 @@ export async function advance(
     s.imagePending = false;
     await checkpoint(env, step, `${prefix}-checkpoint-media`, item);
   }
+  const previewKey = await step.do(`${prefix}-preview`, stepConfig, () =>
+    sendPreview(env, item),
+  );
+  if (typeof previewKey === "string") s.previewImageKey = previewKey;
   if (!s.draft || s.needsRevision) {
     const previous = s.draft;
     s.draft = await retry(step, `${prefix}-generate`, () =>
-      generateDraft(env, item, extraction, cats),
+      withTyping(env, item.chat_id, () =>
+        generateDraft(env, item, extraction, cats),
+      ),
     );
     if (previous) s.revisionNote = s.draft.revisionNote ?? undefined;
     s.needsRevision = false;
@@ -269,7 +282,7 @@ export async function applyAction(
     if (!s.publicationStarted && s.media?.failures.length) {
       s.media = await collectMedia(
         env,
-        step,
+        typingSteps(env, item.chat_id, step),
         `${item.id}/${prefix}-retry-media`,
         s.imageChoice
           ? { ...(await loadExtraction(env, item)), imageUrls: [s.imageChoice] }
@@ -332,6 +345,7 @@ export async function applyAction(
         : extraction.imageUrls[Number(action.value)];
     if (action.value !== "none" && !selected) return "Image inconnue.";
     s.showImages = false;
+    s.revisionReceiptKey = action.receiptKey;
     s.revisionNote = selected ? "Image modifiée." : "Image retirée.";
     s.imageChoice = selected;
     s.imagePending = !!selected;
@@ -404,6 +418,7 @@ export async function applyAction(
       s.instructions.push(action.text);
       s.needsRevision = true;
     }
+    s.revisionReceiptKey = action.receiptKey;
     s.revision++;
     s.approvedRevision = undefined;
     item.status = "queued";

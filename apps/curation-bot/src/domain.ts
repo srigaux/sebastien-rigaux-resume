@@ -85,6 +85,7 @@ export type State = {
   needsRevision?: boolean;
   revisionNote?: string;
   previewImageKey?: string;
+  revisionReceiptKey?: string;
   showSources?: boolean;
   showImages?: boolean;
   imageChoice?: string;
@@ -130,6 +131,7 @@ export type Action = {
     | "image";
   revision: number;
   text?: string;
+  receiptKey?: string;
   value?: string;
 };
 export interface Env {

@@ -1,3 +1,4 @@
+import { withTyping } from "@/telegram-typing";
 import { escapeHtml, proposalHtml } from "@/telegram-format";
 import { log } from "@/observability";
 import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
@@ -105,6 +106,241 @@ export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   );
   await remember(new Store(env.DB), item, message.message_id);
 }
+export async function sendPreview(env: Env, item: Item) {
+  const media = item.state.media?.image;
+  if (!media || media.key === item.state.previewImageKey)
+    return item.state.previewImageKey ?? null;
+  return withTyping(env, item.chat_id, () =>
+    replaceReceiptWithPreview(env, item),
+  );
+}
+async function replaceReceiptWithPreview(env: Env, item: Item) {
+  const s = item.state,
+    media = s.media!.image!,
+    store = new Store(env.DB);
+  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+  const key = receiptKey(item.id),
+    receipt = await readReceipt(store, item.id);
+  if (receipt?.kind === "media" && receipt.mediaKey === media.key) {
+    s.previewImageKey = media.key;
+    await store.save(item);
+    return media.key;
+  }
+  const object = await env.BUCKET.get(media.key);
+  if (!object)
+    throw new BotError("Fichier aperçu manquant. Utilisez /reprendre.");
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  const caption = `<a href="${escapeHtml(s.url)}">${escapeHtml(new URL(s.url).hostname)}</a>`;
+  const replace =
+    receipt && receipt.kind !== "media" && receipt.revision === undefined;
+  const photo = ["image/jpeg", "image/png", "image/webp"].includes(media.mime);
+  let type: "photo" | "document" = photo ? "photo" : "document";
+  let messageId: number | undefined;
+  if (replace) {
+    for (;;) {
+      try {
+        await api.editMessageMedia(item.chat_id, receipt.messageId, {
+          type,
+          media: new InputFile(bytes, media.filename),
+          caption,
+          parse_mode: "HTML",
+        });
+        messageId = receipt.messageId;
+        break;
+      } catch (error) {
+        if (isNotModified(error)) {
+          messageId = receipt.messageId;
+          break;
+        }
+        if (isMissingMessage(error)) break;
+        if (type !== "photo" || !isRejectedPhoto(error)) throw error;
+        type = "document";
+        log("telegram.photo.fallback", { itemId: item.id });
+      }
+    }
+  }
+  if (messageId === undefined) {
+    if (type === "photo") {
+      try {
+        const message = await api.sendPhoto(
+          item.chat_id,
+          new InputFile(bytes, media.filename),
+          { caption, parse_mode: "HTML" },
+        );
+        messageId = message.message_id;
+      } catch (error) {
+        if (!isRejectedPhoto(error)) throw error;
+        log("telegram.photo.fallback", { itemId: item.id });
+      }
+    }
+    if (messageId === undefined)
+      messageId = (
+        await api.sendDocument(
+          item.chat_id,
+          new InputFile(bytes, media.filename),
+          { caption, parse_mode: "HTML" },
+        )
+      ).message_id;
+  }
+  if (replace)
+    await store.completed(key, {
+      messageId,
+      kind: "media",
+      mediaKey: media.key,
+    });
+  // A photo alone is not an approval target. The complete FR/EN message is.
+  s.previewImageKey = media.key;
+  await store.save(item);
+  return media.key;
+}
+function isNotModified(error: unknown) {
+  return (
+    error instanceof GrammyError &&
+    error.error_code === 400 &&
+    /message is not modified/i.test(error.description)
+  );
+}
+function isMissingMessage(error: unknown) {
+  return (
+    error instanceof GrammyError &&
+    error.error_code === 400 &&
+    /message to edit not found|message can't be edited|message can not be edited/i.test(
+      error.description,
+    )
+  );
+}
+function isRejectedPhoto(error: unknown) {
+  return (
+    error instanceof GrammyError &&
+    error.error_code === 400 &&
+    /photo|image|dimension|file/i.test(error.description)
+  );
+}
+
+function receiptKey(id: string) {
+  return `telegram:receipt:${id}`;
+}
+async function readReceipt(store: Store, id: string) {
+  return readReceiptKey(store, receiptKey(id));
+}
+async function readReceiptKey(store: Store, key: string) {
+  const operation = await store.operation(key);
+  if (operation?.status !== "done" || !operation.response) return;
+  const receipt = JSON.parse(operation.response) as {
+    messageId: number;
+    revision?: number;
+    kind?: "media";
+    mediaKey?: string;
+  };
+  return Number.isSafeInteger(receipt.messageId) && receipt.messageId > 0
+    ? receipt
+    : undefined;
+}
+async function ensureReceipt(
+  store: Store,
+  key: string,
+  id: string,
+  send: () => Promise<{ message_id: number }>,
+) {
+  if (await readReceiptKey(store, key)) return;
+  const receipt = await send();
+  await store.db
+    .prepare(
+      "INSERT OR IGNORE INTO operations(key,item_id,target,status,response,updated_at) VALUES(?,?,?,'done',?,?)",
+    )
+    .bind(
+      key,
+      id,
+      "telegram.receipt",
+      JSON.stringify({ messageId: receipt.message_id }),
+      new Date().toISOString(),
+    )
+    .run();
+}
+async function sendProposal(
+  item: Item,
+  cats: Catalog,
+  api: Api,
+  store: Store,
+  html?: string,
+) {
+  const key = item.state.revisionReceiptKey ?? receiptKey(item.id);
+  const receipt = await readReceiptKey(store, key);
+  const editable =
+    receipt &&
+    receipt.kind !== "media" &&
+    (receipt.revision === undefined ||
+      receipt.revision === item.state.revision);
+  const options = {
+    parse_mode: "HTML" as const,
+    link_preview_options: { is_disabled: true },
+    reply_markup: keyboard(item, cats),
+  };
+  const text = html ?? proposalHtml(item, cats);
+  if (editable) {
+    try {
+      await api.editMessageText(item.chat_id, receipt.messageId, text, options);
+      await store.completed(key, {
+        messageId: receipt.messageId,
+        revision: item.state.revision,
+      });
+      log("telegram.receipt.replaced", {
+        itemId: item.id,
+        revision: item.state.revision,
+      });
+      return receipt.messageId;
+    } catch (error) {
+      if (isNotModified(error)) {
+        // A durable replay may retry an edit that Telegram already accepted.
+        await store.completed(key, {
+          messageId: receipt.messageId,
+          revision: item.state.revision,
+        });
+        return receipt.messageId;
+      }
+      if (!isMissingMessage(error)) throw error;
+      log("telegram.receipt.unavailable", { itemId: item.id }, "warn");
+    }
+  }
+  const message = await api.sendMessage(item.chat_id, text, options);
+  // A missing/deleted receipt gets a replacement; subsequent revisions remain
+  // separate messages, so replying to an older proposal stays version-safe.
+  if (editable)
+    await store.completed(key, {
+      messageId: message.message_id,
+      revision: item.state.revision,
+    });
+  return message.message_id;
+}
+
+export async function sendActionNotice(
+  env: Env,
+  item: Item,
+  action: Action,
+  text: string,
+) {
+  const store = new Store(env.DB);
+  const receipt = action.receiptKey
+    ? await readReceiptKey(store, action.receiptKey)
+    : undefined;
+  if (receipt && receipt.kind !== "media") {
+    const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+    try {
+      await api.editMessageText(
+        item.chat_id,
+        receipt.messageId,
+        `ℹ️ ${escapeHtml(text)}`,
+        { parse_mode: "HTML", reply_markup: new InlineKeyboard() },
+      );
+      return;
+    } catch (error) {
+      if (isNotModified(error)) return;
+      if (!isMissingMessage(error)) throw error;
+    }
+  }
+  await sendText(env, text);
+}
+
 export async function present(env: Env, item: Item, cats: Catalog) {
   if (item.state.showSources) return sourceMenu(env, item, cats);
   if (item.state.showImages) {
@@ -138,54 +374,20 @@ export async function present(env: Env, item: Item, cats: Catalog) {
     messages.push(
       `${header}\nCe lien existe déjà :\n${s.duplicateMatches?.join("\n")}\nContinuer quand même ?`,
     );
-  else if (item.status === "error") messages.push(`${header}\n${s.error}`);
-  else if (draft) {
-    const media = s.media?.image;
-    if (media && media.key !== s.previewImageKey) {
-      const object = await env.BUCKET.get(media.key);
-      if (!object)
-        throw new BotError("Fichier aperçu manquant. Utilisez /reprendre.");
-      const bytes = new Uint8Array(await object.arrayBuffer());
-      const caption = `<a href="${escapeHtml(s.url)}">${escapeHtml(new URL(s.url).hostname)}</a>`;
-      let preview;
-      if (["image/jpeg", "image/png", "image/webp"].includes(media.mime)) {
-        try {
-          preview = await api.sendPhoto(
-            item.chat_id,
-            new InputFile(bytes, media.filename),
-            { caption, parse_mode: "HTML" },
-          );
-        } catch (error) {
-          // Retry only a definite unsupported-photo response, never an ambiguous
-          // network error. The original R2 bytes remain the publication source.
-          if (
-            !(error instanceof GrammyError) ||
-            error.error_code !== 400 ||
-            !/photo|image|dimension|file/i.test(error.description)
-          )
-            throw error;
-          log("telegram.photo.fallback", { itemId: item.id });
-        }
-      }
-      if (!preview)
-        preview = await api.sendDocument(
-          item.chat_id,
-          new InputFile(bytes, media.filename),
-          { caption, parse_mode: "HTML" },
-        );
-      await remember(store, item, preview.message_id);
-      s.previewImageKey = media.key;
-    }
-    const message = await api.sendMessage(
-      item.chat_id,
-      proposalHtml(item, cats),
-      {
-        parse_mode: "HTML",
-        link_preview_options: { is_disabled: true },
-        reply_markup: keyboard(item, cats),
-      },
+  else if (item.status === "error") {
+    const messageId = await sendProposal(
+      item,
+      cats,
+      api,
+      store,
+      `⚠️ Je n’ai pas pu terminer cette version.\n${escapeHtml(s.error ?? "Utilise /reprendre pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
     );
-    await remember(store, item, message.message_id);
+    await remember(store, item, messageId);
+    return;
+  } else if (draft) {
+    await sendPreview(env, item);
+    const messageId = await sendProposal(item, cats, api, store);
+    await remember(store, item, messageId);
     await store.save(item);
     return;
   }
@@ -232,6 +434,20 @@ export function createBot(env: Env) {
       "image",
     ];
     if (!allowed.includes(kind as Action["kind"])) return;
+    if (kind === "image" && !item.state.publicationStarted) {
+      await ctx.answerCallbackQuery({ text: "👌 C’est noté !" });
+      const key = `telegram:revision:${item.id}:${ctx.update.update_id}`;
+      await ensureReceipt(store, key, item.id, () =>
+        ctx.reply("✍️ C’est noté ! Je prépare la nouvelle version."),
+      );
+      await store.addAction(ctx.update.update_id, item, {
+        kind: "image",
+        revision: Number(rev),
+        value,
+        receiptKey: key,
+      });
+      return;
+    }
     await store.addAction(ctx.update.update_id, item, {
       kind: kind as Action["kind"],
       revision: Number(rev),
@@ -244,6 +460,21 @@ export function createBot(env: Env) {
       item = await store.active(env.TELEGRAM_CHAT_ID);
     const message = ctx.message!;
     const text = message.text ?? message.caption ?? "";
+    const revise = async () => {
+      if (!item) return;
+      const key = `telegram:revision:${item.id}:${ctx.update.update_id}`;
+      if (!item.state.publicationStarted && text.length <= 8000) {
+        await ensureReceipt(store, key, item.id, () =>
+          ctx.reply("✍️ C’est noté ! Je prépare la nouvelle version."),
+        );
+      }
+      await store.addAction(ctx.update.update_id, item, {
+        kind: "revise",
+        revision: item.state.revision,
+        text,
+        receiptKey: key,
+      });
+    };
     if (/^\/(start|aide)(?:@\w+)?(?:\s|$)/i.test(text)) {
       await ctx.reply(
         "Envoyez un lien, accompagné éventuellement d’un commentaire et de « source: nom ». Les fiches sont relues ici avant publication FR + EN. Écrivez vos corrections directement, « change l’image » ou « change la source ». /statut /file /annuler /reprendre",
@@ -340,11 +571,7 @@ export function createBot(env: Env) {
       return;
     }
     if (item && reply) {
-      await store.addAction(ctx.update.update_id, item, {
-        kind: "revise",
-        revision: item.state.revision,
-        text,
-      });
+      await revise();
       return;
     }
     const entities = [
@@ -358,6 +585,16 @@ export function createBot(env: Env) {
       ...new Set([...linksIn(text), ...hidden.flatMap((u) => linksIn(u))]),
     ];
     if (urls.length) {
+      const id = `u${ctx.update.update_id}`;
+      // Persist the receipt separately from mutable item checkpoints. A replay
+      // reuses it, and the queue cannot start before the message ID is recorded.
+      await ensureReceipt(store, receiptKey(id), id, () =>
+        ctx.reply(
+          item
+            ? "🔖 Bien reçu ! Ton lien est dans la file, je m’en occupe après la fiche en cours."
+            : "🔖 Bien reçu ! Je prépare ta proposition.",
+        ),
+      );
       await store.enqueue(
         `u${ctx.update.update_id}`,
         ctx.update.update_id,
@@ -378,19 +615,9 @@ export function createBot(env: Env) {
         queued: Boolean(item),
         urlCount: urls.length,
       });
-      await ctx.reply(
-        item
-          ? "🔖 Bien reçu ! Ton lien est dans la file, je m’en occupe après la fiche en cours."
-          : "🔖 Bien reçu ! Je prépare ta proposition.",
-      );
       return;
     }
-    if (item)
-      await store.addAction(ctx.update.update_id, item, {
-        kind: "revise",
-        revision: item.state.revision,
-        text,
-      });
+    if (item) await revise();
     else
       await ctx.reply(
         "🔗 Envoie-moi un lien HTTP(S) et je te prépare une proposition !",

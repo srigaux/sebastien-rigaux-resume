@@ -238,3 +238,91 @@ it("ne réessaie pas une authentification Context.dev refusée", async () => {
   ).rejects.toThrow("401");
   expect(remote).toHaveBeenCalledTimes(1);
 });
+
+it("sends the image before OpenAI and keeps the early preview outside approval targets", async () => {
+  const { advance } = await import("@/flow");
+  const { present } = await import("@/telegram");
+  const { Store } = await import("@/store");
+  const item = fixture(),
+    store = new Store(env.DB),
+    order: string[] = [];
+  item.state.draft = undefined;
+  item.state.extractionKey = "extractions/early-preview.json";
+  item.state.checked = [item.state.url];
+  item.state.media = {
+    failures: [],
+    image: {
+      key: "media/early.png",
+      filename: "early.png",
+      mime: "image/png",
+      url: "https://example.com/image.png",
+      size: 3,
+    },
+  };
+  await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction));
+  await env.BUCKET.put("media/early.png", new Uint8Array([1, 2, 3]));
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.claim("1");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url.includes("api.telegram.org")) {
+        const method = url.split("/").at(-1)!;
+        order.push(method);
+        return Response.json({
+          ok: true,
+          result:
+            method === "sendChatAction"
+              ? true
+              : {
+                  message_id: method === "sendPhoto" ? 10 : 11,
+                  date: 1,
+                  chat: { id: 1, type: "private" },
+                },
+        });
+      }
+      if (url.includes("api.openai.com")) {
+        order.push("openai");
+        return Response.json({
+          id: "resp_early",
+          object: "response",
+          created_at: 1,
+          model: env.OPENAI_MODEL,
+          status: "completed",
+          output: [
+            {
+              type: "message",
+              id: "msg_early",
+              role: "assistant",
+              status: "completed",
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify(draft),
+                  annotations: [],
+                },
+              ],
+            },
+          ],
+          usage: { input_tokens: 100, output_tokens: 200, total_tokens: 300 },
+        });
+      }
+      throw new Error("Unexpected external request");
+    }),
+  );
+  await advance(env, steps(), "early", item, cats);
+  expect(order.indexOf("sendPhoto")).toBeLessThan(order.indexOf("openai"));
+  expect(order).toContain("sendChatAction");
+  expect(
+    (await env.DB.prepare("SELECT * FROM messages").all()).results,
+  ).toHaveLength(0);
+  expect((await store.get(item.id)).state.previewImageKey).toBe(
+    "media/early.png",
+  );
+  await present(env, item, cats);
+  expect(order.filter((method) => method === "sendPhoto")).toHaveLength(1);
+  expect(
+    (await env.DB.prepare("SELECT message_id FROM messages").all()).results,
+  ).toEqual([{ message_id: 11 }]);
+});
