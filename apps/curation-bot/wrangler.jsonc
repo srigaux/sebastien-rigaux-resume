@@ -7,15 +7,22 @@
   "upload_source_maps": true,
   "observability": {
     "enabled": true,
+    "head_sampling_rate": 1,
+    "redact_query_string": false,
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
+      "persist": true,
     },
-    // Native fetch traces include full URLs; Telegram embeds its token in the
-    // path. Keep disabled until the platform can redact those attributes.
-    // Safe correlated operation traces are emitted as structured logs instead.
-    "traces": { "enabled": false, "head_sampling_rate": 1 },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+    },
+    "issue_detection": {
+      "enabled": true,
+    },
   },
   "vars": {
     "PRISMIC_REPOSITORY": "bd7d5fa0",
