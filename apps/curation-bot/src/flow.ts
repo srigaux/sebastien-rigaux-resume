@@ -1,3 +1,4 @@
+import { revisionChanges } from "@/telegram-format";
 import {
   canonicalFor,
   BotError,
@@ -136,9 +137,11 @@ export async function advance(
     await checkpoint(env, step, `${prefix}-checkpoint-media`, item);
   }
   if (!s.draft || s.needsRevision) {
+    const previous = s.draft;
     s.draft = await retry(step, `${prefix}-generate`, () =>
       generateDraft(env, item, extraction, cats),
     );
+    if (previous) s.revisionNote = revisionChanges(previous, s.draft);
     s.needsRevision = false;
     if (s.sourceUid === undefined) s.sourceUid = explicitSource(s.note, cats);
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item);
@@ -327,6 +330,7 @@ export async function applyAction(
         : extraction.imageUrls[Number(action.value)];
     if (action.value !== "none" && !selected) return "Image inconnue.";
     s.showImages = false;
+    s.revisionNote = selected ? "Image modifiée." : "Image retirée.";
     s.imageChoice = selected;
     s.imagePending = !!selected;
     if (!selected) {
@@ -355,6 +359,7 @@ export async function applyAction(
     if (action.value !== "none" && !source)
       return "Source inconnue. Rouvrez la liste des sources.";
     s.sourceUid = source?.uid ?? null;
+    s.revisionNote = "Source de découverte modifiée.";
     s.showSources = false;
     s.revision++;
     s.approvedRevision = undefined;
@@ -388,6 +393,7 @@ export async function applyAction(
       (item.status === "source" || /^source\s*:/i.test(action.text))
     ) {
       s.sourceUid = source;
+      s.revisionNote = "Source de découverte modifiée.";
       s.showSources = false;
     } else {
       if (action.text.length > 8000)

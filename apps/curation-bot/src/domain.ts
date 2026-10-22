@@ -80,6 +80,8 @@ export type State = {
   selectedOn: string;
   revision: number;
   needsRevision?: boolean;
+  revisionNote?: string;
+  previewImageKey?: string;
   showSources?: boolean;
   showImages?: boolean;
   imageChoice?: string;

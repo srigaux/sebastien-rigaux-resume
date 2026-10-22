@@ -1,5 +1,6 @@
+import { escapeHtml, proposalHtml } from "@/telegram-format";
 import { log } from "@/observability";
-import { Api, Bot, InlineKeyboard, InputFile } from "grammy";
+import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
 import {
   BotError,
@@ -39,9 +40,7 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       .text("Aucune", button(item, "source", "none"))
       .row();
   } else if (item.status === "review") {
-    kb.text("Publier FR + EN", button(item, "approve")).row();
-    kb.text("Changer la source", button(item, "sources")).row();
-    kb.text("Changer l’image", button(item, "images")).row();
+    kb.text("🚀 Publier", button(item, "approve"));
   } else if (item.status === "error") {
     kb.text("Réessayer", button(item, "resume")).row();
   }
@@ -54,7 +53,7 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       )
       .row();
   if (!item.state.publicationStarted)
-    kb.text("Annuler", button(item, "cancel"));
+    kb.text("🗑 Annuler", button(item, "cancel"));
   return kb;
 }
 export async function sendText(env: Env, text: string, kb?: InlineKeyboard) {
@@ -130,43 +129,54 @@ export async function present(env: Env, item: Item, cats: Catalog) {
     );
   else if (item.status === "error") messages.push(`${header}\n${s.error}`);
   else if (draft) {
-    for (const lang of ["fr", "en"] as const)
-      messages.push(
-        `${header} — ${lang.toUpperCase()}\n\n${draft[lang].title}\n\n${draft[lang].summary}`,
-      );
-    const names = draft.topics.map(
-      (uid) => cats.topics.find((t) => t.uid === uid)?.name ?? uid,
-    );
-    const source =
-      s.sourceUid === undefined
-        ? "À choisir"
-        : s.sourceUid === null
-          ? "Aucune"
-          : (cats.sources.find((x) => x.uid === s.sourceUid)?.name ??
-            s.sourceUid);
-    messages.push(
-      `${header}\n${s.url}\n\nFormat : ${draft.format}\nSujets : ${names.join(", ")}\nLangue originale : ${draft.sourceLanguage ?? "Autre / inconnue"}\nCrédit article : ${draft.credit ?? "Non identifié"}\nPublication source : ${draft.publishedOn ?? "Non identifiée"}\nSélection : ${s.selectedOn}\nSource de découverte : ${source}\nImage : ${s.media?.image?.url ?? "Absente"}\nIcône : ${s.media?.icon?.url ?? "Absente"}${s.media?.failures.length ? "\nMédias indisponibles : " + s.media.failures.map((f) => f.kind).join(", ") + ". Vous pouvez réessayer ou confirmer leur omission." : ""}${item.status === "source" && draft.sourceSuggestionReason ? "\nSuggestion : " + draft.sourceSuggestionReason : ""}\n\nRépondez à cette fiche pour proposer une correction.${item.status === "source" ? " Choisissez une source ou « Aucune »." : " Le bouton publie exactement cette version FR + EN."}`,
-    );
-    for (const kind of ["image", "icon"] as const) {
-      const media = s.media?.[kind];
-      if (!media) continue;
+    const media = s.media?.image;
+    if (media && media.key !== s.previewImageKey) {
       const object = await env.BUCKET.get(media.key);
       if (!object)
         throw new BotError("Fichier aperçu manquant. Utilisez /reprendre.");
-      // A document sends the original bytes, including SVG/ICO, without Telegram
-      // recompression. Prismic receives these same bytes after approval.
-      const message = await api.sendDocument(
-        item.chat_id,
-        new InputFile(
-          new Uint8Array(await object.arrayBuffer()),
-          media.filename,
-        ),
-        {
-          caption: `${header} — ${kind === "image" ? "Image" : "Icône"}${kind === "image" ? "\nFR : " + draft.fr.imageAlt + "\nEN : " + draft.en.imageAlt : ""}`,
-        },
-      );
-      await remember(store, item, message.message_id);
+      const bytes = new Uint8Array(await object.arrayBuffer());
+      const caption = `<a href="${escapeHtml(s.url)}">${escapeHtml(new URL(s.url).hostname)}</a>`;
+      let preview;
+      if (["image/jpeg", "image/png", "image/webp"].includes(media.mime)) {
+        try {
+          preview = await api.sendPhoto(
+            item.chat_id,
+            new InputFile(bytes, media.filename),
+            { caption, parse_mode: "HTML" },
+          );
+        } catch (error) {
+          // Retry only a definite unsupported-photo response, never an ambiguous
+          // network error. The original R2 bytes remain the publication source.
+          if (
+            !(error instanceof GrammyError) ||
+            error.error_code !== 400 ||
+            !/photo|image|dimension|file/i.test(error.description)
+          )
+            throw error;
+          log("telegram.photo.fallback", { itemId: item.id });
+        }
+      }
+      if (!preview)
+        preview = await api.sendDocument(
+          item.chat_id,
+          new InputFile(bytes, media.filename),
+          { caption, parse_mode: "HTML" },
+        );
+      await remember(store, item, preview.message_id);
+      s.previewImageKey = media.key;
     }
+    const message = await api.sendMessage(
+      item.chat_id,
+      proposalHtml(item, cats),
+      {
+        parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
+        reply_markup: keyboard(item, cats),
+      },
+    );
+    await remember(store, item, message.message_id);
+    await store.save(item);
+    return;
   }
   for (let i = 0; i < messages.length; i++) {
     const message = await sendText(
@@ -281,13 +291,32 @@ export function createBot(env: Env) {
     if (/^\s*(valider|publier|oui)\s*[.!]?$/i.test(text)) {
       if (!item || !reply) {
         await ctx.reply(
-          "Utilisez le bouton Publier FR + EN ou répondez « valider » au message de la dernière proposition.",
+          "Utilisez le bouton 🚀 Publier ou répondez « valider » au message de la dernière proposition.",
         );
         return;
       }
       await store.addAction(ctx.update.update_id, item, {
         kind: "approve",
         revision: reply.revision,
+      });
+      return;
+    }
+    const menu =
+      /^(?:change(?:r)?|modifie(?:r)?)\s+(?:l['’]image|la source)[.!?]?$/i.exec(
+        text.trim(),
+      ) ?? /^(?:autre image|autre source)[.!?]?$/i.exec(text.trim());
+    if (item?.state.draft && menu) {
+      await store.addAction(ctx.update.update_id, item, {
+        kind: /source/i.test(text) ? "sources" : "images",
+        revision: item.state.revision,
+      });
+      return;
+    }
+    if (item?.state.draft && /^sans image[.!]?$/i.test(text.trim())) {
+      await store.addAction(ctx.update.update_id, item, {
+        kind: "image",
+        value: "none",
+        revision: item.state.revision,
       });
       return;
     }
