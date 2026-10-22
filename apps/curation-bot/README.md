@@ -153,10 +153,15 @@ source: JavaScript Weekly
 
 Chaque message contenant un nouveau lien entre dans la file. Plusieurs URL dans le même message déclenchent un choix du lien principal. Les liens des messages suivants attendent la fin de la fiche active.
 
+- `/aide` (ou `/help`) : aide complète.
+- `/vider` : annuler les liens en attente uniquement, sans toucher à la fiche active.
+- `/reset` : vider l’attente et demander l’annulation de la fiche active avant publication. Une migration commencée reste protégée ; utiliser `/reprendre`. Aucun document Prismic n’est supprimé.
 - `/statut` : fiche active et éventuelle erreur.
 - `/file` : fiches en cours et en attente.
 - `/annuler` : annuler la fiche active avant le début de la migration.
 - `/reprendre` : reprendre une extraction, un média ou une publication interrompus.
+
+Le menu Telegram propose ces commandes dès que vous tapez `/`. Il est configuré par `pnpm telegram:webhook register`, ou séparément avec `pnpm telegram:webhook commands` sans modifier le webhook.
 
 Les doublons sont cherchés parmi les documents **publiés** et les soumissions du bot. Les brouillons créés dans d’autres outils ne sont pas énumérables globalement avec la Content API. Les paramètres de suivi connus et fragments sont ignorés ; les paramètres fonctionnels et les chemins distincts sont conservés.
 

@@ -50,6 +50,7 @@ export const extraction: Extraction = {
 export function fixture(id = "u100"): Item {
   return {
     id,
+    update_id: 100,
     chat_id: "1",
     status: "review",
     active: 1,

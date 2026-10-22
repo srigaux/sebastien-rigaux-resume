@@ -133,6 +133,7 @@ export type State = {
 };
 export type Item = {
   id: string;
+  update_id: number;
   chat_id: string;
   status: Stage;
   active: number;

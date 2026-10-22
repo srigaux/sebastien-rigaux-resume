@@ -1,0 +1,30 @@
+[
+  {
+    "command": "aide",
+    "description": "Afficher toutes les commandes"
+  },
+  {
+    "command": "statut",
+    "description": "Voir la fiche active et son état"
+  },
+  {
+    "command": "file",
+    "description": "Voir les fiches en cours et en attente"
+  },
+  {
+    "command": "vider",
+    "description": "Vider les liens en attente uniquement"
+  },
+  {
+    "command": "reset",
+    "description": "Vider la file et annuler la fiche si possible"
+  },
+  {
+    "command": "annuler",
+    "description": "Annuler la fiche active avant publication"
+  },
+  {
+    "command": "reprendre",
+    "description": "Reprendre une fiche ou vérifier sa publication"
+  }
+]

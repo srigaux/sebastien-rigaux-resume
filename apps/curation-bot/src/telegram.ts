@@ -1,3 +1,4 @@
+import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
 import { escapeHtml, proposalHtml } from "@/telegram-format";
 import { log } from "@/observability";
@@ -475,17 +476,46 @@ export function createBot(env: Env) {
         receiptKey: key,
       });
     };
-    if (/^\/(start|aide)(?:@\w+)?(?:\s|$)/i.test(text)) {
+    if (/^\/(start|aide|help)(?:@\w+)?(?:\s|$)/i.test(text)) {
       await ctx.reply(
-        "Envoyez un lien, accompagné éventuellement d’un commentaire et de « source: nom ». Les fiches sont relues ici avant publication FR + EN. Écrivez vos corrections directement, « change l’image » ou « change la source ». /statut /file /annuler /reprendre",
+        "👋 Envoie un lien avec un commentaire éventuel et « source: nom ». Corrige la proposition par message, puis confirme sa publication FR + EN.\n\n" +
+          commands
+            .map((entry) => `/${entry.command} — ${entry.description}`)
+            .join("\n") +
+          "\n\n/reset conserve une publication déjà commencée : utilise /reprendre pour la vérifier. Aucun document Prismic publié n’est supprimé. /help et /start sont des alias de /aide.",
+      );
+      return;
+    }
+    if (/^\/(vider|reset)(?:@\w+)?(?:\s|$)/i.test(text)) {
+      const count = await store.clearQueue(
+        env.TELEGRAM_CHAT_ID,
+        ctx.update.update_id,
+      );
+      const reset = /^\/reset(?:@\w+)?(?:\s|$)/i.test(text);
+      let note = "La fiche active est conservée.";
+      if (reset && item && item.update_id <= ctx.update.update_id) {
+        if (item.state.publicationStarted) {
+          note =
+            "La publication de la fiche active a déjà commencé. Utilise /reprendre pour la vérifier ; elle reste protégée.";
+        } else {
+          await store.addAction(ctx.update.update_id, item, {
+            kind: "cancel",
+            revision: item.state.revision,
+          });
+          note = "L’annulation de la fiche active est demandée.";
+        }
+      } else if (!item) note = "Tu peux m’envoyer un nouveau lien !";
+      await ctx.reply(
+        `🧹 File vidée : ${count} lien(s) en attente retiré(s).\n${note}`,
       );
       return;
     }
     if (/^\/file\b/.test(text)) {
       const rows = await store.db
         .prepare(
-          "SELECT id,status FROM items WHERE status NOT IN ('done','cancelled') ORDER BY created_at,id LIMIT 30",
+          "SELECT id,status FROM items WHERE chat_id=? AND status NOT IN ('done','cancelled') ORDER BY created_at,id LIMIT 30",
         )
+        .bind(env.TELEGRAM_CHAT_ID)
         .all<{ id: string; status: string }>();
       await ctx.reply(
         rows.results.map((r) => `${r.id} : ${r.status}`).join("\n") ||
@@ -512,6 +542,12 @@ export function createBot(env: Env) {
         await ctx.reply(
           "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
         );
+      return;
+    }
+    if (/^\//.test(text)) {
+      await ctx.reply(
+        "🤔 Je ne connais pas cette commande. Tape /aide pour voir les commandes disponibles.",
+      );
       return;
     }
     const reply =

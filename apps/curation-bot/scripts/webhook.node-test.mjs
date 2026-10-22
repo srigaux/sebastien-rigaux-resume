@@ -81,3 +81,25 @@ test("empty inbox explains how to obtain an identity", async () => {
   await main("identity", env, api.fetch, (line) => output.push(line));
   assert.match(output[1], /Envoyez \/start/);
 });
+
+test("commands configures the chat menu without changing the webhook", async () => {
+  const api = mock([
+    { ok: true, result: true },
+    { ok: true, result: true },
+  ]);
+  await main(
+    "commands",
+    { ...env, TELEGRAM_CHAT_ID: "42" },
+    api.fetch,
+    () => {},
+  );
+  assert.deepEqual(
+    api.calls.map((call) => call.method),
+    ["setMyCommands", "setChatMenuButton"],
+  );
+  assert.deepEqual(api.calls[0].body.scope, { type: "chat", chat_id: "42" });
+  assert.ok(
+    api.calls[0].body.commands.some((entry) => entry.command === "reset"),
+  );
+  assert.deepEqual(api.calls[1].body.menu_button, { type: "commands" });
+});

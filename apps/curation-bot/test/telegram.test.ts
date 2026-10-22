@@ -443,3 +443,74 @@ it("acknowledges each correction once and replaces that receipt with the new rev
       .results,
   ).toEqual([{ message_id: 1001, revision: 2 }]);
 });
+
+it("vide l’attente du chat sans toucher à la fiche active ni aux nouveaux liens", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    item = fixture("u700");
+  await store.enqueue(item.id, 700, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.enqueue("u701", 701, "1", item.state, item.created_at);
+  await store.enqueue("u702", 702, "2", item.state, item.created_at);
+  await handleUpdate(env, update(703, "/vider"));
+  expect((await store.get("u701")).status).toBe("cancelled");
+  expect((await store.get("u702")).status).toBe("queued");
+  expect((await store.get(item.id)).active).toBe(1);
+  expect(await store.nextAction(item.id)).toBeUndefined();
+  await store.enqueue("u704", 704, "1", item.state, item.created_at);
+  await handleUpdate(env, update(703, "/vider"));
+  expect((await store.get("u704")).status).toBe("queued");
+});
+it.each([false, true])(
+  "reset protège une publication commencée : %s",
+  async (started) => {
+    telegramApi();
+    const store = new Store(env.DB),
+      item = fixture("u710");
+    item.state.publicationStarted = started;
+    await store.enqueue(item.id, 710, "1", item.state, item.created_at);
+    await store.claim("1");
+    await store.enqueue(
+      "u711",
+      711,
+      "1",
+      { ...item.state, publicationStarted: false },
+      item.created_at,
+    );
+    await handleUpdate(env, update(712, "/reset"));
+    expect((await store.get("u711")).status).toBe("cancelled");
+    expect((await store.get(item.id)).active).toBe(1);
+    expect((await store.nextAction(item.id))?.action.kind).toBe(
+      started ? undefined : "cancel",
+    );
+  },
+);
+it("help et les commandes inconnues ne deviennent pas des corrections", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    item = fixture("u720");
+  await store.enqueue(item.id, 720, "1", item.state, item.created_at);
+  await store.claim("1");
+  await handleUpdate(env, update(721, "/help"));
+  await handleUpdate(env, update(722, "/inconnue"));
+  expect(await store.nextAction(item.id)).toBeUndefined();
+  const bodies = vi
+    .mocked(fetch)
+    .mock.calls.map(([, init]) => String(init?.body));
+  expect(
+    bodies.some(
+      (body) => body.includes("/reset") && body.includes("/reprendre"),
+    ),
+  ).toBe(true);
+});
+it("un reset rejoué ne peut pas annuler une nouvelle fiche active", async () => {
+  telegramApi();
+  await handleUpdate(env, update(730, "/reset"));
+  const store = new Store(env.DB),
+    item = fixture("u731");
+  await store.enqueue(item.id, 731, "1", item.state, item.created_at);
+  await store.claim("1");
+  await handleUpdate(env, update(730, "/reset"));
+  expect(await store.nextAction(item.id)).toBeUndefined();
+  expect((await store.get(item.id)).active).toBe(1);
+});

@@ -1,4 +1,8 @@
 import { pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
+const commands = JSON.parse(
+  readFileSync(new URL("../src/commands.json", import.meta.url), "utf8"),
+);
 
 export async function main(
   action = "register",
@@ -25,7 +29,19 @@ export async function main(
       );
     return data.result;
   }
-  if (action === "identity") {
+  async function registerCommands() {
+    if (!env.TELEGRAM_CHAT_ID) throw new Error("TELEGRAM_CHAT_ID missing");
+    const scope = { type: "chat", chat_id: env.TELEGRAM_CHAT_ID };
+    await api("setMyCommands", { commands, scope });
+    await api("setChatMenuButton", {
+      chat_id: env.TELEGRAM_CHAT_ID,
+      menu_button: { type: "commands" },
+    });
+  }
+  if (action === "commands") {
+    await registerCommands();
+    log("Telegram command menu registered.");
+  } else if (action === "identity") {
     const webhook = await api("getWebhookInfo");
     if (webhook.url)
       throw new Error(
@@ -77,9 +93,12 @@ export async function main(
       allowed_updates: ["message", "callback_query"],
       drop_pending_updates: false,
     });
-    log("Webhook registered.");
+    await registerCommands();
+    log("Webhook and command menu registered.");
   } else
-    throw new Error("Usage: webhook.mjs [identity|info|register|unregister]");
+    throw new Error(
+      "Usage: webhook.mjs [identity|info|register|unregister|commands]",
+    );
 }
 
 if (

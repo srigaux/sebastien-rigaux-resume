@@ -38,6 +38,16 @@ export class Store {
       .bind(id, update, chat, JSON.stringify(state), received)
       .run();
   }
+  async clearQueue(chat: string, updateId: number): Promise<number> {
+    // A replayed reset cannot remove links received after that command.
+    const result = await this.db
+      .prepare(
+        "UPDATE items SET status='cancelled' WHERE chat_id=? AND active=0 AND status='queued' AND update_id<=? AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0",
+      )
+      .bind(chat, updateId)
+      .run();
+    return result.meta.changes;
+  }
   async claim(chat: string): Promise<Item | undefined> {
     await this.db
       .prepare(
