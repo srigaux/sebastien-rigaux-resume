@@ -46,12 +46,12 @@ export async function generateDraft(
   const started = Date.now();
   log("editorial.start", {
     itemId: item.id,
-      event: "editorial.start",
+    model: env.OPENAI_MODEL || "gpt-6-luna",
     topicsCount: cats.topics.length,
     sourcesCount: cats.sources.length,
   });
   const { output } = await generateText({
-    model: openai(env.OPENAI_MODEL || "gpt-5-mini"),
+    model: openai(env.OPENAI_MODEL || "gpt-6-luna"),
     maxRetries: 0,
     abortSignal: AbortSignal.timeout(120_000),
     maxOutputTokens: 5000,
@@ -87,7 +87,7 @@ export async function generateDraft(
         ],
       },
     ],
-    providerOptions: { openai: { store: false } },
+    providerOptions: { openai: { store: false, reasoningEffort: "none" } },
   });
   const draft = assertDraft(output, cats);
   log("editorial.complete", {
