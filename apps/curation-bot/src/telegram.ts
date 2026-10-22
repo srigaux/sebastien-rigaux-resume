@@ -1,7 +1,7 @@
 import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
 import { escapeHtml, proposalHtml, duplicateHtml } from "@/telegram-format";
-import { log } from "@/observability";
+import { errorFields, log } from "@/observability";
 import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
 import {
@@ -97,6 +97,34 @@ async function remember(store: Store, item: Item, messageId: number) {
     )
     .bind(item.chat_id, messageId, item.id, item.state.revision)
     .run();
+}
+// Clear only the keyboard: text, media and reply/version tracking stay intact.
+export async function clearItemButtons(env: Env, item: Item) {
+  const messages = await env.DB.prepare(
+    "SELECT message_id FROM messages WHERE chat_id=? AND item_id=?",
+  )
+    .bind(item.chat_id, item.id)
+    .all<{ message_id: number }>();
+  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+  for (const message of messages.results) {
+    try {
+      await api.editMessageReplyMarkup(item.chat_id, message.message_id, {
+        reply_markup: { inline_keyboard: [] },
+      });
+    } catch (error) {
+      if (isNotModified(error) || isMissingMessage(error)) continue;
+      // A Telegram UI failure must never block publication or queue release.
+      log(
+        "telegram.buttons.clear_failed",
+        {
+          itemId: item.id,
+          messageId: message.message_id,
+          ...errorFields(error),
+        },
+        "warn",
+      );
+    }
+  }
 }
 export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   const kb = new InlineKeyboard();
@@ -261,6 +289,41 @@ async function ensureReceipt(
     )
     .run();
 }
+export async function publicationNotice(
+  env: Env,
+  item: Item,
+  complete = false,
+) {
+  const store = new Store(env.DB);
+  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+  const key = `telegram:publication:${item.id}`;
+  if (!complete) {
+    await ensureReceipt(store, key, item.id, () =>
+      api.sendMessage(
+        item.chat_id,
+        "🚀 Publication en cours… Je prépare les versions FR et EN avec leurs médias, puis je vérifie leur publication dans Prismic.",
+      ),
+    );
+    return;
+  }
+  const text =
+    "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction.";
+  const receipt = await readReceiptKey(store, key);
+  if (receipt) {
+    try {
+      await api.editMessageText(item.chat_id, receipt.messageId, text);
+      return;
+    } catch (error) {
+      if (isNotModified(error)) return;
+      if (!isMissingMessage(error)) throw error;
+    }
+  }
+  // Older workflows or a deleted progress message still get a final receipt.
+  await ensureReceipt(store, `${key}:result`, item.id, () =>
+    api.sendMessage(item.chat_id, text),
+  );
+}
+
 async function sendProposal(
   item: Item,
   cats: Catalog,

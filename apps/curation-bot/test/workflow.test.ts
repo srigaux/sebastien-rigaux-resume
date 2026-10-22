@@ -41,6 +41,13 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
       await env.CURATION.get(id)
     ).sendEvent({ type: "input", payload: {} });
     await inspector.waitForStepResult({ name: "g0-c0-commit-action" });
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([url]) =>
+          String(url).endsWith("/editMessageReplyMarkup"),
+        ),
+    ).toBe(false);
     expect((await store.get(item.id)).state.approvedRevision).toBeUndefined();
     await inspector.waitForStepResult({ name: "g0-c1-present" });
     const resumed = new Store(env.DB);
@@ -51,6 +58,13 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
     await inspector.waitForStatus("complete");
     const finished = await resumed.get(item.id);
     expect(finished.status).toBe("cancelled");
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([url]) =>
+          String(url).endsWith("/editMessageReplyMarkup"),
+        ),
+    ).toBe(true);
     expect(finished.active).toBe(0);
     expect(
       (await env.DB.prepare("SELECT * FROM operations").all()).results,
@@ -71,6 +85,8 @@ it("publie après confirmation et attend que les deux traductions soient visible
   await store.claim("1");
   await store.save(item, "review");
   await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000);
+  let publicationMessageId: number | undefined;
+  let publicationConfirmed = false;
   let messageId = 0,
     published = false,
     publishCalls = 0,
@@ -80,7 +96,20 @@ it("publie après confirmation et attend que les deux traductions soient visible
     "fetch",
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("api.telegram.org"))
+      if (url.includes("api.telegram.org")) {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        if (
+          url.endsWith("/sendMessage") &&
+          body.text?.includes("Publication en cours")
+        )
+          publicationMessageId = messageId + 1;
+        if (
+          url.endsWith("/editMessageText") &&
+          body.text?.includes("C’est publié")
+        ) {
+          expect(body.message_id).toBe(publicationMessageId);
+          publicationConfirmed = true;
+        }
         return Response.json({
           ok: true,
           result: {
@@ -90,6 +119,7 @@ it("publie après confirmation et attend que les deux traductions soient visible
             text: "test",
           },
         });
+      }
       if (
         url.includes("cdn.prismic.io/api/v2") &&
         !url.includes("documents/search")
@@ -117,6 +147,14 @@ it("publie après confirmation et attend que les deux traductions soient visible
         return Response.json({});
       }
       if (url.includes("migration-release/publish")) {
+        expect(
+          vi
+            .mocked(fetch)
+            .mock.calls.some(([url]) =>
+              String(url).endsWith("/editMessageReplyMarkup"),
+            ),
+        ).toBe(true);
+        expect(publicationMessageId).toBeDefined();
         published = true;
         publishCalls++;
         return Response.json({ totalItems: 2 }, { status: 202 });
@@ -164,6 +202,7 @@ it("publie après confirmation et attend que les deux traductions soient visible
     expect(finished.state.publishedIds).toEqual(["live-fr", "live-en"]);
     expect(publishCalls).toBe(1);
     expect(createCalls).toBe(2);
+    expect(publicationConfirmed).toBe(true);
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
     ).toHaveLength(0);

@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { it, expect, vi } from "vitest";
 import type { Update } from "grammy/types";
-import { handleUpdate } from "@/telegram";
+import { handleUpdate, clearItemButtons, publicationNotice } from "@/telegram";
 import { Store } from "@/store";
 import { fixture } from "@test/fixtures";
 
@@ -513,4 +513,65 @@ it("un reset rejoué ne peut pas annuler une nouvelle fiche active", async () =>
   await handleUpdate(env, update(730, "/reset"));
   expect(await store.nextAction(item.id)).toBeUndefined();
   expect((await store.get(item.id)).active).toBe(1);
+});
+
+it("retire uniquement les claviers de la fiche, sans supprimer les messages ni leur version", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    item = fixture("u800");
+  await store.enqueue(item.id, 800, "1", item.state, item.created_at);
+  await store.enqueue("u801", 801, "1", item.state, item.created_at);
+  await env.DB.prepare("INSERT INTO messages VALUES(?,?,?,?)")
+    .bind("1", 800, item.id, 1)
+    .run();
+  await env.DB.prepare("INSERT INTO messages VALUES(?,?,?,?)")
+    .bind("1", 801, "u801", 1)
+    .run();
+  await clearItemButtons(env, item);
+  const calls = vi.mocked(fetch).mock.calls;
+  expect(calls).toHaveLength(1);
+  expect(String(calls[0][0])).toContain("/editMessageReplyMarkup");
+  expect(JSON.parse(String(calls[0][1]?.body))).toMatchObject({
+    message_id: 800,
+    reply_markup: { inline_keyboard: [] },
+  });
+  expect(
+    (await env.DB.prepare("SELECT * FROM messages").all()).results,
+  ).toHaveLength(2);
+});
+it("une erreur de retrait de clavier ne bloque pas le traitement", async () => {
+  const item = fixture("u810"),
+    store = new Store(env.DB);
+  await store.enqueue(item.id, 810, "1", item.state, item.created_at);
+  await env.DB.prepare("INSERT INTO messages VALUES(?,?,?,?)")
+    .bind("1", 810, item.id, 1)
+    .run();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw new Error("Network unavailable");
+    }),
+  );
+  await expect(clearItemButtons(env, item)).resolves.toBeUndefined();
+});
+
+it("réutilise le message de publication lors d’une reprise et le remplace par la confirmation", async () => {
+  telegramApi();
+  const item = fixture("u820"),
+    store = new Store(env.DB);
+  await store.enqueue(item.id, 820, "1", item.state, item.created_at);
+  await publicationNotice(env, item);
+  await publicationNotice(env, item);
+  await publicationNotice(env, item, true);
+  const calls = vi.mocked(fetch).mock.calls;
+  expect(
+    calls.filter(([url]) => String(url).endsWith("/sendMessage")),
+  ).toHaveLength(1);
+  const edited = calls.find(([url]) =>
+    String(url).endsWith("/editMessageText"),
+  );
+  expect(JSON.parse(String(edited?.[1]?.body))).toMatchObject({
+    message_id: 999,
+    text: expect.stringContaining("C’est publié"),
+  });
 });

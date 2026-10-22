@@ -8,7 +8,13 @@ import type { Env, Item } from "@/domain";
 import { advance, applyAction, catalog, errorText, stepConfig } from "@/flow";
 import { retry, type Steps } from "@/retry";
 import { Store } from "@/store";
-import { present, sendText, sendActionNotice } from "@/telegram";
+import {
+  present,
+  sendText,
+  sendActionNotice,
+  clearItemButtons,
+  publicationNotice,
+} from "@/telegram";
 
 export class CurationWorkflow extends WorkflowEntrypoint<
   Env,
@@ -109,6 +115,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         });
         return;
       }
+      let accepted = false;
       try {
         log("workflow.action", {
           action: pending.action.kind,
@@ -122,6 +129,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
           cats,
           pending.action,
         );
+        accepted = message === undefined;
         if (message)
           await step.do(`${prefix}-action-notice`, stepConfig, async () => {
             await sendActionNotice(this.env, item, pending!.action, message);
@@ -149,6 +157,15 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         ]);
         return true;
       });
+      if (accepted)
+        await step.do(
+          `${prefix}-clear-action-buttons`,
+          stepConfig,
+          async () => {
+            await clearItemButtons(this.env, item);
+            return true;
+          },
+        );
       if ((item as Item).status === "cancelled") {
         await this.finish(step, prefix, item, store);
         return;
@@ -160,17 +177,21 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     });
   }
   private async finish(step: Steps, prefix: string, item: Item, store: Store) {
+    await step.do(`${prefix}-clear-finished-buttons`, stepConfig, async () => {
+      await clearItemButtons(this.env, item);
+      return true;
+    });
     await step.do(`${prefix}-notify-finished`, stepConfig, async () => {
       log("workflow.finished", {
         status: item.status,
         documentIds: item.state.publishedIds,
       });
-      await sendText(
-        this.env,
-        item.status === "done"
-          ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
-          : "🗑️ C’est annulé ! On passe à la suite quand tu veux.",
-      );
+      if (item.status === "done") await publicationNotice(this.env, item, true);
+      else
+        await sendText(
+          this.env,
+          "🗑️ C’est annulé ! On passe à la suite quand tu veux.",
+        );
       return true;
     });
     await step.do(`${prefix}-release-item`, stepConfig, async () => {

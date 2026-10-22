@@ -1,4 +1,4 @@
-import { sendPreview } from "@/telegram";
+import { sendPreview, publicationNotice } from "@/telegram";
 import { withTyping, typingSteps } from "@/telegram-typing";
 import {
   canonicalFor,
@@ -188,6 +188,10 @@ export async function advance(
     s.publicationStarted = true;
     item.status = "publishing";
     await checkpoint(env, step, `${prefix}-checkpoint-publishing`, item);
+    await step.do(`${prefix}-publication-notice`, stepConfig, async () => {
+      await publicationNotice(env, item);
+      return true;
+    });
     if (!s.publishedIds) {
       try {
         const result = await retry(step, `${prefix}-migrate`, () =>
