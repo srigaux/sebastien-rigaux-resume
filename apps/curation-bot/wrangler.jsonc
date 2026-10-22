@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sebastien-rigaux-curation-bot",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "PRISMIC_REPOSITORY": "bd7d5fa0",
+    "OPENAI_MODEL": "gpt-5-mini",
+    "PUBLISH_ENABLED": "false",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "curation-bot",
+      "database_id": "6343b926-1b34-4884-a28a-9d3a83229b81",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "curation-bot-private",
+    },
+  ],
+  "workflows": [
+    {
+      "binding": "CURATION",
+      "name": "curation",
+      "class_name": "CurationWorkflow",
+    },
+  ],
+  "triggers": {
+    "crons": ["* * * * *"],
+  },
+}

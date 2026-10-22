@@ -1,0 +1,10 @@
+TELEGRAM_BOT_TOKEN=replace-me
+TELEGRAM_WEBHOOK_SECRET=replace-with-random-secret
+TELEGRAM_USER_ID=replace-me
+TELEGRAM_CHAT_ID=replace-me
+OPENAI_API_KEY=replace-me
+CONTEXT_DEV_API_KEY=replace-me
+PRISMIC_WRITE_TOKEN=replace-me
+# Optional for private Content API access:
+PRISMIC_ACCESS_TOKEN=
+PUBLIC_BOT_URL=https://curation-bot.YOUR-SUBDOMAIN.workers.dev

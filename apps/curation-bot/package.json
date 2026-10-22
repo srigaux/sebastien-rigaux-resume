@@ -1,0 +1,41 @@
+{
+  "name": "curation-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "tsc --noEmit",
+    "test": "vitest run && node --test scripts/*.node-test.mjs",
+    "test:scripts": "node --test scripts/*.node-test.mjs",
+    "deploy": "wrangler deploy",
+    "deploy:dry": "wrangler deploy --dry-run",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "db:remote": "wrangler d1 migrations apply DB --remote",
+    "telegram:webhook": "node --env-file=.dev.vars scripts/webhook.mjs",
+    "reconcile": "node scripts/reconcile.mjs",
+    "format": "prettier --write src test scripts *.ts *.json *.jsonc",
+    "format:check": "prettier --check src test scripts *.ts *.json *.jsonc"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.96",
+    "@prismicio/client": "7.22.3",
+    "ai": "^7.0.143",
+    "context.dev": "^3.10.0",
+    "grammy": "^1.38.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261018.1",
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.151.1",
+    "@cloudflare/vitest-plugin": "^1.4.4",
+    "prettier": "^3.6.2"
+  },
+  "packageManager": "pnpm@11.25.0"
+}
