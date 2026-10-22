@@ -135,6 +135,12 @@ pnpm exec wrangler tail
 
 `PUBLIC_BOT_URL` sert seulement au script local d’enregistrement. `/health` est public et ne révèle aucun paramètre. Le webhook `/telegram` n’accepte que les mises à jour authentifiées. L’enregistrement conserve les mises à jour en attente.
 
+## Ligne éditoriale
+
+Le bot adopte un regard technique de CTO sans première personne : intérêt concret, mécanismes, compromis et limites étayées, sans « je retiens », expérience inventée ou ton promotionnel. Le français conserve les termes usuels comme repository GitHub, pull request, code review ou framework. Chaque description comporte généralement deux courts paragraphes (un à trois autorisés), dans la limite totale de 800 caractères et 140 mots. Le Markdown met en valeur quelques idées en gras, une nuance en italique et, lorsque la source le permet, un micro-exemple exact en code inline sur une seule ligne. Aucune classe, commande ou API d'exemple n'est inventée pour enrichir la fiche.
+
+Les paragraphes restent du Markdown littéral dans `summary` avec `spans: []`. Ils sont préservés dans Telegram, les pages de veille, les exports Markdown et le contenu HTML RSS. Le prompt du bot est autonome ; les workflows manuels historiques conservent leurs propres consignes.
+
 ## Utilisation
 
 Envoyer par exemple :

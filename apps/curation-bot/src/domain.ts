@@ -1,3 +1,4 @@
+import MarkdownIt from "markdown-it";
 import { log } from "@/observability";
 import { z } from "zod";
 
@@ -10,6 +11,29 @@ export const formats = [
   "Tool",
   "Other",
 ] as const;
+const summaryMarkdown = new MarkdownIt({ html: true, linkify: false });
+function validSummary(value: string): boolean {
+  if (value.trim().split(/\s+/).length > 140) return false;
+  const tokens = summaryMarkdown.parse(value.trim(), {});
+  const paragraphs = tokens.filter(
+    (token) => token.type === "paragraph_open",
+  ).length;
+  return (
+    paragraphs >= 1 &&
+    paragraphs <= 3 &&
+    tokens.every(
+      (token) =>
+        ["paragraph_open", "inline", "paragraph_close"].includes(token.type) &&
+        !/[\r\n]/.test(token.content) &&
+        (token.children ?? []).every(
+          (child) =>
+            !["html_inline", "image", "softbreak", "hardbreak"].includes(
+              child.type,
+            ) && !/[\r\n]/.test(child.content),
+        ),
+    )
+  );
+}
 const copy = z.object({
   title: z
     .string()
@@ -21,9 +45,8 @@ const copy = z.object({
     .min(20)
     .max(800)
     .refine(
-      (v) =>
-        v.trim().split(/\s+/).length <= 140 &&
-        !/[\r\n]|<[^>]*>|!\[|^\s*(?:#{1,6}\s|[-*•]\s|\d+[.)]\s)/.test(v),
+      validSummary,
+      "Utiliser un à trois paragraphes courts de Markdown inline, sans bloc ni HTML.",
     ),
   imageAlt: z.string().max(240),
 });

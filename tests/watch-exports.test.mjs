@@ -2,7 +2,7 @@ import { pageMarkdownPath, localeHomePath } from "#site-urls";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { sitemapMetadata } from "#site-sitemap";
-import { markdownResponse, summaryText, watchIndexMarkdown, watchLinkMarkdown, watchArchiveMarkdown } from "#watch-markdown";
+import { markdownResponse, renderSummaryMarkdown, summaryText, watchIndexMarkdown, watchLinkMarkdown, watchArchiveMarkdown } from "#watch-markdown";
 
 const site = new URL("https://sebastien.rigaux.be");
 const fr = "/veille/liens/un-outil";
@@ -67,4 +67,11 @@ test("Markdown URLs append .md, with the existing French root export", () => {
   assert.equal(pageMarkdownPath("/en"), "/en.md");
   assert.equal(pageMarkdownPath("/veille/liens/mon-lien"), "/veille/liens/mon-lien.md");
   assert.equal(pageMarkdownPath("/veille/liens/mon-lien/"), "/veille/liens/mon-lien.md");
+});
+
+test("watch summaries preserve paragraphs and micro-examples in HTML and Markdown, with plain SEO text", () => {
+  const summary = "Un **repository GitHub** pour clarifier les composants.\n\nLa classe `flex items-center gap-2` sert d'exemple concret.";
+  assert.equal(renderSummaryMarkdown(summary), "<p>Un <strong>repository GitHub</strong> pour clarifier les composants.</p>\n<p>La classe <code>flex items-center gap-2</code> sert d'exemple concret.</p>");
+  assert.equal(summaryText(summary), "Un repository GitHub pour clarifier les composants. La classe flex items-center gap-2 sert d'exemple concret.");
+  assert.ok(watchLinkMarkdown({ ...link, summary }, site).includes(summary));
 });

@@ -27,7 +27,7 @@
   "vars": {
     "PRISMIC_REPOSITORY": "bd7d5fa0",
     "OPENAI_MODEL": "gpt-6-luna",
-    "PUBLISH_ENABLED": "false",
+    "PUBLISH_ENABLED": "true",
   },
   "d1_databases": [
     {

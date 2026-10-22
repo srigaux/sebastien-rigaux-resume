@@ -24,7 +24,7 @@ export async function watchRss(locale: Locale, site: URL) {
     items: links.slice(0, 50).map((link) => ({
       title: link.title,
       description: summaryText(link.summary),
-      content: `${link.image ? `<p><img src="${escapeMarkup(link.image.url)}" alt="${escapeMarkup(link.image.alt)}"${link.image.width && link.image.height ? ` width="${link.image.width}" height="${link.image.height}"` : ""} /></p>` : ""}<p>${renderSummaryMarkdown(link.summary)}</p><p><a href="${escapeMarkup(link.url)}">${locale === "fr" ? "Ouvrir le lien original" : "Open original link"}</a></p>`,
+      content: `${link.image ? `<p><img src="${escapeMarkup(link.image.url)}" alt="${escapeMarkup(link.image.alt)}"${link.image.width && link.image.height ? ` width="${link.image.width}" height="${link.image.height}"` : ""} /></p>` : ""}${renderSummaryMarkdown(link.summary)}<p><a href="${escapeMarkup(link.url)}">${locale === "fr" ? "Ouvrir le lien original" : "Open original link"}</a></p>`,
       ...(link.image && { customData: `<media:thumbnail url="${escapeMarkup(link.image.url)}"${link.image.width && link.image.height ? ` width="${link.image.width}" height="${link.image.height}"` : ""} /><media:description>${escapeMarkup(link.image.alt)}</media:description>` }),
       link: watchLinkTarget(link, locale),
       pubDate: new Date(`${link.selectedOn}T00:00:00Z`),

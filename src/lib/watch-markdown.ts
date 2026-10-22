@@ -13,14 +13,16 @@ markdown.renderer.rules.link_open = (tokens, index, options, _env, self) => {
 };
 
 export function renderSummaryMarkdown(summary: string): string {
-  return markdown.renderInline(summary.trim());
+  return summary.trim().split(/\n[ \t]*\n+/)
+    .map((paragraph) => `<p>${markdown.renderInline(paragraph)}</p>`).join("\n");
 }
 
 export function summaryText(summary: string): string {
-  const tokens = markdown.parseInline(summary.trim(), {});
-  return tokens.flatMap((token) => token.children ?? [])
-    .filter((token) => token.type === "text" || token.type === "code_inline" || token.type === "softbreak")
-    .map((token) => token.type === "softbreak" ? " " : token.content).join("").replace(/\s+/g, " ").trim();
+  return summary.trim().split(/\n[ \t]*\n+/).map((paragraph) =>
+    markdown.parseInline(paragraph, {}).flatMap((token) => token.children ?? [])
+      .filter((token) => token.type === "text" || token.type === "code_inline" || token.type === "softbreak")
+      .map((token) => token.type === "softbreak" ? " " : token.content).join("")
+  ).join(" ").replace(/\s+/g, " ").trim();
 }
 
 function escapeText(value: string): string {

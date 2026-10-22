@@ -263,3 +263,27 @@ it("passe directement en relecture sans source, et conserve une source explicite
     );
   }
 });
+
+it("autorise un à trois paragraphes et les micro-exemples inline, sans listes ni blocs", () => {
+  const summary =
+    "Des **états explicites** rendent la code review plus lisible.\n\nUne classe `data-[state=open]:opacity-100` illustre ce mécanisme.\n\nLe type `Array<T>` reste du code inline.";
+  expect(
+    assertDraft({ ...draft, fr: { ...draft.fr, summary } }, cats).fr.summary,
+  ).toBe(summary);
+  const invalid = [
+    "Un premier paragraphe suffisamment long.\n\n- Une liste dans le deuxième paragraphe.",
+    "Un premier paragraphe suffisamment long.\n\n## Un titre ajouté après le texte",
+    "Un premier paragraphe suffisamment long.\n\n```ts\nconst x = 1;\n```",
+    "Un premier paragraphe suffisamment long.\nUn saut de ligne forcé.",
+    "Un exemple de code inline `const x =\n1` sur deux lignes.",
+    "Un premier paragraphe suffisamment long.\n\n<span>Du HTML ne doit pas être accepté.</span>",
+    "Un premier paragraphe suffisamment long.\n\n![image](https://example.com/image.png)",
+    "Premier paragraphe.\n\nDeuxième paragraphe.\n\nTroisième paragraphe.\n\nQuatrième paragraphe.",
+  ];
+  for (const value of invalid)
+    expect(
+      () =>
+        assertDraft({ ...draft, fr: { ...draft.fr, summary: value } }, cats),
+      value,
+    ).toThrow();
+});

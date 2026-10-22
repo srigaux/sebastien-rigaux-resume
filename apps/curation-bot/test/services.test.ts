@@ -120,6 +120,10 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
 });
 it("importe réellement deux médias via le SDK officiel, lie EN à FR et reprend sans duplication", async () => {
   const item = fixture();
+  item.state.draft!.fr.summary +=
+    "\n\nUn compromis utile pour la **code review** avec `Array<T>`.";
+  item.state.draft!.en.summary +=
+    "\n\nA useful trade-off for **code review** with `Array<T>`.";
   for (const kind of ["image", "icon"] as const) {
     const key = `sdk/${kind}`;
     await env.BUCKET.put(key, new Uint8Array([1, 2, 3]));
@@ -199,6 +203,8 @@ it("importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   expect(puts[0].data.credit).toBe("Jane Doe");
   expect(puts[0].data.image.copyright).toBeNull();
   expect(puts[0].data.summary[0].spans).toEqual([]);
+  expect(puts[0].data.summary[0].text).toBe(item.state.draft!.fr.summary);
+  expect(puts[1].data.summary[0].text).toBe(item.state.draft!.en.summary);
   await migrate(env, item, cats);
   expect(assetCount).toBe(2);
   expect(creates).toHaveLength(2);

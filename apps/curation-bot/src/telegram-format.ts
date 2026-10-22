@@ -14,6 +14,13 @@ export function escapeHtml(value: string): string {
 // Render the parsed inline tokens to Telegram's HTML subset. Code entities may
 // not overlap other entities, so suspend inline styles around each code span.
 export function telegramMarkdown(value: string): string {
+  return value
+    .trim()
+    .split(/\n[ \t]*\n+/)
+    .map(telegramInline)
+    .join("\n\n");
+}
+function telegramInline(value: string): string {
   const stack: { name: string; open: string }[] = [];
   return (markdown.parseInline(value, {})[0]?.children ?? [])
     .map((token) => {
@@ -43,14 +50,16 @@ export function telegramMarkdown(value: string): string {
         return open;
       }
       if (token.nesting === -1 && tags[type]) return `</${stack.pop()!.name}>`;
-      return escapeHtml(token.content);
+      return token.type === "softbreak" || token.type === "hardbreak"
+        ? " "
+        : escapeHtml(token.content);
     })
     .join("");
 }
 const formats: Record<Draft["format"], string> = {
   Article: "🗒️ Article",
   Video: "🎬 Vidéo",
-  Repository: "📦 Dépôt",
+  Repository: "📦 Repository",
   Release: "🚀 Nouveauté",
   Documentation: "📚 Documentation",
   Tool: "🛠️ Outil",

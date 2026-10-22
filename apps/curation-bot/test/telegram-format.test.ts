@@ -104,3 +104,12 @@ it("offers ranked optional sources above immediate publication without attributi
       .map((button) => button.text),
   ).toEqual(["🚀 Publier", "🗑 Annuler"]);
 });
+
+it("keeps paragraph breaks and inline micro-examples in a single Telegram quotation", () => {
+  const item = fixture();
+  item.state.draft!.fr.summary =
+    "Un **repository GitHub** avec des états explicites.\n\nLa classe `flex items-center gap-2` rend cet exemple concret.";
+  expect(proposalHtml(item, cats)).toContain(
+    "<blockquote>Un <b>repository GitHub</b> avec des états explicites.\n\nLa classe <code>flex items-center gap-2</code> rend cet exemple concret.</blockquote>",
+  );
+});
