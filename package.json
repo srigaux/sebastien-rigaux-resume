@@ -11,8 +11,9 @@
     "#site-urls": "./src/lib/urls.ts"
   },
   "version": "0.0.1",
+  "packageManager": "pnpm@12.15.0",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^24.22.1"
   },
   "scripts": {
     "dev": "astro dev",
