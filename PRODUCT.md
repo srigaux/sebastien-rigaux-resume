@@ -14,7 +14,7 @@ Sébastien Rigaux’s bilingual professional site includes a personal technology
 
 - Readers must be able to read complete summaries directly in the watch list (confirmed by the user).
 - Preserve French and English versions, topic archives, pagination, original resource links, and entry permalinks.
-- Resource images must remain compact, especially on desktop, and use a 1200:630 OG frame without distortion or cropping.
+- Resource images must remain compact, especially on desktop, and use a 1200:630 OG frame with cover cropping, floating left within the complete summary (updated user preference).
 - This work concerns the watch list; the CV and detail pages are outside its scope.
 
 ## Evidence on Hand
