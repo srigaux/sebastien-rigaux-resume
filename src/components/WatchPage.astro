@@ -137,27 +137,47 @@ const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB
       <div class:list={["grid gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16", page === 1 ? "pt-8 sm:pt-10 lg:pt-12" : "pt-6 sm:pt-8"]}>
         <section aria-label={topic?.name || t.all} class="min-w-0">
           {links.length === 0 && <p class="border-t border-rule py-12 text-muted">{t.empty}</p>}
-          <div class="divide-y divide-rule">
+          <div class="divide-y divide-rule border-t border-rule">
             {links.map((link, index) => {
               const icon = link.siteIcon || link.discoveredVia?.icon;
               const FormatIcon = formatIcons[link.format];
               const sourceLanguageTitle = locale === "fr" ? `Langue de la source : ${link.sourceLanguage === "EN" ? "anglais" : "français"}` : `Source language: ${link.sourceLanguage === "FR" ? "French" : "English"}`;
               const monogram = new URL(link.url).hostname.replace(/^www\./, "").charAt(0).toUpperCase();
               return <article no-intersect class:list={["intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none relative isolate py-8 sm:py-10", linkDelays[index]]}>
-                <div>
+                <div class="min-w-0">
+                  <header class:list={["mb-5", link.image && "grid items-center gap-5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6"]}>
+                    {link.image && <div class="pointer-events-none aspect-[1200/630] w-full overflow-hidden rounded-xl bg-ink/5">
+                      <img
+                        src={link.image.url}
+                        alt={link.image.alt}
+                        width={link.image.width}
+                        height={link.image.height}
+                        loading="lazy"
+                        decoding="async"
+                        class="h-full w-full object-contain"
+                      />
+                    </div>}
+                  <div class="min-w-0">
                     <div class="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                       <time datetime={link.selectedOn} aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}>{dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}</time>
                       <span aria-hidden="true">·</span><span class="inline-flex items-center gap-1.5"><FormatIcon size={14} class="shrink-0" aria-hidden="true" />{link.format}</span>
                       {link.sourceLanguage && link.sourceLanguage.toLowerCase() !== locale && <><span aria-hidden="true">·</span><span class="border border-rule px-1.5 py-0.5 font-semibold tracking-wide" title={sourceLanguageTitle} aria-label={sourceLanguageTitle}>{link.sourceLanguage}</span></>}
-                      <span aria-hidden="true">·</span>
-                    <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="pointer-events-auto relative z-10 inline-block text-xs text-muted underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
                     </div>
                     <h2 class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl" lang={link.textLanguage}>
-                      {icon ? <img src={icon.url} alt="" width="24" height="24" loading="lazy" class="pointer-events-none mr-2 inline-block relative -top-0.5 size-6 object-contain align-middle" /> : <span aria-hidden="true" class="pointer-events-none mr-2 relative -top-0.5 inline-flex size-6 items-center justify-center rounded-full bg-accent align-middle font-sans text-sm font-bold text-paper">{monogram}</span>}<ExternalLink href={link.url} newTab stretched aria-label={`${link.title} — ${t.external}`} class="text-ink hover:text-accent">{link.title}</ExternalLink>
+                      <ExternalLink href={link.url} newTab stretched aria-label={`${link.title} — ${t.external}`} class="text-ink hover:text-accent">{link.title}</ExternalLink>
                     </h2>
-                    <div class="[&_p+p]:mt-3 pointer-events-none mt-3 max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
+                    <div class="pointer-events-none relative z-10 mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
+                      <span class="inline-flex min-w-0 items-center gap-2">
+                        {icon ? <img src={icon.url} alt="" width="16" height="16" loading="lazy" class="size-4 shrink-0 object-contain" /> : <span aria-hidden="true" class="inline-flex size-4 shrink-0 items-center justify-center rounded-sm bg-accent text-[10px] font-semibold text-paper">{monogram}</span>}
+                        <span class="break-all">{new URL(link.url).hostname.replace(/^www\./, "")}</span>
+                      </span>
+                      <a href={watchLinkTarget(link, locale)} aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`} class="pointer-events-auto underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent">{locale === "fr" ? "Permalien" : "Permalink"}</a>
+                    </div>
+                  </div>
+                  </header>
+                    <div class="[&_p+p]:mt-3 pointer-events-none max-w-[72ch] text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" lang={link.textLanguage} set:html={renderSummaryMarkdown(link.summary)} />
                     <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
-                      {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="pointer-events-auto relative z-10 border border-rule px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-accent hover:text-accent">{item.name}</a>)}
+                      {link.topics.map((item) => <a href={watchPath(locale, 1, item.uid)} class="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted no-underline transition-colors hover:bg-accent/10 hover:text-accent">{item.name}</a>)}
                     </div>
                     {(link.credit || link.discoveredVia) && <p class="pointer-events-none relative z-10 mt-4 text-xs text-muted">
                       {link.credit && <span lang="en">{link.credit}</span>}
