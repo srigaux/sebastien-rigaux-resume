@@ -8,6 +8,7 @@ import type { Env, Item } from "@/domain";
 import { advance, applyAction, catalog, errorText, stepConfig } from "@/flow";
 import { retry, type Steps } from "@/retry";
 import { Store } from "@/store";
+import { dispatchQueue } from "@/dispatch";
 import {
   present,
   sendText,
@@ -244,5 +245,16 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       );
       return true;
     });
+    await step.do(
+      `${prefix}-start-next-item`,
+      {
+        ...stepConfig,
+        retries: { limit: 2, delay: "1 second" },
+      },
+      async () => {
+        await dispatchQueue(this.env);
+        return true;
+      },
+    );
   }
 }

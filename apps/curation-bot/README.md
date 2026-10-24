@@ -151,6 +151,8 @@ Insiste sur les usages pour une petite équipe frontend.
 source: JavaScript Weekly
 ```
 
+Après publication vérifiée ou annulation, le workflow libère la fiche puis démarre immédiatement la suivante dans une étape durable. Il n’attend ni le cron ni un nouveau message ; le cron reste un filet de sécurité en cas d’échec. Les démarrages concurrents utilisent la même prise atomique D1 et le même identifiant de workflow.
+
 Chaque message contenant un nouveau lien entre dans la file. Plusieurs URL dans le même message déclenchent un choix du lien principal. Les liens des messages suivants attendent la fin de la fiche active.
 
 - `/aide` (ou `/help`) : aide complète.
@@ -167,7 +169,9 @@ L’alerte de doublon propose « ✨ Créer une nouvelle proposition » et « �
 
 Les doublons sont cherchés parmi les documents **publiés** et les soumissions du bot. Les brouillons créés dans d’autres outils ne sont pas énumérables globalement avec la Content API. Les paramètres de suivi connus et fragments sont ignorés ; les paramètres fonctionnels et les chemins distincts sont conservés.
 
-Le message « 🔖 Bien reçu ! » devient l’aperçu image via `editMessageMedia` dès que les médias sont prêts ; les textes FR/EN sont ensuite envoyés dans un message séparé avec les boutons. Sans image, cet accusé devient directement la proposition textuelle. Chaque correction textuelle reçoit immédiatement « ✍️ C’est noté ! Je prépare la nouvelle version. », puis ce message est édité avec la nouvelle proposition. Les révisions précédentes restent donc visibles. Les identifiants sont conservés dans le journal D1, séparément des états du Workflow ; une mise à jour rejouée ne renvoie pas l’accusé de réception. Si un message a été supprimé ou n’est plus éditable, le bot utilise un nouveau message. Un aperçu ou un message d’attente n’est jamais une cible de validation avant l’affichage des textes complets.
+Pour un lien mis en attente, l’accusé de réception reste intact : l’image et la proposition sont envoyées en bas de la conversation lorsque son tour arrive. Cette distinction est conservée dans le journal D1, y compris après reprise. Les accusés historiques dont l’origine est inconnue sont également préservés.
+
+Pour un lien traité immédiatement, le message « 🔖 Bien reçu ! » devient l’aperçu image via `editMessageMedia` dès que les médias sont prêts ; les textes FR/EN sont ensuite envoyés dans un message séparé avec les boutons. Sans image, cet accusé devient directement la proposition textuelle. Chaque correction textuelle reçoit immédiatement « ✍️ C’est noté ! Je prépare la nouvelle version. », puis ce message est édité avec la nouvelle proposition. Les révisions précédentes restent donc visibles. Les identifiants sont conservés dans le journal D1, séparément des états du Workflow ; une mise à jour rejouée ne renvoie pas l’accusé de réception. Si un message a été supprimé ou n’est plus éditable, le bot utilise un nouveau message. Un aperçu ou un message d’attente n’est jamais une cible de validation avant l’affichage des textes complets.
 
 Pendant la publication, un message « 🚀 Publication en cours… » est envoyé une seule fois et remplacé par la confirmation après vérification des deux documents FR/EN. Une reprise réutilise le même message. S’il a été supprimé, une nouvelle confirmation est envoyée.
 

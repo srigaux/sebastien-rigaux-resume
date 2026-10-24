@@ -5,6 +5,13 @@ import { dispatch } from "@/index";
 import type { Env } from "@/domain";
 import { cats, fixture } from "@test/fixtures";
 
+async function queuedChoice(store: Store, id: string, update: number) {
+  const next = fixture(id);
+  next.state.choices = ["https://example.com/next", "https://example.org/next"];
+  await store.enqueue(id, update, "1", next.state, next.created_at);
+  return introspectWorkflowInstance(env.CURATION, `${id}-g0`);
+}
+
 it("attend une action persistée dans un véritable Workflow Cloudflare et rejette une ancienne confirmation", async () => {
   const store = new Store(env.DB),
     item = fixture("u900");
@@ -32,6 +39,7 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
   );
   const id = "workflow-test-wait";
   const inspector = await introspectWorkflowInstance(env.CURATION, id);
+  const next = await queuedChoice(store, "u950", 950);
   try {
     await env.CURATION.create({ id, params: { id: item.id, generation: 0 } });
     await inspector.waitForStepResult({ name: "g0-c0-present" });
@@ -66,11 +74,19 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
         ),
     ).toBe(true);
     expect(finished.active).toBe(0);
+    await next.waitForStepResult({ name: "g0-c0-present" });
+    expect((await store.get("u950")).status).toBe("choose");
+    expect((await store.active("1"))?.id).toBe("u950");
     expect(
-      (await env.DB.prepare("SELECT * FROM operations").all()).results,
+      (
+        await env.DB.prepare(
+          "SELECT * FROM operations WHERE target LIKE '%migration.prismic.io%'",
+        ).all()
+      ).results,
     ).toHaveLength(0);
   } finally {
     await inspector.dispose();
+    await next.dispose();
   }
 });
 
@@ -184,6 +200,7 @@ it("publie après confirmation et attend que les deux traductions soient visible
   );
   const id = "workflow-test-publish",
     inspector = await introspectWorkflowInstance(env.CURATION, id);
+  const next = await queuedChoice(store, "u951", 951);
   try {
     await inspector.modify(async (m) => {
       await m.disableSleeps();
@@ -203,11 +220,15 @@ it("publie après confirmation et attend que les deux traductions soient visible
     expect(publishCalls).toBe(1);
     expect(createCalls).toBe(2);
     expect(publicationConfirmed).toBe(true);
+    await next.waitForStepResult({ name: "g0-c0-present" });
+    expect((await store.get("u951")).status).toBe("choose");
+    expect((await store.active("1"))?.id).toBe("u951");
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
     ).toHaveLength(0);
   } finally {
     await inspector.dispose();
+    await next.dispose();
   }
 }, 30000);
 

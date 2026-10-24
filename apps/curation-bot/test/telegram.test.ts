@@ -322,7 +322,10 @@ it("sends a replacement if the original receipt was deleted", async () => {
   await store.enqueue(item.id, 100, "1", item.state, item.created_at);
   await store.claim("1");
   await store.begin(`telegram:receipt:${item.id}`, item.id, "telegram.receipt");
-  await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 });
+  await store.completed(`telegram:receipt:${item.id}`, {
+    messageId: 10,
+    replaceable: true,
+  });
   await present(env, item, cats);
   expect(calls.map((call) => call.method)).toEqual([
     "editMessageText",
@@ -344,7 +347,10 @@ it("does not send a duplicate proposal after an edit with an unknown network res
   await store.enqueue(item.id, 100, "1", item.state, item.created_at);
   await store.claim("1");
   await store.begin(`telegram:receipt:${item.id}`, item.id, "telegram.receipt");
-  await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 });
+  await store.completed(`telegram:receipt:${item.id}`, {
+    messageId: 10,
+    replaceable: true,
+  });
   await expect(present(env, item, cats)).rejects.toThrow();
   expect(calls.map((call) => call.method)).toEqual(["editMessageText"]);
 });
@@ -574,4 +580,70 @@ it("réutilise le message de publication lors d’une reprise et le remplace par
     message_id: 999,
     text: expect.stringContaining("C’est publié"),
   });
+});
+
+it.each([false, true])(
+  "un lien sorti de la file envoie sa proposition en bas sans modifier l’accusé : image=%s",
+  async (withImage) => {
+    const { present, sendPreview } = await import("@/telegram");
+    const { cats } = await import("@test/fixtures");
+    const calls = receiptApi(),
+      store = new Store(env.DB),
+      first = fixture("u900");
+    await store.enqueue(first.id, 900, "1", first.state, first.created_at);
+    await store.claim("1");
+    await handleUpdate(env, update(901, "https://example.com/queued"));
+    const original = JSON.parse(
+      (await store.operation("telegram:receipt:u901"))!.response!,
+    );
+    expect(original.replaceable).toBe(false);
+    await store.finish(first, "done");
+    const item = (await store.claim("1"))!;
+    item.state.draft = structuredClone(first.state.draft);
+    item.state.sourceUid = null;
+    item.state.media = { failures: [] };
+    if (withImage) {
+      item.state.media.image = {
+        key: "queued/image",
+        mime: "image/png",
+        filename: "image.png",
+        size: 3,
+        url: "https://example.com/image.png",
+      };
+      await env.BUCKET.put("queued/image", new Uint8Array([1, 2, 3]));
+      await sendPreview(env, item);
+      item.state.previewImageKey = undefined;
+      await sendPreview(env, item); // Replay must not send the image twice.
+      expect(calls.filter((call) => call.method === "sendPhoto")).toHaveLength(
+        1,
+      );
+    }
+    await present(env, item, cats);
+    expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(
+      2,
+    );
+    expect(
+      calls.some(
+        (call) =>
+          call.method.startsWith("editMessage") &&
+          call.body.message_id === original.messageId,
+      ),
+    ).toBe(false);
+    expect(
+      JSON.parse((await store.operation("telegram:receipt:u901"))!.response!),
+    ).toEqual(original);
+  },
+);
+
+it("préserve aussi les accusés anciens dont l’origine immédiate ou différée est inconnue", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi(),
+    store = new Store(env.DB),
+    item = fixture("u910");
+  await store.enqueue(item.id, 910, "1", item.state, item.created_at);
+  await store.begin(`telegram:receipt:${item.id}`, item.id);
+  await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 });
+  await present(env, item, cats);
+  expect(calls.map((call) => call.method)).toEqual(["sendMessage"]);
 });

@@ -151,8 +151,8 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
     media = s.media!.image!,
     store = new Store(env.DB);
   const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
-  const key = receiptKey(item.id),
-    receipt = await readReceipt(store, item.id);
+  const key = await processingReceiptKey(store, item.id),
+    receipt = await readReceiptKey(store, key);
   if (receipt?.kind === "media" && receipt.mediaKey === media.key) {
     s.previewImageKey = media.key;
     await store.save(item);
@@ -214,12 +214,16 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
         )
       ).message_id;
   }
-  if (replace)
+  if (replace || !receipt) {
+    await ensureReceipt(store, key, item.id, async () => ({
+      message_id: messageId!,
+    }));
     await store.completed(key, {
       messageId,
       kind: "media",
       mediaKey: media.key,
     });
+  }
   // A photo alone is not an approval target. The complete FR/EN message is.
   s.previewImageKey = media.key;
   await store.save(item);
@@ -252,8 +256,14 @@ function isRejectedPhoto(error: unknown) {
 function receiptKey(id: string) {
   return `telegram:receipt:${id}`;
 }
-async function readReceipt(store: Store, id: string) {
-  return readReceiptKey(store, receiptKey(id));
+async function processingReceiptKey(store: Store, id: string) {
+  const receipt = await readReceiptKey(store, receiptKey(id));
+  // Unknown legacy receipts may be old queue acknowledgements: keep them intact.
+  return receipt?.replaceable === true ||
+    receipt?.kind === "media" ||
+    receipt?.revision !== undefined
+    ? receiptKey(id)
+    : `telegram:processing:${id}`;
 }
 async function readReceiptKey(store: Store, key: string) {
   const operation = await store.operation(key);
@@ -263,6 +273,7 @@ async function readReceiptKey(store: Store, key: string) {
     revision?: number;
     kind?: "media";
     mediaKey?: string;
+    replaceable?: boolean;
   };
   return Number.isSafeInteger(receipt.messageId) && receipt.messageId > 0
     ? receipt
@@ -273,6 +284,7 @@ async function ensureReceipt(
   key: string,
   id: string,
   send: () => Promise<{ message_id: number }>,
+  metadata: { replaceable?: boolean } = {},
 ) {
   if (await readReceiptKey(store, key)) return;
   const receipt = await send();
@@ -284,7 +296,7 @@ async function ensureReceipt(
       key,
       id,
       "telegram.receipt",
-      JSON.stringify({ messageId: receipt.message_id }),
+      JSON.stringify({ messageId: receipt.message_id, ...metadata }),
       new Date().toISOString(),
     )
     .run();
@@ -375,7 +387,9 @@ async function sendProposal(
   store: Store,
   html?: string,
 ) {
-  const key = item.state.revisionReceiptKey ?? receiptKey(item.id);
+  const key =
+    item.state.revisionReceiptKey ??
+    (await processingReceiptKey(store, item.id));
   const receipt = await readReceiptKey(store, key);
   const editable =
     receipt &&
@@ -416,11 +430,13 @@ async function sendProposal(
   const message = await api.sendMessage(item.chat_id, text, options);
   // A missing/deleted receipt gets a replacement; subsequent revisions remain
   // separate messages, so replying to an older proposal stays version-safe.
-  if (editable)
+  if (editable || !receipt) {
+    await ensureReceipt(store, key, item.id, async () => message);
     await store.completed(key, {
       messageId: message.message_id,
       revision: item.state.revision,
     });
+  }
   return message.message_id;
 }
 
@@ -740,12 +756,17 @@ export function createBot(env: Env) {
       const id = `u${ctx.update.update_id}`;
       // Persist the receipt separately from mutable item checkpoints. A replay
       // reuses it, and the queue cannot start before the message ID is recorded.
-      await ensureReceipt(store, receiptKey(id), id, () =>
-        ctx.reply(
-          item
-            ? "🔖 Bien reçu ! Ton lien est dans la file, je m’en occupe après la fiche en cours."
-            : "🔖 Bien reçu ! Je prépare ta proposition.",
-        ),
+      await ensureReceipt(
+        store,
+        receiptKey(id),
+        id,
+        () =>
+          ctx.reply(
+            item
+              ? "🔖 Bien reçu ! Ton lien est dans la file, je m’en occupe après la fiche en cours."
+              : "🔖 Bien reçu ! Je prépare ta proposition.",
+          ),
+        { replaceable: !item },
       );
       await store.enqueue(
         `u${ctx.update.update_id}`,
