@@ -4,6 +4,7 @@ import { localeHomePath, pageMarkdownPath, watchRssPath } from "@/lib/urls";
 import type { Locale, Person } from "@/types";
 import printStyles from "@/styles/print.css?url";
 import "@/styles/global.css";
+import CookieConsent from "@/components/CookieConsent.astro";
 import GoogleAnalytics from "@/components/GoogleAnalytics.astro";
 
 interface Props {
@@ -459,6 +460,7 @@ const structuredData =
   </head>
   <body>
     <slot />
+    <CookieConsent />
     <script>
       import { Observer } from "tailwindcss-intersect/observer";
 

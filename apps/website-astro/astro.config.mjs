@@ -104,7 +104,7 @@ export default defineConfig({
           : {}),
       },
     }),
-    partytown({ config: { forward: ["dataLayer.push"] } }),
+    partytown({ config: { forward: ["dataLayer.push", "gtag"] } }),
   ],
   i18n: {
     locales: ["fr", "en"],

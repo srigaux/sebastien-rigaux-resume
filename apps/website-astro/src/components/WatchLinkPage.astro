@@ -1,4 +1,5 @@
 ---
+import CookieSettings from "@/components/CookieSettings.astro";
 import { pageMarkdownPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header.astro";
@@ -98,5 +99,6 @@ const schema = {
       >Markdown</a>
       <a href={watchPath(locale)} class="col-start-2 row-start-1 justify-self-end text-accent hover:underline md:col-start-3">{t.back}</a>
     </div>
+    <div class="mx-auto max-w-7xl px-5 pb-6 text-center sm:px-8 lg:px-12"><CookieSettings locale={locale} /></div>
   </footer>
 </BaseLayout>

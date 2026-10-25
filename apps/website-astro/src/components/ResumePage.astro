@@ -1,4 +1,5 @@
 ---
+import CookieSettings from "@/components/CookieSettings.astro";
 import About from "@/components/About.astro";
 import Education from "@/components/Education.astro";
 import Experience from "@/components/Experience.astro";
@@ -144,6 +145,7 @@ const footerLinkClass = "text-muted underline-offset-4 hover:text-accent hover:u
               class={footerLinkClass}>{copy.markdownFooterText}</a
             >
           </li>
+          <li><CookieSettings locale={locale} /></li>
           <li><a href="/llms.txt" class={footerLinkClass}>llms.txt</a></li>
           <li><a href="/llms-full.txt" class={footerLinkClass}>llms-full.txt</a></li>
         </ul>

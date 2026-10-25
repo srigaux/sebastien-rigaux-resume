@@ -1,0 +1,73 @@
+@reference "./global.css";
+
+/* Keep the library's accessible interactions; inherit the site's visual theme. */
+#cc-main {
+  --cc-font-family: var(--font-plex-sans), sans-serif;
+  --cc-bg: var(--theme-paper);
+  --cc-primary-color: var(--theme-ink);
+  --cc-secondary-color: var(--theme-muted);
+  --cc-btn-primary-bg: var(--theme-accent);
+  --cc-btn-primary-color: var(--theme-paper);
+  --cc-btn-primary-border-color: var(--theme-accent);
+  --cc-btn-primary-hover-bg: var(--theme-ink);
+  --cc-btn-primary-hover-color: var(--theme-paper);
+  --cc-btn-primary-hover-border-color: var(--theme-ink);
+  --cc-btn-secondary-bg: var(--theme-paper);
+  --cc-btn-secondary-color: var(--theme-ink);
+  --cc-btn-secondary-border-color: var(--theme-rule);
+  --cc-btn-secondary-hover-bg: var(--theme-rule);
+  --cc-btn-secondary-hover-color: var(--theme-ink);
+  --cc-btn-secondary-hover-border-color: var(--theme-rule);
+  --cc-cookie-category-block-bg: var(--theme-paper);
+  --cc-cookie-category-block-hover-bg: var(--theme-rule);
+  --cc-cookie-category-block-border: var(--theme-rule);
+  --cc-separator-border-color: var(--theme-rule);
+  --cc-toggle-on-bg: var(--theme-accent);
+  --cc-toggle-off-bg: var(--theme-muted);
+  --cc-toggle-readonly-bg: var(--theme-rule);
+  --cc-toggle-on-knob-bg: var(--theme-paper);
+  --cc-toggle-off-knob-bg: var(--theme-paper);
+  --cc-toggle-readonly-knob-bg: var(--theme-muted);
+  --cc-modal-border-radius: 0;
+  --cc-btn-border-radius: 0;
+}
+
+#cc-main .cm {
+  border-top: 2px solid var(--theme-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .show--consent #cc-main .cc--anim .cm {
+    @apply motion-preset-blur-left motion-scale-in-95 motion-duration-500 motion-delay-[500ms] motion-ease-spring-bouncier/translate;
+    /* About 8px of overshoot, with smooth blur/opacity and a 500ms entry. */
+    --motion-translate-perceptual-duration-multiplier: 1;
+    --motion-opacity-duration: 250ms;
+    --motion-filter-duration: 250ms;
+    --motion-scale-duration: 250ms;
+    /* Keep the delayed popup out of keyboard navigation until entry starts. */
+    transition: visibility 0s 500ms;
+  }
+}
+
+#cc-main .cm__btn,
+#cc-main .pm__btn {
+  min-height: 44px;
+}
+
+#cc-main :focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cc-main {
+    --cc-modal-transition-duration: 0s;
+  }
+}
+
+@media print {
+  #cc-main,
+  .cookie-settings {
+    display: none !important;
+  }
+}

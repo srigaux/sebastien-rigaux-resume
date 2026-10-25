@@ -9,7 +9,7 @@
   },
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev --background",
+    "dev": "astro dev",
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
@@ -32,13 +32,14 @@
     "@types/react-dom": "^19.3.0",
     "astro": "^7.3.7",
     "astro-pdf": "^1.10.1",
+    "cms-prismic": "workspace:*",
     "markdown-it": "^15.0.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3",
     "tailwindcss-intersect": "^3.0.0",
     "three": "^0.186.1",
-    "cms-prismic": "workspace:*"
+    "vanilla-cookieconsent": "^3.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

@@ -1,0 +1,10 @@
+---
+import type { Locale } from "@/types";
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+---
+<button
+  type="button"
+  data-cc="show-preferencesModal"
+  class="cookie-settings cursor-pointer text-xs text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline print:hidden"
+>{locale === "fr" ? "Gérer les cookies" : "Cookie settings"}</button>
