@@ -42,7 +42,7 @@ function link(id, overrides = {}) {
 
 test("seeded topic and source UIDs are clean and unique", async () => {
   const seed = JSON.parse(
-    await readFile(new URL("../docs/tech-watch-seed.json", import.meta.url), "utf8"),
+    await readFile(new URL("../../../docs/tech-watch-seed.json", import.meta.url), "utf8"),
   );
   for (const collection of [seed.topics, seed.discoverySources]) {
     assert.ok(collection.every(({ uid }) => isCleanSlug(uid)));
@@ -53,8 +53,8 @@ test("seeded topic and source UIDs are clean and unique", async () => {
 });
 
 test("prepared examples have original URLs and use the controlled vocabulary", async () => {
-  const seed = JSON.parse(await readFile(new URL("../docs/tech-watch-seed.json", import.meta.url), "utf8"));
-  const examples = JSON.parse(await readFile(new URL("../docs/tech-watch-examples.json", import.meta.url), "utf8"));
+  const seed = JSON.parse(await readFile(new URL("../../../docs/tech-watch-seed.json", import.meta.url), "utf8"));
+  const examples = JSON.parse(await readFile(new URL("../../../docs/tech-watch-examples.json", import.meta.url), "utf8"));
   const topicUids = new Set(seed.topics.map(({ uid }) => uid));
   const urls = new Set();
   for (const example of examples.curatedLinks) {

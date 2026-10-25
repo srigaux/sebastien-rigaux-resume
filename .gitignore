@@ -26,5 +26,3 @@ pnpm-debug.log*
 
 # Private import state and editorial drafts
 .local/
-
-docs/teams-history.json

@@ -1,0 +1,51 @@
+{
+  "name": "website-astro",
+  "type": "module",
+  "imports": {
+    "#watch-markdown": "./src/lib/watch-markdown.ts",
+    "#watch-model": "./src/lib/watch-model.ts",
+    "#site-sitemap": "./src/integrations/site-sitemap.mjs",
+    "#site-urls": "./src/lib/urls.ts"
+  },
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev --background",
+    "build": "astro build",
+    "check": "astro check",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test:watch": "node --test tests/*.test.mjs",
+    "check:watch-build": "node scripts/check-watch-build.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@4hse/astro-llms-txt": "^1.0.5",
+    "@astrojs/partytown": "^2.1.9",
+    "@astrojs/react": "^7.0.1",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "@lucide/astro": "^1.52.0",
+    "@prismicio/client": "^7.22.3",
+    "@tabler/icons-astro": "^3.49.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "astro": "^7.3.7",
+    "astro-pdf": "^1.10.1",
+    "markdown-it": "^15.0.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "tailwindcss-intersect": "^3.0.0",
+    "three": "^0.186.1",
+    "cms-prismic": "workspace:*"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/markdown-it": "^14.2.0",
+    "@types/three": "^0.186.0",
+    "tailwindcss-motion": "^1.1.1",
+    "typescript": "^6.0.3"
+  },
+  "private": true
+}

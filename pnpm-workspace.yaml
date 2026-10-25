@@ -1,5 +1,8 @@
+packages:
+  - apps/*
 allowBuilds:
   esbuild: true
+  workerd: true
   puppeteer: true
   sharp: true
 minimumReleaseAgeExclude:

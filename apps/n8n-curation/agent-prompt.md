@@ -207,17 +207,25 @@ Affiche un aperçu éditorial des deux fiches effectivement créées, en Markdow
 
 Pour une paire créée, utilise cette structure (remplace tous les marqueurs) :
 
+## 🇫🇷 Français
+
 ![Icône du site](<URL CDN Prismic de site_icon>)
 
 ### [<titre FR>](<URL source>)
 
+![<texte alternatif FR de image>](<URL CDN Prismic de image>)
+
 > <résumé FR complet, avec son Markdown inline>
+
+## 🇬🇧 English
+
+![Site icon](<URL CDN Prismic de site_icon>)
 
 ### [<titre EN>](<URL source>)
 
-> <résumé EN complet, avec son Markdown inline>
+![<texte alternatif EN de image>](<URL CDN Prismic de image>)
 
-![<texte alternatif FR de image>](<URL CDN Prismic de image>)
+> <résumé EN complet, avec son Markdown inline>
 
 ---
 

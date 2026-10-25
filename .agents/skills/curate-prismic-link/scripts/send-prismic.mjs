@@ -8,7 +8,7 @@ import * as prismic from "@prismicio/client";
 
 const ROOT = new URL("../../../../", import.meta.url);
 const ENV_FILE = fileURLToPath(new URL(".env.local", ROOT));
-const CONFIG_FILE = new URL("prismic-models/prismic.config.json", ROOT);
+const CONFIG_FILE = new URL("apps/cms-prismic/prismic.config.json", ROOT);
 const FORMATS = new Set(["Article", "Video", "Repository", "Release", "Documentation", "Tool", "Other"]);
 
 function webUrl(value, field) {

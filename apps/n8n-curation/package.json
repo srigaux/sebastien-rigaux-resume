@@ -1,0 +1,9 @@
+{
+  "name": "n8n-curation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test workflow.test.mjs"
+  }
+}

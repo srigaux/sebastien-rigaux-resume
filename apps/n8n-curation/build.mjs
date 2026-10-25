@@ -40,5 +40,5 @@ export function build(chat=false) {
   return {name:chat?'Veille - Chat + OpenAI + Prismic':'Veille - Formulaire + OpenAI + Prismic',nodes,connections,active:false,pinData:{},settings:{executionOrder:'v1',timezone:'Europe/Brussels',saveManualExecutions:true,saveExecutionProgress:true,saveDataErrorExecution:'all',saveDataSuccessExecution:'all'},tags:[]};
 }
 if(process.argv[1]===fileURLToPath(import.meta.url)) {
-  for(const [chat,name] of [[false,'curate-prismic.n8n.json'],[true,'curate-prismic-chat.n8n.json']]) writeFileSync(new URL('./'+name,import.meta.url),JSON.stringify(build(chat),null,2)+'\n');
+  for(const [chat,name] of [[false,'n8n-curation.n8n.json'],[true,'n8n-curation-chat.n8n.json']]) writeFileSync(new URL('./'+name,import.meta.url),JSON.stringify(build(chat),null,2)+'\n');
 }

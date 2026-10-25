@@ -2,8 +2,8 @@
 
 Deux exports autonomes, au choix :
 
-- `curate-prismic.n8n.json` : mini formulaire avec **Lien** et **Note** facultative ; date du jour automatique.
-- `curate-prismic-chat.n8n.json` : même agent depuis le chat n8n.
+- `n8n-curation.n8n.json` : mini formulaire avec **Lien** et **Note** facultative ; date du jour automatique.
+- `n8n-curation-chat.n8n.json` : même agent depuis le chat n8n.
 
 Le formulaire envoie le lien à un **AI Agent** n8n, connecté à **OpenAI Chat Model**, à l'outil HTTP **context_dev** et au **MCP officiel Prismic**. L'agent lit la source, rédige les fiches FR/EN, importe les images/favicons, renseigne les crédits disponibles et crée les traductions liées dans une release. Le bilan contient les résultats par lien et le lien vers la release.
 
@@ -46,7 +46,7 @@ Le prompt fournit les formes éditeur Prismic vérifiées. Le Markdown est stock
 
 ## Variante chat
 
-Importer `curate-prismic-chat.n8n.json`, connecter les mêmes credentials, puis ouvrir **Chat** dans l'éditeur n8n. Exemple :
+Importer `n8n-curation-chat.n8n.json`, connecter les mêmes credentials, puis ouvrir **Chat** dans l'éditeur n8n. Exemple :
 
 > Ajoute ce lien à ma veille : https://example.com/article Mets l'accent sur les usages pour une petite équipe frontend.
 
@@ -65,8 +65,8 @@ Après une interruption, le bilan ou les sorties d'outils donnent les IDs déjà
 ## Maintenance
 
 ```sh
-node workflows/curate-prismic/build.mjs
-node --test workflows/curate-prismic/workflow.test.mjs
+node apps/n8n-curation/build.mjs
+node --test apps/n8n-curation/workflow.test.mjs
 ```
 
 `agent-prompt.md` contient le prompt prêt à coller ; `build.mjs` le charge et génère les deux exports. Aucun changement au skill ni au site Astro n'est nécessaire.

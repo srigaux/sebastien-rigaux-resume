@@ -22,7 +22,8 @@ import pdf from "astro-pdf";
 import partytown from "@astrojs/partytown";
 
 // Astro loads .env files after this config, so load the local browser path here.
-if (existsSync(".env.local")) loadEnvFile(".env.local");
+const envFile = new URL("../../.env.local", import.meta.url);
+if (existsSync(envFile)) loadEnvFile(fileURLToPath(envFile));
 const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
 
 export default defineConfig({

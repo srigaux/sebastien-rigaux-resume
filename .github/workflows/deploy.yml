@@ -34,11 +34,14 @@ jobs:
         uses: pnpm/setup@v1
         with:
           install: false
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
       - name: Build with Astro
-        uses: withastro/action@v6
+        run: pnpm --filter website-astro check && pnpm test:watch && pnpm build && pnpm check:watch-build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          node-version: ${{ steps.node.outputs.node-version }}
-          build-cmd: pnpm run check && pnpm run test:watch && pnpm run build && pnpm run check:watch-build
+          path: apps/website-astro/dist
 
   deploy:
     needs: build

@@ -1,11 +1,11 @@
 import * as prismic from "@prismicio/client";
-import config from "@prismic-models/prismic.config.json";
+import config from "cms-prismic/config";
 import type { Locale } from "@/types";
 import type {
   CuratedLinkDocument,
   DiscoverySourceDocument,
   TopicDocument,
-} from "@prismic-models/prismicio-types";
+} from "cms-prismic/types";
 import { buildLocalizedWatchData, normalizeWatchImage as image, type WatchData, type WatchTranslationDraft, type WatchSource, type WatchTopic } from "@/lib/watch-model";
 
 const client = prismic.createClient(config.repositoryName);

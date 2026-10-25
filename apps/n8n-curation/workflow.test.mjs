@@ -44,7 +44,7 @@ for(const chat of [false,true])test(`valid ${chat?'chat':'form'} export and AI c
  assert.equal(workflow.active,false);
  const mcp=workflow.nodes.find(n=>n.name==='Prismic MCP').parameters;
  assert.equal(mcp.include,'selected');assert.ok(mcp.includeTools.includes('create_document'));assert.ok(mcp.includeTools.includes('upload_asset'));assert.ok(!mcp.includeTools.includes('publish_release'));assert.ok(!mcp.includeTools.includes('search_assets'));
- const file=new URL(chat?'./curate-prismic-chat.n8n.json':'./curate-prismic.n8n.json',import.meta.url);
+ const file=new URL(chat?'./n8n-curation-chat.n8n.json':'./n8n-curation.n8n.json',import.meta.url);
  assert.deepEqual(JSON.parse(readFileSync(file,'utf8')),workflow);
  for(const node of workflow.nodes)assert.equal(node.credentials,undefined);
 });
