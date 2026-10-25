@@ -24,14 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
         id: node
         uses: actions/setup-node@v7
         with:
           node-version-file: package.json
       - name: Setup pnpm
-        uses: pnpm/setup@v1
+        uses: pnpm/setup@v3
         with:
           install: false
       - name: Install workspace
@@ -39,7 +39,7 @@ jobs:
       - name: Build with Astro
         run: pnpm --filter website-astro check && pnpm test:watch && pnpm build && pnpm check:watch-build
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: apps/website-astro/dist
 
