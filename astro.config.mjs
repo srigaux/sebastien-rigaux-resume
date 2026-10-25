@@ -1,6 +1,13 @@
 // @ts-check
 import { existsSync } from "node:fs";
-import { readFile, writeFile, mkdtemp, mkdir, copyFile, rm } from "node:fs/promises";
+import {
+  readFile,
+  writeFile,
+  mkdtemp,
+  mkdir,
+  copyFile,
+  rm,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadEnvFile } from "node:process";
@@ -11,6 +18,8 @@ import siteSitemap from "#site-sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import astroLlmsTxt from "@4hse/astro-llms-txt";
 import pdf from "astro-pdf";
+
+import partytown from "@astrojs/partytown";
 
 // Astro loads .env files after this config, so load the local browser path here.
 if (existsSync(".env.local")) loadEnvFile(".env.local");
@@ -30,8 +39,18 @@ export default defineConfig({
       notes:
         "Contenu généré automatiquement à partir des pages publiques du CV et des sélections de veille ; les pages HTML restent les sources canoniques.",
       optionalLinks: [
-        { label: "Veille technologique — index Markdown", url: "https://sebastien.rigaux.be/veille.md", description: "Toutes les sélections, leurs permaliens et leurs versions Markdown." },
-        { label: "Tech watch — Markdown index", url: "https://sebastien.rigaux.be/en/tech-watch.md", description: "All selected resources, their permalinks and Markdown versions." },
+        {
+          label: "Veille technologique — index Markdown",
+          url: "https://sebastien.rigaux.be/veille.md",
+          description:
+            "Toutes les sélections, leurs permaliens et leurs versions Markdown.",
+        },
+        {
+          label: "Tech watch — Markdown index",
+          url: "https://sebastien.rigaux.be/en/tech-watch.md",
+          description:
+            "All selected resources, their permalinks and Markdown versions.",
+        },
       ],
       docSet: [
         {
@@ -84,6 +103,7 @@ export default defineConfig({
           : {}),
       },
     }),
+    partytown({ config: { forward: ["dataLayer.push"] } }),
   ],
   i18n: {
     locales: ["fr", "en"],
@@ -136,10 +156,20 @@ function astroLlmsTxtForFileBuild(options) {
     try {
       await mkdir(new URL("en/", temporaryDir));
       await Promise.all([
-        copyFile(new URL("index.html", context.dir), new URL("index.html", temporaryDir)),
-        copyFile(new URL("en.html", context.dir), new URL("en/index.html", temporaryDir)),
+        copyFile(
+          new URL("index.html", context.dir),
+          new URL("index.html", temporaryDir),
+        ),
+        copyFile(
+          new URL("en.html", context.dir),
+          new URL("en/index.html", temporaryDir),
+        ),
       ]);
-      await onBuildDone?.({ ...context, dir: temporaryDir, pages: [{ pathname: "/" }, { pathname: "en/" }] });
+      await onBuildDone?.({
+        ...context,
+        dir: temporaryDir,
+        pages: [{ pathname: "/" }, { pathname: "en/" }],
+      });
       for (const name of ["llms.txt", "fr.md", "en.md", "llms-full.txt"]) {
         await copyFile(new URL(name, temporaryDir), new URL(name, context.dir));
       }

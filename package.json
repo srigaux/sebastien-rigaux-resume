@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@4hse/astro-llms-txt": "^1.0.5",
+    "@astrojs/partytown": "^2.1.9",
     "@astrojs/react": "^7.0.1",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",

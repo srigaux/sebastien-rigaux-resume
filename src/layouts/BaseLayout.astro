@@ -4,6 +4,7 @@ import { localeHomePath, pageMarkdownPath, watchRssPath } from "@/lib/urls";
 import type { Locale, Person } from "@/types";
 import printStyles from "@/styles/print.css?url";
 import "@/styles/global.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics.astro";
 
 interface Props {
   locale: Locale;
@@ -36,13 +37,24 @@ const {
 } = Astro.props;
 const site = Astro.site ?? new URL("https://sebastien.rigaux.be");
 const canonical = new URL(canonicalPath ?? localeHomePath(locale), site).href;
-const languagePaths = alternatePaths ?? { fr: localeHomePath("fr"), en: localeHomePath("en") };
-const markdownUrl = (markdownPath || person) ? new URL(markdownPath ?? pageMarkdownPath(localeHomePath(locale)), site).href : undefined;
+const languagePaths = alternatePaths ?? {
+  fr: localeHomePath("fr"),
+  en: localeHomePath("en"),
+};
+const markdownUrl =
+  markdownPath || person
+    ? new URL(markdownPath ?? pageMarkdownPath(localeHomePath(locale)), site)
+        .href
+    : undefined;
 const llmsUrl = new URL("/llms.txt", site).href;
 const shareImage = socialImage ?? {
   url: new URL(`/og-image-${locale}.png`, site).href,
-  width: 1200, height: 630,
-  alt: locale === "fr" ? "Sébastien Rigaux, directeur technique et Tech Lead" : "Sébastien Rigaux, CTO and Tech Lead",
+  width: 1200,
+  height: 630,
+  alt:
+    locale === "fr"
+      ? "Sébastien Rigaux, directeur technique et Tech Lead"
+      : "Sébastien Rigaux, CTO and Tech Lead",
 };
 const imageUrl = new URL(shareImage.url, site).href;
 const fullTitle = `${title} | Sébastien Rigaux`;
@@ -56,39 +68,47 @@ const cvSchema = {
         name: "Directeur de la technologie (CTO)",
         employer: "djm digital S.A.",
         startDate: "2016",
-        responsibilities: "Stratégie technologique, accompagnement des équipes, transition vers l’IA et conseil en architecture en CTO as a Service.",
+        responsibilities:
+          "Stratégie technologique, accompagnement des équipes, transition vers l’IA et conseil en architecture en CTO as a Service.",
       },
       {
         name: "Software Engineer II · Voicemail",
         employer: "Microsoft",
         startDate: "2020",
         endDate: "2021",
-        responsibilities: "Direction de l’équipe Voicemail pour Microsoft Teams et Skype for Business, montée en charge des services et intégration de technologies vocales.",
+        responsibilities:
+          "Direction de l’équipe Voicemail pour Microsoft Teams et Skype for Business, montée en charge des services et intégration de technologies vocales.",
       },
       {
         name: "Directeur de la technologie - Mobile",
         employer: "djm digital S.A.",
         startDate: "2015",
         endDate: "2016",
-        responsibilities: "Direction des équipes mobile et API/backend .NET, architecture d’applications iOS et Android et intégration d’IoT en temps réel.",
+        responsibilities:
+          "Direction des équipes mobile et API/backend .NET, architecture d’applications iOS et Android et intégration d’IoT en temps réel.",
       },
       {
         name: "Développeur iOS & Web",
         employer: "djm digital S.A.",
         startDate: "2012",
         endDate: "2015",
-        responsibilities: "Développement d’applications iOS natives et accompagnement des projets de la conception au support client.",
+        responsibilities:
+          "Développement d’applications iOS natives et accompagnement des projets de la conception au support client.",
       },
       {
         name: "Stage Développeur iOS",
         employer: "djm digital S.A.",
         startDate: "2012",
         endDate: "2012",
-        responsibilities: "Développement d’une application iPhone, d’API et d’applications web en ASP.NET MVC.",
+        responsibilities:
+          "Développement d’une application iPhone, d’API et d’applications web en ASP.NET MVC.",
       },
     ],
     credentials: [
-      { name: "Master en sciences informatiques, finalité gestion", level: "Master" },
+      {
+        name: "Master en sciences informatiques, finalité gestion",
+        level: "Master",
+      },
       { name: "Bachelier en sciences informatiques", level: "Bachelier" },
       { name: "Bachelier en informatique de gestion", level: "Bachelier" },
     ],
@@ -99,7 +119,14 @@ const cvSchema = {
       "Communication à grande échelle",
       "Technologies vocales & IA appliquée",
     ],
-    knowsAbout: ["Évolutions de l’IA", "React", "Développement frontend", "C#", "Pratiques de tech lead", "Kubernetes"],
+    knowsAbout: [
+      "Évolutions de l’IA",
+      "React",
+      "Développement frontend",
+      "C#",
+      "Pratiques de tech lead",
+      "Kubernetes",
+    ],
   },
   en: {
     occupations: [
@@ -107,39 +134,47 @@ const cvSchema = {
         name: "Chief Technology Officer",
         employer: "djm digital S.A.",
         startDate: "2016",
-        responsibilities: "Technology strategy, team support, AI transition and architecture advice through CTO as a Service engagements.",
+        responsibilities:
+          "Technology strategy, team support, AI transition and architecture advice through CTO as a Service engagements.",
       },
       {
         name: "Software Engineer II · Voicemail",
         employer: "Microsoft",
         startDate: "2020",
         endDate: "2021",
-        responsibilities: "Led the Voicemail team for Microsoft Teams and Skype for Business, scaled services and integrated speech technologies.",
+        responsibilities:
+          "Led the Voicemail team for Microsoft Teams and Skype for Business, scaled services and integrated speech technologies.",
       },
       {
         name: "Chief Technology Officer · Mobile",
         employer: "djm digital S.A.",
         startDate: "2015",
         endDate: "2016",
-        responsibilities: "Led the mobile and .NET API/backend teams, architected iOS and Android applications and integrated real-time IoT.",
+        responsibilities:
+          "Led the mobile and .NET API/backend teams, architected iOS and Android applications and integrated real-time IoT.",
       },
       {
         name: "iOS & Web Developer",
         employer: "djm digital S.A.",
         startDate: "2012",
         endDate: "2015",
-        responsibilities: "Built native iOS applications and supported projects from planning through launch and client support.",
+        responsibilities:
+          "Built native iOS applications and supported projects from planning through launch and client support.",
       },
       {
         name: "iOS Developer Intern",
         employer: "djm digital S.A.",
         startDate: "2012",
         endDate: "2012",
-        responsibilities: "Developed an iPhone app, APIs and web applications using ASP.NET MVC.",
+        responsibilities:
+          "Developed an iPhone app, APIs and web applications using ASP.NET MVC.",
       },
     ],
     credentials: [
-      { name: "Master of Science in Computer Science, Management track", level: "Master" },
+      {
+        name: "Master of Science in Computer Science, Management track",
+        level: "Master",
+      },
       { name: "Bachelor of Science in Computer Science", level: "Bachelor" },
       { name: "Bachelor in Management Computing", level: "Bachelor" },
     ],
@@ -150,90 +185,118 @@ const cvSchema = {
       "Communication at scale",
       "Speech technology & applied AI",
     ],
-    knowsAbout: ["AI developments", "React", "Frontend development", "C#", "Engineering leadership", "Kubernetes"],
+    knowsAbout: [
+      "AI developments",
+      "React",
+      "Frontend development",
+      "C#",
+      "Engineering leadership",
+      "Kubernetes",
+    ],
   },
 }[locale];
 // Keep one stable Person ID across translations; each page describes that person.
-const structuredData = person && JSON.stringify({
-  "@context": "https://schema.org",
-  "@graph": [
-    ...(locale === "fr" ? [{
-      "@type": "WebSite",
-      "@id": websiteId,
-      url: new URL("/", site).href,
-      name: `${person.firstName} ${person.lastName}`,
-      inLanguage: ["fr", "en"],
-      author: { "@id": personId },
-    }] : []),
-    {
-      "@type": "ProfilePage",
-      "@id": profileId,
-      url: canonical,
-      name: fullTitle,
-      description,
-      inLanguage: locale,
-      isPartOf: { "@id": websiteId },
-      creator: { "@id": personId },
-      mainEntity: { "@id": personId },
-    },
-    {
-      "@type": "Person",
-      "@id": personId,
-      name: `${person.firstName} ${person.lastName}`,
-      givenName: person.firstName,
-      familyName: person.lastName,
-      description,
-      jobTitle: person.jobTitle[locale],
-      url: person.website,
-      email: person.email,
-      telephone: person.phone,
-      address: {
-        "@type": "PostalAddress",
-        addressCountry: person.address.country,
-        addressLocality: person.address.locality,
-        postalCode: person.address.zip,
+const structuredData =
+  person &&
+  JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      ...(locale === "fr"
+        ? [
+            {
+              "@type": "WebSite",
+              "@id": websiteId,
+              url: new URL("/", site).href,
+              name: `${person.firstName} ${person.lastName}`,
+              inLanguage: ["fr", "en"],
+              author: { "@id": personId },
+            },
+          ]
+        : []),
+      {
+        "@type": "ProfilePage",
+        "@id": profileId,
+        url: canonical,
+        name: fullTitle,
+        description,
+        inLanguage: locale,
+        isPartOf: { "@id": websiteId },
+        creator: { "@id": personId },
+        mainEntity: { "@id": personId },
       },
-      worksFor: {
-        "@type": "Organization",
-        name: "djm digital S.A.",
-        url: "https://djmdigital.be/fr/",
-      },
-      hasOccupation: cvSchema.occupations.map(({ name, employer, startDate, responsibilities, ...dates }) => ({
-        "@type": "Role",
-        roleName: name,
-        description: `${name} · ${employer}`,
-        startDate,
-        ...dates,
-        hasOccupation: {
-          "@type": "Occupation",
-          name,
-          responsibilities,
+      {
+        "@type": "Person",
+        "@id": personId,
+        name: `${person.firstName} ${person.lastName}`,
+        givenName: person.firstName,
+        familyName: person.lastName,
+        description,
+        jobTitle: person.jobTitle[locale],
+        url: person.website,
+        email: person.email,
+        telephone: person.phone,
+        address: {
+          "@type": "PostalAddress",
+          addressCountry: person.address.country,
+          addressLocality: person.address.locality,
+          postalCode: person.address.zip,
         },
-      })),
-      alumniOf: [
-        { "@type": "CollegeOrUniversity", name: "HEC Liège", url: "https://www.hec.uliege.be/" },
-        { "@type": "CollegeOrUniversity", name: "Université de Liège", url: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa" },
-        { "@type": "CollegeOrUniversity", name: "Haute École de la Province de Liège", url: "https://www.hepl.be/fr/informatique" },
-      ],
-      hasCredential: cvSchema.credentials.map(({ name, level }) => ({
-        "@type": "EducationalOccupationalCredential",
-        name,
-        credentialCategory: "degree",
-        educationalLevel: level,
-      })),
-      knowsLanguage: ["fr", "en", "nl"],
-      skills: cvSchema.skills,
-      knowsAbout: cvSchema.knowsAbout,
-      sameAs: person.socialLinks.map((link) => link.url),
-    },
-  ],
-}).replaceAll("<", "\\u003c");
+        worksFor: {
+          "@type": "Organization",
+          name: "djm digital S.A.",
+          url: "https://djmdigital.be/fr/",
+        },
+        hasOccupation: cvSchema.occupations.map(
+          ({ name, employer, startDate, responsibilities, ...dates }) => ({
+            "@type": "Role",
+            roleName: name,
+            description: `${name} · ${employer}`,
+            startDate,
+            ...dates,
+            hasOccupation: {
+              "@type": "Occupation",
+              name,
+              responsibilities,
+            },
+          }),
+        ),
+        alumniOf: [
+          {
+            "@type": "CollegeOrUniversity",
+            name: "HEC Liège",
+            url: "https://www.hec.uliege.be/",
+          },
+          {
+            "@type": "CollegeOrUniversity",
+            name: "Université de Liège",
+            url: "https://www.fsa.uliege.be/cms/c_3112656/fr/fsa",
+          },
+          {
+            "@type": "CollegeOrUniversity",
+            name: "Haute École de la Province de Liège",
+            url: "https://www.hepl.be/fr/informatique",
+          },
+        ],
+        hasCredential: cvSchema.credentials.map(({ name, level }) => ({
+          "@type": "EducationalOccupationalCredential",
+          name,
+          credentialCategory: "degree",
+          educationalLevel: level,
+        })),
+        knowsLanguage: ["fr", "en", "nl"],
+        skills: cvSchema.skills,
+        knowsAbout: cvSchema.knowsAbout,
+        sameAs: person.socialLinks.map((link) => link.url),
+      },
+    ],
+  }).replaceAll("<", "\\u003c");
 ---
 
 <!doctype html>
 <html lang={locale}>
   <head>
     <meta charset="utf-8" />
+    {import.meta.env.PROD && <GoogleAnalytics measurementId={"G-F8LHN28LWK"} />}
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f6f8f7" />
     <script is:inline>
@@ -250,13 +313,19 @@ const structuredData = person && JSON.stringify({
         }
 
         const apply = () => {
-          const dark = preference === "dark" || (preference === "system" && system.matches);
+          const dark =
+            preference === "dark" ||
+            (preference === "system" && system.matches);
           root.classList.toggle("dark", dark);
           root.classList.toggle("light", !dark);
-          document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#111c1a" : "#f6f8f7");
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute("content", dark ? "#111c1a" : "#f6f8f7");
 
           const toggle = document.querySelector("[data-theme-toggle]");
-          const label = toggle?.getAttribute(dark ? "data-label-to-light" : "data-label-to-dark");
+          const label = toggle?.getAttribute(
+            dark ? "data-label-to-light" : "data-label-to-dark",
+          );
           if (toggle && label) {
             toggle.setAttribute("aria-label", label);
             toggle.setAttribute("title", label);
@@ -269,7 +338,11 @@ const structuredData = person && JSON.stringify({
           if (preference === "system") apply();
         });
         document.addEventListener("click", (event) => {
-          if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+          if (
+            !(event.target instanceof Element) ||
+            !event.target.closest("[data-theme-toggle]")
+          )
+            return;
           preference = root.classList.contains("dark") ? "light" : "dark";
           try {
             localStorage.setItem("theme", preference);
@@ -281,61 +354,122 @@ const structuredData = person && JSON.stringify({
       })();
     </script>
     <meta name="description" content={description} />
-    {person && <meta name="author" content={`${person.firstName} ${person.lastName}`} />}
+    {
+      person && (
+        <meta
+          name="author"
+          content={`${person.firstName} ${person.lastName}`}
+        />
+      )
+    }
     <title>{fullTitle}</title>
-    <link rel="alternate" type="application/rss+xml" title={locale === "fr" ? "Veille technologique — RSS" : "Tech watch — RSS"} href={new URL(watchRssPath(locale), site).href} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={locale === "fr"
+        ? "Veille technologique — RSS"
+        : "Tech watch — RSS"}
+      href={new URL(watchRssPath(locale), site).href}
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <Font cssVariable="--font-plex-sans" preload={[{ weight: 400, style: "normal", subset: "latin" }]} />
-    <Font cssVariable="--font-sora" preload={[{ weight: 700, style: "normal", subset: "latin" }]} />
+    <Font
+      cssVariable="--font-plex-sans"
+      preload={[{ weight: 400, style: "normal", subset: "latin" }]}
+    />
+    <Font
+      cssVariable="--font-sora"
+      preload={[{ weight: 700, style: "normal", subset: "latin" }]}
+    />
     <link rel="stylesheet" href={printStyles} media="print" />
-    {noindex ? (
-      <meta name="robots" content="noindex, follow" />
-    ) : (
-      <>
-        <meta name="robots" content="max-image-preview:large" />
-        <link rel="canonical" href={canonical} />
-        {previousPath && <link rel="prev" href={new URL(previousPath, site).href} />}
-        {nextPath && <link rel="next" href={new URL(nextPath, site).href} />}
-        {Object.entries(languagePaths).map(([lang, path]) => <link rel="alternate" hreflang={lang} href={new URL(path, site).href} />)}
-        <link rel="alternate" hreflang="x-default" href={new URL(languagePaths.fr ?? languagePaths.en ?? canonical, site).href} />
-        {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
-        {markdownUrl && <link rel="describedby" href={llmsUrl} />}
-        {modifiedAt && <meta name="last-modified" content={modifiedAt} />}
-        <meta property="og:type" content={person ? "profile" : "website"} />
-        <meta property="og:site_name" content="Sébastien Rigaux" />
-        <meta property="og:locale" content={locale === "fr" ? "fr_BE" : "en_US"} />
-        {languagePaths[locale === "fr" ? "en" : "fr"] && <meta property="og:locale:alternate" content={locale === "fr" ? "en_US" : "fr_BE"} />}
-        <meta property="og:title" content={fullTitle} />
-        <meta property="og:description" content={description} />
-        <meta property="og:url" content={canonical} />
-        <meta property="og:image" content={imageUrl} />
-        {!socialImage && <meta property="og:image:type" content="image/png" />}
-        {shareImage.width && <meta property="og:image:width" content={String(shareImage.width)} />}
-        {shareImage.height && <meta property="og:image:height" content={String(shareImage.height)} />}
-        <meta property="og:image:alt" content={shareImage.alt} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:creator" content="@rigauxse" />
-        <meta name="twitter:title" content={fullTitle} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={imageUrl} />
-        <meta name="twitter:image:alt" content={shareImage.alt} />
-        {structuredData && <script type="application/ld+json" set:html={structuredData} />}
-      </>
-    )}
+    {
+      noindex ? (
+        <meta name="robots" content="noindex, follow" />
+      ) : (
+        <>
+          <meta name="robots" content="max-image-preview:large" />
+          <link rel="canonical" href={canonical} />
+          {previousPath && (
+            <link rel="prev" href={new URL(previousPath, site).href} />
+          )}
+          {nextPath && <link rel="next" href={new URL(nextPath, site).href} />}
+          {Object.entries(languagePaths).map(([lang, path]) => (
+            <link
+              rel="alternate"
+              hreflang={lang}
+              href={new URL(path, site).href}
+            />
+          ))}
+          <link
+            rel="alternate"
+            hreflang="x-default"
+            href={
+              new URL(languagePaths.fr ?? languagePaths.en ?? canonical, site)
+                .href
+            }
+          />
+          {markdownUrl && (
+            <link rel="alternate" type="text/markdown" href={markdownUrl} />
+          )}
+          {markdownUrl && <link rel="describedby" href={llmsUrl} />}
+          {modifiedAt && <meta name="last-modified" content={modifiedAt} />}
+          <meta property="og:type" content={person ? "profile" : "website"} />
+          <meta property="og:site_name" content="Sébastien Rigaux" />
+          <meta
+            property="og:locale"
+            content={locale === "fr" ? "fr_BE" : "en_US"}
+          />
+          {languagePaths[locale === "fr" ? "en" : "fr"] && (
+            <meta
+              property="og:locale:alternate"
+              content={locale === "fr" ? "en_US" : "fr_BE"}
+            />
+          )}
+          <meta property="og:title" content={fullTitle} />
+          <meta property="og:description" content={description} />
+          <meta property="og:url" content={canonical} />
+          <meta property="og:image" content={imageUrl} />
+          {!socialImage && (
+            <meta property="og:image:type" content="image/png" />
+          )}
+          {shareImage.width && (
+            <meta
+              property="og:image:width"
+              content={String(shareImage.width)}
+            />
+          )}
+          {shareImage.height && (
+            <meta
+              property="og:image:height"
+              content={String(shareImage.height)}
+            />
+          )}
+          <meta property="og:image:alt" content={shareImage.alt} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:creator" content="@rigauxse" />
+          <meta name="twitter:title" content={fullTitle} />
+          <meta name="twitter:description" content={description} />
+          <meta name="twitter:image" content={imageUrl} />
+          <meta name="twitter:image:alt" content={shareImage.alt} />
+          {structuredData && (
+            <script type="application/ld+json" set:html={structuredData} />
+          )}
+        </>
+      )
+    }
   </head>
   <body>
     <slot />
-  <script>
-    import { Observer } from "tailwindcss-intersect/observer";
+    <script>
+      import { Observer } from "tailwindcss-intersect/observer";
 
-    const startObserver = () => Observer.start();
+      const startObserver = () => Observer.start();
 
-    document.addEventListener("astro:page-load", startObserver);
-    if (document.readyState === "loading")
-      document.addEventListener("DOMContentLoaded", startObserver, {
-        once: true,
-      });
-    else startObserver();
-  </script>
+      document.addEventListener("astro:page-load", startObserver);
+      if (document.readyState === "loading")
+        document.addEventListener("DOMContentLoaded", startObserver, {
+          once: true,
+        });
+      else startObserver();
+    </script>
   </body>
 </html>
