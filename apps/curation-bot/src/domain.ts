@@ -91,6 +91,19 @@ export type MediaSet = {
   icon?: Media;
   failures: { kind: "image" | "icon"; url: string; reason: string }[];
 };
+export type PublicationStage =
+  | "prepare"
+  | "image"
+  | "icon"
+  | "media"
+  | "create-fr"
+  | "create-en"
+  | "write-fr"
+  | "write-en"
+  | "check"
+  | "publish"
+  | "verify"
+  | "paused";
 export type Stage =
   | "queued"
   | "choose"

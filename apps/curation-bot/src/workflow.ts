@@ -98,6 +98,8 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       } catch (error) {
         item.status = "error";
         item.state.error = errorText(error);
+        if (item.state.publicationStarted)
+          await publicationNotice(this.env, item, "paused");
         log(
           "workflow.failed",
           { phase: "advance", ...errorFields(error) },
@@ -181,6 +183,8 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       } catch (error) {
         item.status = "error";
         item.state.error = errorText(error);
+        if (item.state.publicationStarted)
+          await publicationNotice(this.env, item, "paused");
         log(
           "workflow.failed",
           { phase: "action", ...errorFields(error) },

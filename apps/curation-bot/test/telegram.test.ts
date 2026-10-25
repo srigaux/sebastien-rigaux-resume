@@ -647,3 +647,45 @@ it("préserve aussi les accusés anciens dont l’origine immédiate ou différ�
   await present(env, item, cats);
   expect(calls.map((call) => call.method)).toEqual(["sendMessage"]);
 });
+
+it("édite le même message à chaque étape sans répéter une étape inchangée", async () => {
+  telegramApi();
+  const item = fixture("u920"),
+    store = new Store(env.DB);
+  await store.enqueue(item.id, 920, "1", item.state, item.created_at);
+  await publicationNotice(env, item);
+  await publicationNotice(env, item, "image");
+  await publicationNotice(env, item, "image");
+  await publicationNotice(env, item, "create-fr");
+  await publicationNotice(env, item, "verify", "⏱ 30 s écoulées.");
+  await publicationNotice(env, item, "paused");
+  await publicationNotice(env, item, true);
+  await publicationNotice(env, item, "image"); // A replay must not overwrite success.
+  const calls = vi.mocked(fetch).mock.calls;
+  expect(
+    calls.filter(([url]) => String(url).endsWith("/sendMessage")),
+  ).toHaveLength(1);
+  const edits = calls
+    .filter(([url]) => String(url).endsWith("/editMessageText"))
+    .map(([, init]) => JSON.parse(String(init?.body)));
+  expect(edits).toHaveLength(5);
+  expect(edits.every((body) => body.message_id === 999)).toBe(true);
+  expect(edits.at(-1).text).toContain("C’est publié");
+  expect(edits[2].text).toContain("30 s");
+  expect(edits[3].text).toContain("Publication en pause");
+});
+
+it("un échec Telegram de progression ne fait pas échouer une opération Prismic", async () => {
+  const item = fixture("u921"),
+    store = new Store(env.DB);
+  await store.enqueue(item.id, 921, "1", item.state, item.created_at);
+  telegramApi();
+  await publicationNotice(env, item);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw new Error("Telegram offline");
+    }),
+  );
+  await expect(publicationNotice(env, item, "image")).resolves.toBeUndefined();
+});

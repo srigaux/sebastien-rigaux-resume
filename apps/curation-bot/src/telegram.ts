@@ -1,6 +1,11 @@
 import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
-import { escapeHtml, proposalHtml, duplicateHtml } from "@/telegram-format";
+import {
+  escapeHtml,
+  proposalHtml,
+  duplicateHtml,
+  publicationChecklist,
+} from "@/telegram-format";
 import { errorFields, log } from "@/observability";
 import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
@@ -12,6 +17,7 @@ import {
   type Catalog,
   type Env,
   type Item,
+  type PublicationStage,
 } from "@/domain";
 import { Store } from "@/store";
 
@@ -274,6 +280,10 @@ async function readReceiptKey(store: Store, key: string) {
     kind?: "media";
     mediaKey?: string;
     replaceable?: boolean;
+    text?: string;
+    complete?: boolean;
+    publicationDone?: string[];
+    publicationStage?: PublicationStage;
   };
   return Number.isSafeInteger(receipt.messageId) && receipt.messageId > 0
     ? receipt
@@ -284,7 +294,7 @@ async function ensureReceipt(
   key: string,
   id: string,
   send: () => Promise<{ message_id: number }>,
-  metadata: { replaceable?: boolean } = {},
+  metadata: { replaceable?: boolean; text?: string; complete?: boolean } = {},
 ) {
   if (await readReceiptKey(store, key)) return;
   const receipt = await send();
@@ -348,36 +358,70 @@ export async function retryWaitNotice(
 export async function publicationNotice(
   env: Env,
   item: Item,
-  complete = false,
+  stage: boolean | PublicationStage = false,
+  detail?: string,
 ) {
-  const store = new Store(env.DB);
-  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
-  const key = `telegram:publication:${item.id}`;
-  if (!complete) {
-    await ensureReceipt(store, key, item.id, () =>
-      api.sendMessage(
-        item.chat_id,
-        "🚀 Publication en cours… Je prépare les versions FR et EN avec leurs médias, puis je vérifie leur publication dans Prismic.",
-      ),
+  const complete = stage === true;
+  try {
+    const store = new Store(env.DB),
+      api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+    const key = `telegram:publication:${item.id}`;
+    let receipt = await readReceiptKey(store, key);
+    if (receipt?.complete) return;
+    const checklist = publicationChecklist(
+      item,
+      stage === true || stage === false ? "prepare" : stage,
+      receipt?.publicationDone,
+      receipt?.publicationStage,
+      detail,
     );
-    return;
-  }
-  const text =
-    "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction.";
-  const receipt = await readReceiptKey(store, key);
-  if (receipt) {
-    try {
-      await api.editMessageText(item.chat_id, receipt.messageId, text);
+    const text = complete
+      ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
+      : checklist.text;
+    const metadata = {
+      text,
+      complete,
+      publicationDone: checklist.done,
+      publicationStage: checklist.stage,
+    };
+    if (receipt?.text === text) {
+      await store.completed(key, { ...receipt, ...metadata });
       return;
-    } catch (error) {
-      if (isNotModified(error)) return;
-      if (!isMissingMessage(error)) throw error;
     }
+    if (receipt) {
+      try {
+        await api.editMessageText(item.chat_id, receipt.messageId, text);
+        await store.completed(key, { ...receipt, ...metadata });
+        return;
+      } catch (error) {
+        if (isNotModified(error)) {
+          await store.completed(key, { ...receipt, ...metadata });
+          return;
+        }
+        if (!isMissingMessage(error)) throw error;
+      }
+    }
+    // Recreate a deleted progress message once, then keep editing its replacement.
+    const sendKey = receipt ? `${key}:replacement:${receipt.messageId}` : key;
+    await ensureReceipt(
+      store,
+      sendKey,
+      item.id,
+      () => api.sendMessage(item.chat_id, text),
+      metadata,
+    );
+    receipt = await readReceiptKey(store, sendKey);
+    if (receipt && sendKey !== key)
+      await store.completed(key, { ...receipt, ...metadata });
+  } catch (error) {
+    // UI updates must never cause a Prismic operation to fail or be retried.
+    if (complete) throw error;
+    log(
+      "telegram.publication_progress.failed",
+      { itemId: item.id, ...errorFields(error) },
+      "warn",
+    );
   }
-  // Older workflows or a deleted progress message still get a final receipt.
-  await ensureReceipt(store, `${key}:result`, item.id, () =>
-    api.sendMessage(item.chat_id, text),
-  );
 }
 
 async function sendProposal(

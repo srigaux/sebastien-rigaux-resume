@@ -103,6 +103,7 @@ it("publie après confirmation et attend que les deux traductions soient visible
   await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000);
   let publicationMessageId: number | undefined;
   let publicationConfirmed = false;
+  const publicationUpdates: string[] = [];
   let messageId = 0,
     published = false,
     publishCalls = 0,
@@ -114,6 +115,8 @@ it("publie après confirmation et attend que les deux traductions soient visible
       const url = String(input);
       if (url.includes("api.telegram.org")) {
         const body = JSON.parse(String(init?.body ?? "{}"));
+        if (body.text?.includes("Publication en cours"))
+          publicationUpdates.push(body.text);
         if (
           url.endsWith("/sendMessage") &&
           body.text?.includes("Publication en cours")
@@ -220,6 +223,18 @@ it("publie après confirmation et attend que les deux traductions soient visible
     expect(publishCalls).toBe(1);
     expect(createCalls).toBe(2);
     expect(publicationConfirmed).toBe(true);
+    for (const text of [
+      "⏳ Création de la fiche FR",
+      "✅ Création de la fiche FR",
+      "⏳ Création de la fiche EN",
+      "⏳ Enregistrement des textes",
+      "⏳ Publication dans Prismic",
+      "⏳ Vérification des deux versions",
+    ]) {
+      expect(publicationUpdates.some((update) => update.includes(text))).toBe(
+        true,
+      );
+    }
     await next.waitForStepResult({ name: "g0-c0-present" });
     expect((await store.get("u951")).status).toBe("choose");
     expect((await store.active("1"))?.id).toBe("u951");

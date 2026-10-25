@@ -9,6 +9,7 @@ import {
   type Env,
   type Item,
   type Media,
+  type PublicationStage,
 } from "@/domain";
 import { RemoteError, retryAfter } from "@/retry";
 import { Store } from "@/store";
@@ -330,12 +331,64 @@ async function mediaFile(env: Env, media?: Media) {
     type: media.mime,
   });
 }
-export async function migrate(env: Env, item: Item, cats: Catalog) {
+export async function migrate(
+  env: Env,
+  item: Item,
+  cats: Catalog,
+  onProgress?: (stage: PublicationStage) => Promise<void>,
+) {
   const store = new Store(env.DB);
+  const transport = journaledFetch(store, item.id, fetch, item.state.draft)!;
+  const documentLanguages = new Map<string, "fr" | "en">();
   const client = prismic.createWriteClient(env.PRISMIC_REPOSITORY, {
     writeToken: env.PRISMIC_WRITE_TOKEN,
     accessToken: env.PRISMIC_ACCESS_TOKEN || undefined,
-    fetch: journaledFetch(store, item.id, fetch, item.state.draft),
+    fetch: async (url, init) => {
+      let stage: PublicationStage | undefined;
+      if (init?.method === "POST" && String(url).includes("/assets")) {
+        const file =
+          init.body instanceof FormData ? init.body.get("file") : undefined;
+        stage =
+          file instanceof File &&
+          file.name === item.state.media?.image?.filename
+            ? "image"
+            : file instanceof File &&
+                file.name === item.state.media?.icon?.filename
+              ? "icon"
+              : "media";
+      } else if (
+        /\/documents(?:\/[^/]+)?$/.test(String(url)) &&
+        typeof init?.body === "string"
+      ) {
+        const language =
+          init.method === "PUT"
+            ? documentLanguages.get(
+                new URL(String(url)).pathname.split("/").pop()!,
+              )
+            : JSON.parse(init.body).lang === "en-us"
+              ? "en"
+              : "fr";
+        if (init.method === "POST")
+          stage = language === "fr" ? "create-fr" : "create-en";
+        if (init.method === "PUT")
+          stage = language === "fr" ? "write-fr" : "write-en";
+      }
+      if (stage && onProgress) await onProgress(stage);
+      const response = await transport(url, init);
+      if (
+        init?.method === "POST" &&
+        String(url).endsWith("/documents") &&
+        response.ok &&
+        typeof init.body === "string"
+      ) {
+        const created = (await response.clone().json()) as { id: string };
+        documentLanguages.set(
+          created.id,
+          JSON.parse(init.body).lang === "en-us" ? "en" : "fr",
+        );
+      }
+      return response;
+    },
   });
   const files = {
     image: await mediaFile(env, item.state.media?.image),

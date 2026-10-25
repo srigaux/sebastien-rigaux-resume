@@ -3,6 +3,7 @@ import {
   proposalHtml,
   telegramMarkdown,
   duplicateHtml,
+  publicationChecklist,
 } from "@/telegram-format";
 import { keyboard } from "@/telegram";
 import { formats } from "@/domain";
@@ -140,4 +141,54 @@ it("présente les doublons avec un lien FR échappé et des boutons explicites",
   ]);
   item.state.duplicateMatches = ["Ancienne fiche"];
   expect(duplicateHtml(item)).toContain("Ancienne fiche");
+});
+
+it("affiche les médias terminés, la fiche FR en cours et les étapes suivantes en attente", () => {
+  const item = fixture();
+  const media = {
+    key: "preview",
+    url: "https://example.com/image.png",
+    filename: "image.png",
+    mime: "image/png",
+    size: 3,
+  };
+  item.state.media = {
+    image: media,
+    icon: { ...media, key: "icon" },
+    failures: [],
+  };
+  const checklist = publicationChecklist(item, "create-fr");
+  expect(checklist.text).toContain("✅ Import de l’image");
+  expect(checklist.text).toContain("✅ Import de l’icône du site");
+  expect(checklist.text).toContain("⏳ Création de la fiche FR 🇫🇷");
+  expect(checklist.text).toContain("▫️ Création de la fiche EN 🇬🇧");
+  expect(checklist.text).toContain("▫️ Publication dans Prismic");
+  const paused = publicationChecklist(
+    item,
+    "paused",
+    checklist.done,
+    checklist.stage,
+  );
+  expect(paused.text).toContain("✅ Import de l’image");
+  expect(paused.text).toContain("⚠️ Création de la fiche FR");
+  expect(paused.text).toContain("/reprendre");
+});
+it("omet les médias absents et ne coche pas une demande de publication encore incertaine", () => {
+  const item = fixture();
+  const pending = publicationChecklist(
+    item,
+    "verify",
+    [],
+    undefined,
+    "⏱ 30 s écoulées.",
+  );
+  expect(pending.text).not.toContain("Import de l’");
+  expect(pending.text).toContain("✅ Enregistrement des textes");
+  expect(pending.text).toContain("▫️ Publication dans Prismic");
+  expect(pending.text).toContain("⏳ Vérification des deux versions");
+  expect(pending.text).toContain("30 s");
+  item.state.publicationRequested = true;
+  expect(publicationChecklist(item, "verify").text).toContain(
+    "✅ Publication dans Prismic",
+  );
 });

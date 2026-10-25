@@ -1,5 +1,5 @@
 import MarkdownIt from "markdown-it";
-import type { Catalog, Draft, Item } from "@/domain";
+import type { Catalog, Draft, Item, PublicationStage } from "@/domain";
 
 const markdown = new MarkdownIt({ html: false, linkify: false, breaks: false });
 markdown.disable(["image", "autolink"]);
@@ -124,4 +124,71 @@ export function duplicateHtml(item: Item): string {
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+const publicationRows = [
+  ["prepare", "Préparation de ta sélection"],
+  ["image", "Import de l’image"],
+  ["icon", "Import de l’icône du site"],
+  ["create-fr", "Création de la fiche FR 🇫🇷"],
+  ["create-en", "Création de la fiche EN 🇬🇧"],
+  ["content", "Enregistrement des textes, médias et traductions"],
+  ["publish", "Publication dans Prismic"],
+  ["verify", "Vérification des deux versions"],
+] as const;
+export function publicationChecklist(
+  item: Item,
+  stage: PublicationStage,
+  previousDone: string[] = [],
+  previousStage?: PublicationStage,
+  detail?: string,
+) {
+  const activeStage = stage === "paused" ? previousStage : stage;
+  const current =
+    activeStage === "write-fr" || activeStage === "write-en"
+      ? "content"
+      : activeStage === "check"
+        ? "publish"
+        : activeStage === "media"
+          ? item.state.media?.image
+            ? "image"
+            : "icon"
+          : activeStage;
+  const currentIndex = publicationRows.findIndex(([key]) => key === current);
+  const done = new Set(previousDone);
+  for (let i = 0; i < currentIndex; i++) {
+    const key = publicationRows[i][0];
+    // Verification can reconcile an uncertain publish without an acknowledgement.
+    if (key !== "publish" || item.state.publicationRequested) done.add(key);
+  }
+  if (item.state.publicationRequested) done.add("publish");
+  const lines = publicationRows
+    .filter(
+      ([key]) =>
+        (key !== "image" || item.state.media?.image) &&
+        (key !== "icon" || item.state.media?.icon),
+    )
+    .map(
+      ([key, label]) =>
+        `${done.has(key) ? "✅" : key === current ? (stage === "paused" ? "⚠️" : "⏳") : "▫️"} ${label}`,
+    );
+  const footer =
+    stage === "paused"
+      ? "Consulte le message d’erreur, puis utilise /reprendre pour continuer."
+      : activeStage === "verify"
+        ? "Prismic finalise la mise en ligne…"
+        : undefined;
+  return {
+    text: [
+      stage === "paused"
+        ? "⏸ Publication en pause"
+        : "🚀 Publication en cours…",
+      lines.join("\n"),
+      [footer, detail].filter(Boolean).join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+    done: [...done],
+    stage: activeStage,
+  };
 }

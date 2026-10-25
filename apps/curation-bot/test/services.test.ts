@@ -196,7 +196,18 @@ it("importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   await expect(migrate(env, item, cats)).rejects.toMatchObject({
     retryAfter: 1000,
   });
-  const result = await migrate(env, item, cats);
+  const progress: string[] = [];
+  const result = await migrate(env, item, cats, async (stage) => {
+    progress.push(stage);
+  });
+  expect(progress).toEqual([
+    "image",
+    "icon",
+    "create-fr",
+    "create-en",
+    "write-fr",
+    "write-en",
+  ]);
   expect(result.ids).toEqual(["fr-id", "en-id"]);
   expect(assetCount).toBe(2);
   expect(creates[1].alternate_language_id).toBe("fr-id");

@@ -11,6 +11,7 @@ import {
   type Env,
   type Extraction,
   type Item,
+  type PublicationStage,
 } from "@/domain";
 import { generateDraft } from "@/editor";
 import { collectMedia, scrape } from "@/extract";
@@ -185,6 +186,8 @@ export async function advance(
       topics: Object.fromEntries(cats.topics.map((t) => [t.uid, t.id])),
       sourceId: cats.sources.find((source) => source.uid === s.sourceUid)?.id,
     };
+    const progress = (stage: PublicationStage, detail?: string) =>
+      publicationNotice(env, item, stage, detail);
     s.publicationStarted = true;
     item.status = "publishing";
     await checkpoint(env, step, `${prefix}-checkpoint-publishing`, item);
@@ -195,7 +198,7 @@ export async function advance(
     if (!s.publishedIds) {
       try {
         const result = await retry(step, `${prefix}-migrate`, () =>
-          migrate(env, item, cats),
+          migrate(env, item, cats, progress),
         );
         s.publishedIds = result.ids;
         s.mediaIds = result.mediaIds;
@@ -236,8 +239,13 @@ export async function advance(
     }
     // First reconcile an already-requested/ambiguous publish through the Content
     // API. A 202 is only an acknowledgement, not proof the pair is live.
-    let live = await step.do(`${prefix}-verify-before`, stepConfig, () =>
-      verifyPublication(env, item),
+    let live = await step.do(
+      `${prefix}-verify-before`,
+      stepConfig,
+      async () => {
+        await progress("check");
+        return verifyPublication(env, item);
+      },
     );
     const uncertainPublish = await env.DB.prepare(
       "SELECT key FROM operations WHERE item_id=? AND target LIKE '%migration-release/publish' AND status='pending'",
@@ -245,14 +253,41 @@ export async function advance(
       .bind(item.id)
       .first();
     if (!live && !s.publicationRequested && !uncertainPublish) {
-      await retry(step, `${prefix}-publish`, () => publish(env, item));
+      await retry(step, `${prefix}-publish`, async () => {
+        await progress("publish");
+        return publish(env, item);
+      });
       s.publicationRequested = true;
       await checkpoint(env, step, `${prefix}-checkpoint-requested`, item);
     }
+    const verificationStarted = await step.do(
+      `${prefix}-verify-start-time`,
+      stepConfig,
+      async () => Date.now(),
+    );
+    if (!live)
+      await step.do(`${prefix}-verify-notice`, stepConfig, async () => {
+        await progress("verify");
+        return true;
+      });
     for (let attempt = 0; !live && attempt < 12; attempt++) {
       await step.sleep(`${prefix}-publication-delay-${attempt}`, 10_000);
-      live = await step.do(`${prefix}-verify-${attempt}`, stepConfig, () =>
-        verifyPublication(env, item),
+      live = await step.do(
+        `${prefix}-verify-${attempt}`,
+        stepConfig,
+        async () => {
+          const seconds = Math.max(
+            0,
+            Math.floor((Date.now() - verificationStarted) / 1000),
+          );
+          await progress(
+            "verify",
+            seconds
+              ? `⏱ ${seconds} s écoulées depuis le début de la vérification.`
+              : undefined,
+          );
+          return verifyPublication(env, item);
+        },
       );
     }
     if (!live)
