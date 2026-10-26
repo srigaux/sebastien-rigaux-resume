@@ -211,6 +211,7 @@
         scheme.addEventListener("change", markThemeDirty, { signal: listeners.signal });
 
         const hero = shader.closest<HTMLElement>("[data-cv-hero]");
+        const logo = hero?.querySelector<SVGElement>("[data-hero-logo]");
         let heroTravel = 640;
         let parallaxTarget = 0;
         const syncParallax = () => {
@@ -253,8 +254,19 @@
         }
 
         const resize = () => {
-          const { width, height } = shader.getBoundingClientRect();
+          // Read layout only on initialization or resize, before updating the canvas.
+          const { left, top, width, height } = shader.getBoundingClientRect();
+          const logoBounds = logo?.getBoundingClientRect();
           heroTravel = Math.max(hero?.clientHeight ?? height, 1);
+          const unit = Math.max(Math.min(width, height), 1);
+          if (logoBounds) {
+            uniforms.center.value.set(
+              (logoBounds.left + logoBounds.width / 2 - left - width / 2) / unit,
+              (height / 2 - (logoBounds.top + logoBounds.height / 2 - top)) / unit,
+            );
+          } else {
+            uniforms.center.value.set(0.29 * width / unit, 0.015);
+          }
           syncParallax();
           const ratio = Math.min(devicePixelRatio, maxPixelRatio,
             Math.sqrt(maxPixels / Math.max(width * height, 1)));
@@ -264,14 +276,10 @@
           canvas.style.removeProperty("width");
           canvas.style.removeProperty("height");
           uniforms.resolution.value.set(canvas.width, canvas.height);
-          const unit = Math.max(Math.min(width, height), 1);
-          // Fixed anchors for the mobile, sm and lg identity layouts; no logo measurement.
-          const centerX = width < 640 ? 84 : width < 1024 ? 112 : width * 0.79;
-          const centerY = height * (width < 640 ? 0.39 : width < 1024 ? 0.38 : 0.485);
-          uniforms.center.value.set((centerX - width / 2) / unit, (height / 2 - centerY) / unit);
         };
         const resizeObserver = new ResizeObserver(() => { sizeDirty = true; });
         resizeObserver.observe(shader);
+        if (logo) resizeObserver.observe(logo);
         syncTheme();
         resize();
 
