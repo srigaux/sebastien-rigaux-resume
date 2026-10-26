@@ -2,6 +2,8 @@ import { sendPreview, publicationNotice } from "@/telegram";
 import { withTyping, typingSteps } from "@/telegram-typing";
 import {
   canonicalFor,
+  assertDraft,
+  webUrl,
   BotError,
   MediaRejected,
   errorText,
@@ -15,15 +17,10 @@ import {
 } from "@/domain";
 import { generateDraft } from "@/editor";
 import { collectMedia, scrape } from "@/extract";
-import {
-  catalog,
-  migrate,
-  publish,
-  publishedDuplicates,
-  verifyPublication,
-} from "@/prismic";
+import { catalog, migrate, publish, publishedDuplicates } from "@/prismic";
 import { retry, type Steps } from "@/retry";
 import { Store } from "@/store";
+import { schedulePublicationCheck } from "@/publication";
 
 export const stepConfig = {
   retries: { limit: 0, delay: "1 second" },
@@ -91,6 +88,8 @@ export async function advance(
   if (
     item.status === "error" ||
     item.status === "duplicate" ||
+    item.status === "publication_pending" ||
+    item.status === "waiting_publish_slot" ||
     s.showSources ||
     s.showImages
   )
@@ -161,6 +160,12 @@ export async function advance(
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item);
   }
   if (s.approvedRevision === s.revision) {
+    if (!s.publicationStarted) {
+      assertDraft(s.draft, cats);
+      webUrl(s.url);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s.selectedOn))
+        throw new BotError("Date de sélection invalide.");
+    }
     if (
       !s.publicationStarted &&
       (s.draft.topics.some((uid) => !cats.topics.some((t) => t.uid === uid)) ||
@@ -178,10 +183,13 @@ export async function advance(
       throw new BotError(
         "Confirmez l’omission des médias indisponibles avant publication.",
       );
-    await step.do(`${prefix}-publication-lock`, stepConfig, async () => {
-      await new Store(env.DB).lock(env.PRISMIC_REPOSITORY, item.id);
-      return true;
-    });
+    const locked = await step.do(`${prefix}-publication-lock`, stepConfig, () =>
+      new Store(env.DB).tryLock(env.PRISMIC_REPOSITORY, item.id),
+    );
+    if (!locked) {
+      item.status = "waiting_publish_slot";
+      return;
+    }
     s.references ??= {
       topics: Object.fromEntries(cats.topics.map((t) => [t.uid, t.id])),
       sourceId: cats.sources.find((source) => source.uid === s.sourceUid)?.id,
@@ -237,64 +245,51 @@ export async function advance(
       }
       await checkpoint(env, step, `${prefix}-checkpoint-ids`, item);
     }
-    // First reconcile an already-requested/ambiguous publish through the Content
-    // API. A 202 is only an acknowledgement, not proof the pair is live.
-    let live = await step.do(
-      `${prefix}-verify-before`,
-      stepConfig,
-      async () => {
-        await progress("check");
-        return verifyPublication(env, item);
-      },
-    );
     const uncertainPublish = await env.DB.prepare(
       "SELECT key FROM operations WHERE item_id=? AND target LIKE '%migration-release/publish' AND status='pending'",
     )
       .bind(item.id)
       .first();
-    if (!live && !s.publicationRequested && !uncertainPublish) {
-      await retry(step, `${prefix}-publish`, async () => {
-        await progress("publish");
-        return publish(env, item);
-      });
-      s.publicationRequested = true;
-      await checkpoint(env, step, `${prefix}-checkpoint-requested`, item);
-    }
-    const verificationStarted = await step.do(
-      `${prefix}-verify-start-time`,
-      stepConfig,
-      async () => Date.now(),
-    );
-    if (!live)
-      await step.do(`${prefix}-verify-notice`, stepConfig, async () => {
-        await progress("verify");
-        return true;
-      });
-    for (let attempt = 0; !live && attempt < 12; attempt++) {
-      await step.sleep(`${prefix}-publication-delay-${attempt}`, 10_000);
-      live = await step.do(
-        `${prefix}-verify-${attempt}`,
+    if (!s.publicationRequested && !uncertainPublish) {
+      await step.do(
+        `${prefix}-register-publication-check`,
         stepConfig,
         async () => {
-          const seconds = Math.max(
-            0,
-            Math.floor((Date.now() - verificationStarted) / 1000),
-          );
-          await progress(
-            "verify",
-            seconds
-              ? `⏱ ${seconds} s écoulées depuis le début de la vérification.`
-              : undefined,
-          );
-          return verifyPublication(env, item);
+          await schedulePublicationCheck(env, item, "requesting");
+          return true;
         },
       );
-    }
-    if (!live)
-      throw new BotError(
-        "Publication pas encore vérifiable. /reprendre vérifiera à nouveau sans recréer les fiches.",
+      try {
+        await retry(step, `${prefix}-publish`, async () => {
+          await progress("publish");
+          return publish(env, item);
+        });
+        s.publicationRequested = true;
+        s.publicationUnknown = false;
+      } catch (error) {
+        const pending = await env.DB.prepare(
+          "SELECT key FROM operations WHERE item_id=? AND target LIKE '%migration-release/publish' AND status='pending'",
+        )
+          .bind(item.id)
+          .first();
+        if (!pending) {
+          await schedulePublicationCheck(env, item, "attention");
+          throw error;
+        }
+        s.publicationUnknown = true;
+      }
+    } else if (uncertainPublish && !s.publicationRequested)
+      s.publicationUnknown = true;
+    await step.do(`${prefix}-schedule-availability`, stepConfig, async () => {
+      await schedulePublicationCheck(
+        env,
+        item,
+        s.publicationRequested ? "accepted" : "unknown",
       );
-    item.status = "done";
+      return true;
+    });
+    item.status = "publication_pending";
+    await checkpoint(env, step, `${prefix}-checkpoint-accepted`, item);
     return;
   }
   item.status = "review";
@@ -313,6 +308,7 @@ export async function applyAction(
   if (
     action.kind === "resume" &&
     (item.status === "error" ||
+      item.status === "waiting_publish_slot" ||
       (!s.publicationStarted && !!s.media?.failures.length))
   ) {
     // If an external write is uncertain, replay protection will stop it again.

@@ -2,6 +2,7 @@ import { errorFields, log, observe, withContext } from "@/observability";
 import type { Update } from "grammy/types";
 import type { Env } from "@/domain";
 import { handleUpdate } from "@/telegram";
+import { reconcilePublications } from "@/publication";
 import { dispatchQueue } from "@/dispatch";
 export { CurationWorkflow } from "@/workflow";
 
@@ -110,6 +111,9 @@ export default {
     return new Response("OK");
   },
   async scheduled(_event: ScheduledController, env: Env) {
+    await observe("scheduled.publications", {}, () =>
+      reconcilePublications(env),
+    );
     await observe("scheduled.dispatch", {}, () => dispatch(env));
   },
 } satisfies ExportedHandler<Env>;

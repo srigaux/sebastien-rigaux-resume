@@ -13,6 +13,7 @@ beforeEach(async () => {
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
   await env.DB.batch(
     [
+      "publication_checks",
       "actions",
       "messages",
       "items",

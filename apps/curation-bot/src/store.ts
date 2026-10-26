@@ -57,13 +57,19 @@ export class Store {
       .run();
     return this.active(chat);
   }
-  async finish(item: Item, status: "done" | "cancelled", repository?: string) {
+  async finish(
+    item: Item,
+    status: "done" | "cancelled" | "publication_pending",
+    repository?: string,
+  ) {
     const statements = [
       this.db
-        .prepare("UPDATE items SET state=?,status=?,active=0 WHERE id=?")
-        .bind(JSON.stringify(item.state), status, item.id),
+        .prepare(
+          "UPDATE items SET state=?,status=?,active=0 WHERE id=? AND NOT(status='done' AND ?='publication_pending')",
+        )
+        .bind(JSON.stringify(item.state), status, item.id, status),
     ];
-    if (repository)
+    if (repository && status !== "publication_pending")
       statements.push(
         this.db
           .prepare(
@@ -124,6 +130,10 @@ export class Store {
       .run();
   }
   async lock(repo: string, id: string) {
+    if (!(await this.tryLock(repo, id)))
+      throw new Error("Publication lock held");
+  }
+  async tryLock(repo: string, id: string): Promise<boolean> {
     await this.db
       .prepare(
         "INSERT OR IGNORE INTO publication_lock(repository,item_id) VALUES(?,?)",
@@ -134,7 +144,7 @@ export class Store {
       .prepare("SELECT item_id FROM publication_lock WHERE repository=?")
       .bind(repo)
       .first<{ item_id: string }>();
-    if (row?.item_id !== id) throw new Error("Publication lock held");
+    return row?.item_id === id;
   }
   async unlock(repo: string, id: string) {
     await this.db

@@ -110,7 +110,11 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         await store.save(item);
         return true;
       });
-      if (item.status === "done" || item.status === "cancelled") {
+      if (
+        item.status === "done" ||
+        item.status === "cancelled" ||
+        item.status === "publication_pending"
+      ) {
         await this.finish(step, prefix, item, store);
         return;
       }
@@ -234,6 +238,12 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         documentIds: item.state.publishedIds,
       });
       if (item.status === "done") await publicationNotice(this.env, item, true);
+      else if (item.status === "publication_pending")
+        await publicationNotice(
+          this.env,
+          item,
+          item.state.publicationRequested ? "accepted" : "unconfirmed",
+        );
       else
         await sendText(
           this.env,
@@ -244,7 +254,11 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     await step.do(`${prefix}-release-item`, stepConfig, async () => {
       await store.finish(
         item,
-        item.status === "done" ? "done" : "cancelled",
+        item.status === "publication_pending"
+          ? "publication_pending"
+          : item.status === "done"
+            ? "done"
+            : "cancelled",
         this.env.PRISMIC_REPOSITORY,
       );
       return true;

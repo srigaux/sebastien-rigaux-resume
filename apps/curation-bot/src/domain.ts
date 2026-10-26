@@ -103,7 +103,9 @@ export type PublicationStage =
   | "check"
   | "publish"
   | "verify"
-  | "paused";
+  | "paused"
+  | "accepted"
+  | "unconfirmed";
 export type Stage =
   | "queued"
   | "choose"
@@ -112,6 +114,8 @@ export type Stage =
   | "review"
   | "error"
   | "publishing"
+  | "publication_pending"
+  | "waiting_publish_slot"
   | "done"
   | "cancelled";
 export type State = {
@@ -140,6 +144,7 @@ export type State = {
   mediaOmissions?: string[];
   publicationStarted?: boolean;
   publicationRequested?: boolean;
+  publicationUnknown?: boolean;
   references?: { topics: Record<string, string>; sourceId?: string };
   publishedIds?: string[];
   mediaIds?: { image?: string; icon?: string };

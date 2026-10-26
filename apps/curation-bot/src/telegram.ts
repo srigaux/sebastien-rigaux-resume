@@ -364,7 +364,7 @@ export async function publicationNotice(
   const complete = stage === true;
   try {
     const store = new Store(env.DB),
-      api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch });
+      api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch, timeoutSeconds: 10 });
     const key = `telegram:publication:${item.id}`;
     let receipt = await readReceiptKey(store, key);
     if (receipt?.complete) return;
@@ -377,7 +377,11 @@ export async function publicationNotice(
     );
     const text = complete
       ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
-      : checklist.text;
+      : stage === "accepted"
+        ? "🚀 Publication FR/EN acceptée par Prismic !\nLa mise en ligne se finalise. Je la vérifie en arrière-plan, tu peux continuer ta veille."
+        : stage === "unconfirmed"
+          ? "⏳ La réponse de publication n’a pas été confirmée.\nJe vérifie les versions FR/EN en arrière-plan, sans renvoyer la demande."
+          : checklist.text;
     const metadata = {
       text,
       complete,
@@ -551,6 +555,16 @@ export async function present(env: Env, item: Item, cats: Catalog) {
     );
     await remember(store, item, messageId);
     return;
+  } else if (item.status === "waiting_publish_slot") {
+    const messageId = await sendProposal(
+      item,
+      cats,
+      api,
+      store,
+      "⏳ Ta sélection est prête ! J’attends que Prismic termine la publication précédente avant d’envoyer celle-ci.\nTu peux encore l’annuler.",
+    );
+    await remember(store, item, messageId);
+    return;
   } else if (item.status === "error") {
     const messageId = await sendProposal(
       item,
@@ -694,16 +708,33 @@ export function createBot(env: Env) {
         .bind(env.TELEGRAM_CHAT_ID)
         .all<{ id: string; status: string }>();
       await ctx.reply(
-        rows.results.map((r) => `${r.id} : ${r.status}`).join("\n") ||
+        rows.results
+          .map(
+            (r) =>
+              `${r.id} : ${r.status === "publication_pending" ? "mise en ligne en cours de confirmation" : r.status === "waiting_publish_slot" ? "prête, en attente de publication" : r.status}`,
+          )
+          .join("\n") ||
           "📭 La file est vide. Tu peux m’envoyer un nouveau lien !",
       );
       return;
     }
     if (/^\/statut\b/.test(text)) {
+      const pending = await store.db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM items WHERE chat_id=? AND status='publication_pending'",
+        )
+        .bind(env.TELEGRAM_CHAT_ID)
+        .first<{ count: number }>();
+      const background = pending?.count
+        ? `\n⏳ ${pending.count} publication(s) en cours de confirmation, vérifiées chaque minute.`
+        : "";
       await ctx.reply(
-        item
-          ? `${item.id} — ${item.status}, version ${item.state.revision}${item.state.error ? "\n" + item.state.error : ""}`
-          : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
+        (item
+          ? `${item.id} — ${item.status === "waiting_publish_slot" ? "prête, en attente de Prismic" : item.status}, version ${item.state.revision}${item.state.error ? "\n" + item.state.error : ""}`
+          : background
+            ? "☕ Aucune fiche en cours de préparation."
+            : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !") +
+          background,
       );
       return;
     }

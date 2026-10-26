@@ -401,7 +401,15 @@ export async function migrate(
   );
   await client.migrate(migration);
   const ids = [french.document.id!, english.document.id!];
-  if (ids.some((id) => !id)) throw new BotError("Migration incomplète.");
+  if (ids.some((id) => !id) || new Set(ids).size !== 2)
+    throw new BotError("Migration incomplète.");
+  if (
+    (item.state.media?.image && !image?.asset?.id) ||
+    (item.state.media?.icon && !icon?.asset?.id)
+  )
+    throw new BotError(
+      "Import des médias incomplet : publication interrompue.",
+    );
   return { ids, mediaIds: { image: image?.asset?.id, icon: icon?.asset?.id } };
 }
 export async function publish(env: Env, item: Item) {
@@ -419,57 +427,22 @@ export async function publish(env: Env, item: Item) {
       `Prismic a mis ${result.totalItems} documents en publication au lieu de 2. Vérification opérateur nécessaire.`,
     );
 }
+// Availability only: payloads were validated locally and SDK writes acknowledged.
+// Network/auth/rate-limit errors must remain distinguishable from absent pages.
 export async function verifyPublication(
   env: Env,
   item: Item,
 ): Promise<boolean> {
-  if (!item.state.publishedIds?.length) return false;
-  const client = readClient(env);
-  const docs = await Promise.all(
-    item.state.publishedIds.map((id) =>
-      client.getByID(id, { lang: "*" }).catch(() => null),
+  const ids = item.state.publishedIds;
+  if (!ids || ids.length !== 2 || new Set(ids).size !== 2) return false;
+  const { results } = await readClient(env).getByIDs(ids, {
+    lang: "*",
+    pageSize: 2,
+    fetch: ["curated_link.url"],
+  });
+  return ids.every((id, index) =>
+    results.some(
+      (doc) => doc.id === id && doc.lang === (index === 0 ? "fr-be" : "en-us"),
     ),
   );
-  return docs.every((doc, i) => {
-    if (!doc) return false;
-    const lang = i === 0 ? "fr" : "en",
-      draft = item.state.draft![lang];
-    const other = item.state.publishedIds![i === 0 ? 1 : 0];
-    const media = item.state.media;
-    return (
-      doc.lang === (i === 0 ? "fr-be" : "en-us") &&
-      doc.alternate_languages.some((t) => t.id === other) &&
-      prismic.asText(doc.data.title) === draft.title &&
-      prismic.asText(doc.data.summary) === draft.summary &&
-      doc.data.url?.url === item.state.url &&
-      doc.data.selected_on === item.state.selectedOn &&
-      (doc.data.credit || null) === (item.state.draft!.credit || null) &&
-      (doc.data.source_language || null) ===
-        (item.state.draft!.sourceLanguage || null) &&
-      (doc.data.published_on || null) ===
-        (item.state.draft!.publishedOn || null) &&
-      doc.data.format === item.state.draft!.format &&
-      JSON.stringify(
-        (doc.data.topics ?? [])
-          .map((t: { topic: { id: string } }) => t.topic.id)
-          .sort(),
-      ) ===
-        JSON.stringify(
-          item.state
-            .draft!.topics.map((uid) => item.state.references?.topics[uid])
-            .sort(),
-        ) &&
-      (doc.data.discovered_via?.id || null) ===
-        (item.state.references?.sourceId || null) &&
-      (!media?.image ||
-        (doc.data.image?.id === item.state.mediaIds?.image &&
-          doc.data.image.alt === draft.imageAlt &&
-          doc.data.image.dimensions?.width > 0 &&
-          doc.data.image.dimensions?.height > 0)) &&
-      (!media?.icon ||
-        (doc.data.site_icon?.id === item.state.mediaIds?.icon &&
-          doc.data.site_icon.dimensions?.width > 0 &&
-          doc.data.site_icon.dimensions?.height > 0))
-    );
-  });
 }

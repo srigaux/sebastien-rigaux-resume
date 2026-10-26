@@ -151,7 +151,7 @@ Insiste sur les usages pour une petite équipe frontend.
 source: JavaScript Weekly
 ```
 
-Après publication vérifiée ou annulation, le workflow libère la fiche puis démarre immédiatement la suivante dans une étape durable. Il n’attend ni le cron ni un nouveau message ; le cron reste un filet de sécurité en cas d’échec. Les démarrages concurrents utilisent la même prise atomique D1 et le même identifiant de workflow.
+Après acceptation de la demande de publication par Prismic (HTTP 202), réponse de publication incertaine enregistrée, ou annulation, le workflow libère la fiche puis démarre immédiatement la suivante dans une étape durable. Il n’attend ni le cron ni un nouveau message ; le cron reste un filet de sécurité en cas d’échec. Les démarrages concurrents utilisent la même prise atomique D1 et le même identifiant de workflow.
 
 Chaque message contenant un nouveau lien entre dans la file. Plusieurs URL dans le même message déclenchent un choix du lien principal. Les liens des messages suivants attendent la fin de la fiche active.
 
@@ -173,7 +173,9 @@ Pour un lien mis en attente, l’accusé de réception reste intact : l’image 
 
 Pour un lien traité immédiatement, le message « 🔖 Bien reçu ! » devient l’aperçu image via `editMessageMedia` dès que les médias sont prêts ; les textes FR/EN sont ensuite envoyés dans un message séparé avec les boutons. Sans image, cet accusé devient directement la proposition textuelle. Chaque correction textuelle reçoit immédiatement « ✍️ C’est noté ! Je prépare la nouvelle version. », puis ce message est édité avec la nouvelle proposition. Les révisions précédentes restent donc visibles. Les identifiants sont conservés dans le journal D1, séparément des états du Workflow ; une mise à jour rejouée ne renvoie pas l’accusé de réception. Si un message a été supprimé ou n’est plus éditable, le bot utilise un nouveau message. Un aperçu ou un message d’attente n’est jamais une cible de validation avant l’affichage des textes complets.
 
-Pendant la publication, un message « 🚀 Publication en cours… » est envoyé une seule fois puis mis à jour sous forme de checklist (✅ terminé, ⏳ en cours, ▫️ à venir) selon les opérations du client JS Prismic : image, icône, création FR/EN, enregistrement des contenus et des relations, envoi de la publication et vérification finale. Le temps écoulé pendant la vérification est actualisé à chaque contrôle. En cas d’erreur, la progression passe en pause avec l’indication `/reprendre`. Les notifications de progression sont facultatives et leurs erreurs ne font jamais relancer une écriture Prismic. Le message est remplacé par la confirmation après vérification des deux documents FR/EN. Une reprise réutilise le même message. S’il a été supprimé, une nouvelle confirmation est envoyée.
+Pendant l’envoi, un seul message affiche la checklist des opérations réelles du client JS : image, icône, création FR/EN, contenus et demande de publication. Les données éditoriales, la version approuvée et le catalogue sont validés localement avant les écritures ; les deux IDs distincts et les références de médias retournés sont contrôlés avant la publication. Chaque écriture doit recevoir sa réponse SDK de réussite.
+
+Après le HTTP 202, cette checklist devient « 🚀 Publication FR/EN acceptée par Prismic ! La mise en ligne se finalise ». Le contrôle de disponibilité est confié au cron : aucun polling ni sommeil de vérification dans le workflow. Les erreurs de progression Telegram ne relancent jamais une écriture Prismic. Une reprise ou un message supprimé conserve les règles de reçu durable. Le succès final remplace le message lorsque le cron constate les deux documents publiés.
 
 Après une action acceptée (publication, annulation, correction, source, etc.), les boutons des messages précédents sont retirés ; les textes, images et références de réponse restent disponibles. Une action refusée laisse les boutons utilisables. Un échec Telegram lors du retrait est journalisé sans bloquer la publication ni la file.
 
@@ -199,7 +201,15 @@ Les fichiers sont limités à 10 Mio et les extractions à 220 000 caractères. 
 
 La publication est sérialisée et son accord porte sur une version exacte. Chaque réponse d’écriture Prismic est enregistrée avant d’être rendue au SDK. Une reprise reconstitue les références de migration en rejouant ces réponses connues ; elle ne réémet pas leurs POST/PUT. Une réponse perdue reste incertaine et bloque les écritures suivantes. Les refus 429 peuvent être retentés avec un budget durable.
 
-Après le HTTP 202, le bot vérifie les deux documents et leurs relations, contenus et médias dans la Content API. Si la publication tarde, `/reprendre` revérifie. Le message de réussite concerne Prismic ; le site Astro attend sa reconstruction habituelle.
+Chaque minute, le cron traite au plus une entrée due de `publication_checks`, avec un bail de deux minutes contre les passages concurrents. Un seul appel SDK `getByIDs` (langues `*`, réponse limitée) vérifie les deux IDs et leurs locales FR/EN ; aucun texte, crédit, tag, relation ou média n’est recomparé après publication. Une absence relance le contrôle au prochain passage sans mettre la fiche en erreur. Une erreur réseau, d’authentification ou de quota est enregistrée séparément de `documents_not_available`. Le cron n’écrit aucun contenu dans Prismic et n’approuve aucune proposition humaine.
+
+La fiche passe en `publication_pending` et libère la conversation dès l’acceptation. Le verrou de release reste détenu jusqu’à confirmation de disponibilité. La sélection suivante peut être extraite et corrigée ; si elle est déjà approuvée, elle reste en `waiting_publish_slot` sans commencer ses écritures. Le cron la réveille après libération du verrou. `/statut` et `/file` affichent également les confirmations en arrière-plan. Une erreur Telegram de confirmation n’empêche pas la libération du verrou et la notification est retentée séparément.
+
+Une réponse de publication perdue passe en état `unknown` : le cron peut la confirmer par disponibilité des deux IDs, sans renvoyer la demande. Une incertitude sur une création de document ou un import média reste une erreur nécessitant la réconciliation opérateur décrite ci-dessous. Une publication refusée ou portant sur un nombre inattendu de documents reste également bloquée pour intervention ; sa release n’est pas libérée aveuglément.
+
+Ces contrôles courts conviennent au cron des Workers gratuits. `timeout: "5 minutes"` est une limite configurée de nos étapes, pas une durée totale du Workflow. Les attentes réseau et `step.sleep` ne sont pas du temps CPU ; les limites CPU de l’offre gratuite restent applicables. Voir les [limites Workflows](https://developers.cloudflare.com/workflows/reference/limits/) et [limites Workers](https://developers.cloudflare.com/workers/platform/limits/). Appliquer `pnpm db:remote` avant le déploiement pour créer `publication_checks`.
+
+L’acceptation et la confirmation concernent Prismic ; le site Astro attend sa reconstruction habituelle.
 
 ### Réconcilier une écriture incertaine
 

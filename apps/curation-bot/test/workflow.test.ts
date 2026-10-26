@@ -2,6 +2,7 @@ import { env, introspectWorkflowInstance } from "cloudflare:test";
 import { it, expect, vi } from "vitest";
 import { Store } from "@/store";
 import { dispatch } from "@/index";
+import { reconcilePublications } from "@/publication";
 import type { Env } from "@/domain";
 import { cats, fixture } from "@test/fixtures";
 
@@ -90,7 +91,7 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
   }
 });
 
-it("publie après confirmation et attend que les deux traductions soient visibles avant de libérer la file", async () => {
+it("libère la file dès l’acceptation et garde le verrou jusqu’au contrôle cron des deux versions", async () => {
   const { repository, extraction } = await import("@test/fixtures");
   const store = new Store(env.DB),
     item = fixture("u901");
@@ -103,6 +104,7 @@ it("publie après confirmation et attend que les deux traductions soient visible
   await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000);
   let publicationMessageId: number | undefined;
   let publicationConfirmed = false;
+  let publicationAccepted = false;
   const publicationUpdates: string[] = [];
   let messageId = 0,
     published = false,
@@ -115,6 +117,8 @@ it("publie après confirmation et attend que les deux traductions soient visible
       const url = String(input);
       if (url.includes("api.telegram.org")) {
         const body = JSON.parse(String(init?.body ?? "{}"));
+        if (body.text?.includes("acceptée par Prismic"))
+          publicationAccepted = true;
         if (body.text?.includes("Publication en cours"))
           publicationUpdates.push(body.text);
         if (
@@ -180,13 +184,14 @@ it("publie après confirmation et attend que les deux traductions soient visible
       }
       if (url.includes("/documents/search")) {
         const query = new URL(url).searchParams.get("q") ?? "";
-        const doc = [...docs.values()].find((d) =>
-          query.includes(String(d.id)),
-        );
-        // The Content API defaults to the master locale, even for getByID.
         const locale = new URL(url).searchParams.get("lang") ?? "fr-be";
-        const visible = doc && (locale === "*" || doc.lang === locale);
-        const results = published && visible ? [doc] : [];
+        const results = published
+          ? [...docs.values()].filter(
+              (doc) =>
+                query.includes(String(doc.id)) &&
+                (locale === "*" || doc.lang === locale),
+            )
+          : [];
         return Response.json({
           page: 1,
           results_per_page: 20,
@@ -217,19 +222,19 @@ it("publie après confirmation et attend que les deux traductions soient visible
     ).sendEvent({ type: "input", payload: {} });
     await inspector.waitForStatus("complete");
     const finished = await store.get(item.id);
-    expect(finished.status).toBe("done");
+    expect(finished.status).toBe("publication_pending");
     expect(finished.active).toBe(0);
     expect(finished.state.publishedIds).toEqual(["live-fr", "live-en"]);
     expect(publishCalls).toBe(1);
     expect(createCalls).toBe(2);
-    expect(publicationConfirmed).toBe(true);
+    expect(publicationAccepted).toBe(true);
+    expect(publicationConfirmed).toBe(false);
     for (const text of [
       "⏳ Création de la fiche FR",
       "✅ Création de la fiche FR",
       "⏳ Création de la fiche EN",
       "⏳ Enregistrement des textes",
       "⏳ Publication dans Prismic",
-      "⏳ Vérification des deux versions",
     ]) {
       expect(publicationUpdates.some((update) => update.includes(text))).toBe(
         true,
@@ -238,6 +243,13 @@ it("publie après confirmation et attend que les deux traductions soient visible
     await next.waitForStepResult({ name: "g0-c0-present" });
     expect((await store.get("u951")).status).toBe("choose");
     expect((await store.active("1"))?.id).toBe("u951");
+    expect(
+      (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
+    ).toHaveLength(1);
+    await reconcilePublications(env);
+    expect((await store.get(item.id)).status).toBe("done");
+    expect(publicationConfirmed).toBe(true);
+    expect(publishCalls).toBe(1);
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
     ).toHaveLength(0);
