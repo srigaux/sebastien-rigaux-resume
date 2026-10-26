@@ -91,6 +91,18 @@
           powerPreference: "low-power",
         });
         const gl = renderer.gl;
+        // CPU-backed WebGL can make this decorative effect block the page.
+        // Keep the CSS glow instead, before compiling or drawing the shader.
+        const rendererInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        const rendererName = String(gl.getParameter(
+          rendererInfo?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER,
+        ));
+        if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(rendererName)) {
+          failed = true;
+          syncState();
+          gl.getExtension("WEBGL_lose_context")?.loseContext();
+          return;
+        }
         const root = document.documentElement;
         const uniforms = {
           resolution: { value: new Vec2(1, 1) },
