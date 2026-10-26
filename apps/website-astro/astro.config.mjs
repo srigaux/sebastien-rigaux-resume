@@ -23,6 +23,8 @@ import partytown from "@astrojs/partytown";
 
 import playformInline from "@playform/inline";
 
+import playformCompress from "@playform/compress";
+
 // Astro loads .env files after this config, so load the local browser path here.
 const envFile = new URL("../../.env.local", import.meta.url);
 if (existsSync(envFile)) loadEnvFile(fileURLToPath(envFile));
@@ -101,7 +103,7 @@ export default defineConfig({
         ? { args: ["--no-sandbox"] }
         : {}),
     },
-  }), partytown({ config: { forward: ["dataLayer.push", "gtag"] } }), playformInline()],
+  }), partytown({ config: { forward: ["dataLayer.push", "gtag"] } }), playformInline(), playformCompress()],
   i18n: {
     locales: ["fr", "en"],
     defaultLocale: "fr",
