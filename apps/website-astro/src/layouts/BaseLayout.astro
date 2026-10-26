@@ -381,7 +381,12 @@ const structuredData =
       cssVariable="--font-sora"
       preload={[{ weight: 700, style: "normal", subset: "latin" }]}
     />
-    <link rel="stylesheet" href={printStyles} media="print" />
+    <link
+      rel="stylesheet"
+      href={printStyles}
+      media="print"
+      data-beasties-skip
+    />
     {
       noindex ? (
         <meta name="robots" content="noindex, follow" />

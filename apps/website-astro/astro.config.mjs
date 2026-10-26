@@ -32,78 +32,86 @@ const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
 
 export default defineConfig({
   site: "https://sebastien.rigaux.be",
-  integrations: [react(), siteSitemap(), astroLlmsTxtForFileBuild({
-    title: "Sébastien Rigaux — CV et veille / Résumé and tech watch",
-    description:
-      "CV bilingue et veille technologique de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
-    details:
-      "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en).",
-    notes:
-      "Contenu généré automatiquement à partir des pages publiques du CV et des sélections de veille ; les pages HTML restent les sources canoniques.",
-    optionalLinks: [
-      {
-        label: "Veille technologique — index Markdown",
-        url: "https://sebastien.rigaux.be/veille.md",
-        description:
-          "Toutes les sélections, leurs permaliens et leurs versions Markdown.",
+  integrations: [
+    react(),
+    siteSitemap(),
+    astroLlmsTxtForFileBuild({
+      title: "Sébastien Rigaux — CV et veille / Résumé and tech watch",
+      description:
+        "CV bilingue et veille technologique de Sébastien Rigaux, directeur technique (CTO) et Tech Lead spécialisé en architecture logicielle, produits web et mobiles et transition vers l’IA.",
+      details:
+        "Pages officielles : [français](https://sebastien.rigaux.be/) et [English](https://sebastien.rigaux.be/en).",
+      notes:
+        "Contenu généré automatiquement à partir des pages publiques du CV et des sélections de veille ; les pages HTML restent les sources canoniques.",
+      optionalLinks: [
+        {
+          label: "Veille technologique — index Markdown",
+          url: "https://sebastien.rigaux.be/veille.md",
+          description:
+            "Toutes les sélections, leurs permaliens et leurs versions Markdown.",
+        },
+        {
+          label: "Tech watch — Markdown index",
+          url: "https://sebastien.rigaux.be/en/tech-watch.md",
+          description:
+            "All selected resources, their permalinks and Markdown versions.",
+        },
+      ],
+      docSet: [
+        {
+          title: "CV complet / Full résumé",
+          description:
+            "Le CV complet en français et en anglais / The complete résumé in French and English.",
+          url: "/llms-full.txt",
+          include: ["/", "en/"],
+          promote: ["/", "en/"],
+          mainSelector: "main",
+        },
+        {
+          title: "CV en français",
+          description: "Version Markdown de la page française du CV.",
+          url: "/fr.md",
+          include: ["/"],
+          mainSelector: "main",
+        },
+        {
+          title: "Résumé in English",
+          description: "Markdown version of the English résumé page.",
+          url: "/en.md",
+          include: ["en/"],
+          mainSelector: "main",
+        },
+      ],
+      pageSeparator: "\n\n---\n\n",
+    }),
+    pdf({
+      pages: {
+        "/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
+        "/en": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
       },
-      {
-        label: "Tech watch — Markdown index",
-        url: "https://sebastien.rigaux.be/en/tech-watch.md",
-        description:
-          "All selected resources, their permalinks and Markdown versions.",
+      baseOptions: {
+        throwOnFail: true,
+        // Apply print media before navigation so decorative WebGL never starts in PDF pages.
+        preCallback: (page) => page.emulateMediaType("print"),
+        pdf: {
+          format: "A4",
+          printBackground: true,
+          preferCSSPageSize: true,
+        },
       },
-    ],
-    docSet: [
-      {
-        title: "CV complet / Full résumé",
-        description:
-          "Le CV complet en français et en anglais / The complete résumé in French and English.",
-        url: "/llms-full.txt",
-        include: ["/", "en/"],
-        promote: ["/", "en/"],
-        mainSelector: "main",
+      launch: {
+        ...(executablePath ? { executablePath } : {}),
+        // GitHub's Ubuntu runner cannot sandbox Chrome for Testing.
+        ...(process.env.GITHUB_ACTIONS === "true" &&
+        process.platform === "linux"
+          ? { args: ["--no-sandbox"] }
+          : {}),
       },
-      {
-        title: "CV en français",
-        description: "Version Markdown de la page française du CV.",
-        url: "/fr.md",
-        include: ["/"],
-        mainSelector: "main",
-      },
-      {
-        title: "Résumé in English",
-        description: "Markdown version of the English résumé page.",
-        url: "/en.md",
-        include: ["en/"],
-        mainSelector: "main",
-      },
-    ],
-    pageSeparator: "\n\n---\n\n",
-  }), pdf({
-    pages: {
-      "/": "/pdf/Sebastien-Rigaux-CV-FR.pdf",
-      "/en": "/pdf/Sebastien-Rigaux-CV-EN.pdf",
-    },
-    baseOptions: {
-      throwOnFail: true,
-      // Apply print media before navigation so decorative WebGL never starts in PDF pages.
-      preCallback: (page) => page.emulateMediaType("print"),
-      pdf: {
-        format: "A4",
-        printBackground: true,
-        preferCSSPageSize: true,
-      },
-    },
-    launch: {
-      ...(executablePath ? { executablePath } : {}),
-      // GitHub's Ubuntu runner cannot sandbox Chrome for Testing.
-      ...(process.env.GITHUB_ACTIONS === "true" &&
-      process.platform === "linux"
-        ? { args: ["--no-sandbox"] }
-        : {}),
-    },
-  }), partytown({ config: { forward: ["dataLayer.push", "gtag"] } }), playformInline(), playformCompress()],
+    }),
+    partytown({ config: { forward: ["dataLayer.push", "gtag"] } }),
+    playformInline({ Beasties: { pruneSource: false } }),
+    playformCompress({}),
+  ],
   i18n: {
     locales: ["fr", "en"],
     defaultLocale: "fr",

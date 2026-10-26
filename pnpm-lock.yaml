@@ -206,6 +206,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@playform/inline>beasties': ^0.4.3
+
 importers:
 
   .:
@@ -2053,8 +2056,8 @@ packages:
   bcp-47-match@2.0.3:
     resolution: {integrity: sha512-JtTezzbAibu8G0R9op9zb3vcWZd9JF6M0xOYGPn0fNCd7wOpRB1mU2mH9T8gaBGbAAyIIVgB2G7xG0GP98zMAQ==}
 
-  beasties@0.4.1:
-    resolution: {integrity: sha512-2Imdcw3LznDuxAbJM26RHniOLAzE6WgrK8OuvVXCQtNBS8rsnD9zsSEa3fHl4hHpUY7BYTlrpvtPVbvu9G6neg==}
+  beasties@0.4.3:
+    resolution: {integrity: sha512-fIIeLOcbAB/K1kb1HBVJoiq1alHL4RCYBSo5e7HzrNkkgMggXR1Vqt/Z9JWnkfe/qdCo66Ux3QRwZioAIBdWRA==}
     engines: {node: '>=18.0.0'}
 
   blake3-wasm@2.1.5:
@@ -5258,7 +5261,7 @@ snapshots:
     dependencies:
       '@playform/pipe': 0.1.4
       astro: 7.4.2(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(yaml@2.9.1)
-      beasties: 0.4.1
+      beasties: 0.4.3
       deepmerge-ts: 7.1.5
     transitivePeerDependencies:
       - '@astrojs/markdown-remark'
@@ -5985,7 +5988,7 @@ snapshots:
 
   bcp-47-match@2.0.3: {}
 
-  beasties@0.4.1:
+  beasties@0.4.3:
     dependencies:
       css-select: 6.0.0
       css-what: 7.0.0
