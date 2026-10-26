@@ -1,4 +1,11 @@
-import * as CookieConsent from "vanilla-cookieconsent";
+import {
+  acceptedService,
+  eraseCookies,
+  run,
+  validConsent,
+  type CookieItem,
+  type Translation,
+} from "vanilla-cookieconsent";
 
 let analyticsStarted = false;
 
@@ -68,7 +75,7 @@ function safeReferrer() {
 
 function updateAnalyticsConsent() {
   if (!analyticsStarted) return;
-  const analyticsStorage: ConsentState = CookieConsent.acceptedService("ga", "analytics")
+  const analyticsStorage: ConsentState = acceptedService("ga", "analytics")
     ? "granted"
     : "denied";
   gtag("consent", "update", {
@@ -78,13 +85,13 @@ function updateAnalyticsConsent() {
   if (analyticsStorage === "denied") {
     // Also covers rejection of just the GA service and expired consent cookies.
     for (const cookie of analyticsCookies()) {
-      CookieConsent.eraseCookies(cookie.name, cookie.path, cookie.domain);
+      eraseCookies(cookie.name, cookie.path, cookie.domain);
     }
   }
 }
 
 /** GA can set cookies on a parent domain, unlike the host-only choice cookie. */
-function analyticsCookies(): CookieConsent.CookieItem[] {
+function analyticsCookies(): CookieItem[] {
   const domains = [location.hostname];
   const labels = location.hostname.split(".");
   // Browsers ignore attempts to clear a public-suffix cookie.
@@ -95,7 +102,7 @@ function analyticsCookies(): CookieConsent.CookieItem[] {
   ];
 }
 
-function translation(fr: boolean): CookieConsent.Translation {
+function translation(fr: boolean): Translation {
   return {
     consentModal: {
       title: fr ? "Votre choix, vos cookies" : "Your cookies, your choice",
@@ -143,7 +150,7 @@ export async function initCookieConsent() {
   // Neither the banner nor analytics belongs in the generated CV PDFs.
   if (window.matchMedia("print").matches) return;
   startAnalytics();
-  await CookieConsent.run({
+  await run({
     mode: "opt-in",
     revision: 2,
     manageScriptTags: false,
@@ -168,5 +175,5 @@ export async function initCookieConsent() {
     },
   });
   // No callback runs until a first choice; clear cookies from expired revisions too.
-  if (!CookieConsent.validConsent()) updateAnalyticsConsent();
+  if (!validConsent()) updateAnalyticsConsent();
 }
