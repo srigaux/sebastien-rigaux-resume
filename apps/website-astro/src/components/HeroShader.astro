@@ -94,6 +94,7 @@
         const root = document.documentElement;
         const uniforms = {
           resolution: { value: new Vec2(1, 1) },
+          center: { value: new Vec2() },
           time: { value: 0 },
           accent: { value: new Color() },
           lightMode: { value: 0 },
@@ -118,6 +119,7 @@
           fragment: `
             precision highp float;
             uniform vec2 resolution;
+            uniform vec2 center;
             uniform float time;
             uniform vec3 accent;
             uniform float lightMode;
@@ -126,7 +128,6 @@
 
             void main() {
               vec2 uv = (gl_FragCoord.xy - resolution * 0.5) / min(resolution.x, resolution.y);
-              vec2 center = vec2(0.29 * resolution.x / min(resolution.x, resolution.y), 0.015);
               vec2 glowPosition = uv - center + vec2(0.0, parallax * 0.6) + interaction * 0.6;
               float light = 0.0;
 
@@ -263,6 +264,11 @@
           canvas.style.removeProperty("width");
           canvas.style.removeProperty("height");
           uniforms.resolution.value.set(canvas.width, canvas.height);
+          const unit = Math.max(Math.min(width, height), 1);
+          // Fixed anchors for the mobile, sm and lg identity layouts; no logo measurement.
+          const centerX = width < 640 ? 84 : width < 1024 ? 112 : width * 0.79;
+          const centerY = height * (width < 640 ? 0.39 : width < 1024 ? 0.38 : 0.485);
+          uniforms.center.value.set((centerX - width / 2) / unit, (height / 2 - centerY) / unit);
         };
         const resizeObserver = new ResizeObserver(() => { sizeDirty = true; });
         resizeObserver.observe(shader);
