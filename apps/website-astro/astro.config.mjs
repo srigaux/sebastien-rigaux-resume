@@ -25,10 +25,13 @@ import playformInline from "@playform/inline";
 
 import playformCompress from "@playform/compress";
 
+import { visualizer } from "rollup-plugin-visualizer";
+
 // Astro loads .env files after this config, so load the local browser path here.
 const envFile = new URL("../../.env.local", import.meta.url);
 if (existsSync(envFile)) loadEnvFile(fileURLToPath(envFile));
 const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+const fastBuild = process.env.BUILD_FAST === "1" || process.env.BUILD_FAST === "true";
 
 export default defineConfig({
   site: "https://sebastien.rigaux.be",
@@ -109,8 +112,12 @@ export default defineConfig({
       },
     }),
     partytown({ config: { forward: ["dataLayer.push", "gtag"] } }),
-    playformInline({ Beasties: { pruneSource: false } }),
-    playformCompress({}),
+    ...(fastBuild
+      ? []
+      : [
+          playformInline({ Beasties: { pruneSource: false } }),
+          playformCompress({}),
+        ]),
   ],
   i18n: {
     locales: ["fr", "en"],
@@ -143,7 +150,7 @@ export default defineConfig({
   trailingSlash: "never",
   build: { format: "file" },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), visualizer()],
   },
 });
 
