@@ -115,7 +115,13 @@ export default defineConfig({
     ...(fastBuild
       ? []
       : [
-          playformInline({ Beasties: { pruneSource: false } }),
+          playformInline({
+            Beasties: {
+              pruneSource: false,
+              // The JS-generated dialog must be styled before it receives focus.
+              allowRules: [/#cc-main/],
+            },
+          }),
           playformCompress({}),
         ]),
   ],
