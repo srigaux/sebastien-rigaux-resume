@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { sitemapMetadata } from "#site-sitemap";
+import { parseHtml, htmlElements, htmlText, jsonLdGraph } from "#site-html";
 
 const dist = new URL("../dist/", import.meta.url);
 const origin = "https://sebastien.rigaux.be";
@@ -17,6 +18,8 @@ for (const base of ["veille/liens/", "en/tech-watch/links/"]) {
     const path = `${base}${file.name.slice(0, -5)}`;
     const url = `${origin}/${path}`;
     const html = await readFile(new URL(`${path}.html`, dist), "utf8");
+    const document = parseHtml(html);
+    const links = htmlElements(document, "link");
     const md = await readFile(new URL(`${path}.md`, dist), "utf8");
     const seo = sitemapMetadata(html, url);
     assert.ok(seo, `Missing self-canonical: ${url}`);
@@ -33,11 +36,10 @@ for (const base of ["veille/liens/", "en/tech-watch/links/"]) {
       assert.ok(entry.includes(`hreflang="${lang}" href="${alternate}"`), `Sitemap/HTML alternate mismatch: ${url}`);
       assert.ok(md.includes(alternate) || lang === "x-default", `Missing Markdown translation: ${url}`);
     }
-    assert.ok(html.includes(`href="${url}.md"`), `Missing Markdown alternate: ${url}`);
-    assert.ok(html.includes(`href="${origin}/llms.txt"`), `Missing llms.txt relation: ${url}`);
+    assert.ok(links.some((node) => node.attribs.href === `${url}.md`), `Missing Markdown alternate: ${url}`);
+    assert.ok(links.some((node) => node.attribs.href === `${origin}/llms.txt`), `Missing llms.txt relation: ${url}`);
     assert.ok(md.startsWith("# ") && md.includes(url), `Missing Markdown title/canonical: ${url}`);
-    const schemas = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
-      .flatMap(([, json]) => JSON.parse(json)["@graph"] ?? []);
+    const schemas = jsonLdGraph(document);
     const page = schemas.find((node) => node["@type"] === "WebPage");
     assert.equal(page?.url, url, `Missing WebPage schema: ${url}`);
     assert.equal(page.dateModified, seo.lastmod, `Schema modification mismatch: ${url}`);
@@ -60,52 +62,57 @@ for (const [url] of sitemap) {
   const path = new URL(url).pathname;
   const file = path === "/" ? "index.html" : `${path.slice(1)}.html`;
   const html = await readFile(new URL(file, dist), "utf8");
-  assert.ok(/<meta name="robots" content="max-image-preview:large"/.test(html), `Large image previews are not allowed: ${url}`);
-  const head = html.match(/<head[\s>][\s\S]*?<\/head>/i)?.[0] ?? "";
-  const headNavigation = [...head.matchAll(/<link rel="(prev|next)" href="([^"]+)"/g)]
-    .map(([, rel, target]) => [rel, target]).sort();
-  const visibleNavigation = [...html.matchAll(/<a href="([^"]+)" rel="(prev|next)"/g)]
-    .map(([, target, rel]) => [rel, new URL(target, origin).href]).sort();
+  const document = parseHtml(html);
+  const head = htmlElements(document, "head")[0];
+  const links = htmlElements(head, "link");
+  const anchors = htmlElements(document, "a");
+  assert.ok(htmlElements(head, "meta").some((node) => node.attribs.name === "robots" && node.attribs.content === "max-image-preview:large"), `Large image previews are not allowed: ${url}`);
+  const headNavigation = links.filter((node) => ["prev", "next"].includes(node.attribs.rel))
+    .map(({ attribs }) => [attribs.rel, attribs.href]).sort();
+  const visibleNavigation = anchors.filter((node) => ["prev", "next"].includes(node.attribs.rel))
+    .map(({ attribs }) => [attribs.rel, new URL(attribs.href, origin).href]).sort();
   assert.deepEqual(headNavigation, visibleNavigation, `Head/visible navigation mismatch: ${url}`);
   for (const [, target] of headNavigation) {
     assert.notEqual(target, url, `Navigation points to itself: ${url}`);
     assert.ok(sitemap.has(target), `Navigation target is not an indexable page: ${target}`);
   }
-  for (const [, href] of html.matchAll(/href="([^"#]+)"/g)) {
+  for (const node of htmlElements(document, "*")) {
+    const href = node.attribs.href;
+    if (!href || href.startsWith("#")) continue;
     if (href.startsWith("/") && !href.startsWith("//")) {
-      const target = new URL(href.replace(/&amp;/g, "&"), origin).pathname;
+      const target = new URL(href, origin).pathname;
       assert.ok(target === "/" || !target.endsWith("/"), `Trailing slash in internal link: ${url} → ${href}`);
     }
   }
   if (path === "/veille" || path.startsWith("/veille/") || path === "/en/tech-watch" || path.startsWith("/en/tech-watch/")) {
     await readFile(new URL(`${path.slice(1)}.md`, dist), "utf8");
-    assert.ok(html.includes(`href="${url}.md"`), `Missing sibling Markdown alternate: ${url}`);
-    assert.ok(/property="og:image" content="https:\/\//.test(html), `Missing social image: ${url}`);
-    assert.ok(/name="twitter:image" content="https:\/\//.test(html), `Missing Twitter image: ${url}`);
+    assert.ok(links.some((node) => node.attribs.href === `${url}.md`), `Missing sibling Markdown alternate: ${url}`);
+    assert.ok(htmlElements(head, "meta").some(({ attribs }) => attribs.property === "og:image" && attribs.content?.startsWith("https://")), `Missing social image: ${url}`);
+    assert.ok(htmlElements(head, "meta").some(({ attribs }) => attribs.name === "twitter:image" && attribs.content?.startsWith("https://")), `Missing Twitter image: ${url}`);
     if (metadata.has(url)) {
-      for (const [, figure] of html.matchAll(/<figure\b[^>]*>([\s\S]*?)<\/figure>/g)) {
-        assert.ok(/width="[1-9]\d*(?:\.\d+)?"/.test(figure) && /height="[1-9]\d*(?:\.\d+)?"/.test(figure), `Missing intrinsic image dimensions: ${url}`);
+      for (const figure of htmlElements(document, "figure")) {
+        assert.ok(htmlElements(figure, "img").some(({ attribs }) => /^[1-9]\d*(?:\.\d+)?$/.test(attribs.width ?? "") && /^[1-9]\d*(?:\.\d+)?$/.test(attribs.height ?? "")), `Missing intrinsic image dimensions: ${url}`);
       }
     } else {
-      const schemas = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
-        .flatMap(([, json]) => JSON.parse(json)["@graph"] ?? []);
+      const schemas = jsonLdGraph(document);
       const collection = schemas.find((node) => node["@type"] === "CollectionPage");
       const list = schemas.find((node) => node["@type"] === "ItemList");
       assert.equal(collection?.url, url, `Missing CollectionPage: ${url}`);
       assert.equal(collection.mainEntity["@id"], list?.["@id"], `Invalid collection/list relationship: ${url}`);
       const pageNumber = Number(path.match(/\/page\/(\d+)$/)?.[1] ?? 1);
-      assert.equal((html.match(/<h1\b/g) ?? []).length, 1, `Expected one primary heading: ${url}`);
-      const paginationHtml = html.match(/<nav aria-label="Pagination"[\s\S]*?<\/nav>/)?.[0] ?? "";
-      const pageLinks = [...paginationHtml.matchAll(/aria-label="Page (\d+)"/g)].map(([, number]) => Number(number));
+      assert.equal(htmlElements(document, "h1").length, 1, `Expected one primary heading: ${url}`);
+      const pagination = htmlElements(document, "nav").find((node) => node.attribs["aria-label"] === "Pagination");
+      const paginationLinks = htmlElements(pagination, "a");
+      const pageLinks = paginationLinks.map((node) => node.attribs["aria-label"]?.match(/^Page (\d+)$/)?.[1]).filter(Boolean).map(Number);
       assert.ok(pageLinks.length <= 5, `Too many numbered pagination links: ${url}`);
-      if (paginationHtml) {
+      if (pagination) {
         assert.ok(pageLinks.includes(1) && pageLinks.includes(pageNumber), `Missing first/current page in pagination: ${url}`);
-        assert.equal((paginationHtml.match(/aria-current="page"/g) ?? []).length, 1, `Expected one current page: ${url}`);
+        assert.equal(htmlElements(pagination, "*").filter((node) => node.attribs["aria-current"] === "page").length, 1, `Expected one current page: ${url}`);
       }
       const firstPage = `${origin}${path.replace(/\/page\/\d+$/, "")}`;
-      assert.ok(html.includes(`href="${new URL(firstPage).pathname}"`), `Missing link to collection start: ${url}`);
+      assert.ok(anchors.some((node) => node.attribs.href === new URL(firstPage).pathname), `Missing link to collection start: ${url}`);
       if (pageNumber > 1) {
-        assert.ok(html.match(/<title>(.*?)<\/title>/)?.[1].includes(`Page ${pageNumber}`), `Missing page number in title: ${url}`);
+        assert.ok(htmlText(htmlElements(head, "title")[0]).includes(`Page ${pageNumber}`), `Missing page number in title: ${url}`);
         assert.ok(headNavigation.some(([rel]) => rel === "prev"), `Missing previous page: ${url}`);
       }
       if (path.includes("/tags/") || pageNumber > 1) {
@@ -115,7 +122,8 @@ for (const [url] of sitemap) {
         assert.equal(breadcrumb.itemListElement.at(-1).item, url, `Breadcrumb does not end on this page: ${url}`);
         for (const entry of breadcrumb.itemListElement) assert.ok(sitemap.has(entry.item), `Unknown breadcrumb target: ${entry.item}`);
       }
-      const visibleLinks = [...html.matchAll(/href="([^"<>]+)" aria-label="Perm(?:alien|alink) :/g)].map(([, path]) => new URL(path, origin).href);
+      const visibleLinks = anchors.filter((node) => /^Perm(?:alien|alink) :/.test(node.attribs["aria-label"] ?? ""))
+        .map((node) => new URL(node.attribs.href, origin).href);
       assert.equal(list.numberOfItems, visibleLinks.length, `ItemList count differs from visible links: ${url}`);
       assert.deepEqual(list.itemListElement.map((entry) => entry.item.url), visibleLinks, `ItemList URLs/order differ from visible links: ${url}`);
       for (const [index, entry] of list.itemListElement.entries()) {

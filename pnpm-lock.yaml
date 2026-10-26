@@ -330,6 +330,9 @@ importers:
       cms-prismic:
         specifier: workspace:*
         version: link:../cms-prismic
+      htmlparser2:
+        specifier: ^10.1.0
+        version: 10.1.0
       markdown-it:
         specifier: ^15.0.2
         version: 15.0.3
