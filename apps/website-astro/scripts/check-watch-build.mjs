@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import sharp from "sharp";
+import { access, readFile, readdir } from "node:fs/promises";
 import { sitemapMetadata } from "#site-sitemap";
 import { parseHtml, htmlElements, htmlText, jsonLdGraph } from "#site-html";
 
@@ -58,6 +59,15 @@ for (const [url, seo] of metadata) {
 // Every canonical watch page, including topic archives and pagination, has a
 // sibling Markdown file. No generated internal HTML link should add a slash.
 let watchPages = 0;
+let mediaCount = 0;
+const checkedAssets = new Map();
+async function checkMediaAsset(src) {
+  assert.ok(src?.startsWith("/_astro/"), `Watch media must be served locally: ${src}`);
+  if (!checkedAssets.has(src)) {
+    await access(new URL(src.slice(1), dist));
+    checkedAssets.set(src, undefined);
+  }
+}
 for (const [url] of sitemap) {
   const path = new URL(url).pathname;
   const file = path === "/" ? "index.html" : `${path.slice(1)}.html`;
@@ -85,6 +95,39 @@ for (const [url] of sitemap) {
     }
   }
   if (path === "/veille" || path.startsWith("/veille/") || path === "/en/tech-watch" || path.startsWith("/en/tech-watch/")) {
+    for (const image of htmlElements(document, "img").filter((node) => node.attribs["data-watch-media"])) {
+      const attrs = image.attribs;
+      assert.ok(Number(attrs.width) > 0 && Number(attrs.height) > 0, `Missing media dimensions: ${url}`);
+      assert.ok("alt" in attrs, `Missing media alt: ${url}`);
+      assert.ok(["lazy", "eager"].includes(attrs.loading), `Missing media loading: ${url}`);
+      assert.ok(["async", "sync"].includes(attrs.decoding), `Missing media decoding: ${url}`);
+      await checkMediaAsset(attrs.src);
+      if (!attrs["data-watch-media"].startsWith("original")) {
+        assert.equal(image.parent?.name, "picture", `Missing picture: ${url}`);
+        const sources = htmlElements(image.parent, "source");
+        const types = sources.map((source) => source.attribs.type);
+        assert.ok(types.includes("image/webp"), `Missing WebP: ${url}`);
+        if (attrs["data-watch-media"] === "image") assert.ok(types.includes("image/avif"), `Missing AVIF: ${url}`);
+        assert.ok(attrs.src.endsWith(".png"), `Missing PNG fallback: ${url}`);
+        for (const node of [image, ...sources]) {
+          assert.ok(node.attribs.sizes && node.attribs.srcset, `Missing responsive media: ${url}`);
+          for (const entry of node.attribs.srcset.split(",")) {
+            const [src, descriptor] = entry.trim().split(/\s+/);
+            await checkMediaAsset(src);
+            const expected = node === image ? "png" : node.attribs.type.split("/")[1];
+            assert.ok(src.endsWith(`.${expected}`), `Incorrect variant format: ${src}`);
+            let dimensions = checkedAssets.get(src);
+            if (!dimensions) {
+              dimensions = await sharp(await readFile(new URL(src.slice(1), dist))).metadata();
+              checkedAssets.set(src, dimensions);
+            }
+            assert.equal(dimensions.width, Number.parseInt(descriptor), `Incorrect srcset width: ${src}`);
+            assert.equal(dimensions.format === "heif" ? "avif" : dimensions.format, expected, `Incorrect encoded format: ${src}`);
+          }
+        }
+      }
+      mediaCount++;
+    }
     await readFile(new URL(`${path.slice(1)}.md`, dist), "utf8");
     assert.ok(links.some((node) => node.attribs.href === `${url}.md`), `Missing sibling Markdown alternate: ${url}`);
     assert.ok(htmlElements(head, "meta").some(({ attribs }) => attribs.property === "og:image" && attribs.content?.startsWith("https://")), `Missing social image: ${url}`);
@@ -151,3 +194,6 @@ for (const name of ["fr.md", "en.md", "llms-full.txt"]) {
   assert.ok(text.length > 500 && !text.includes("<SYSTEM>"), `Invalid CV export: ${name}`);
 }
 console.log(`Verified ${count} curated HTML/Markdown pages (${singleLanguage} single-language), reciprocal translations, ${sitemap.size} sitemap URLs, ${watchPages} sibling watch Markdown exports, LLM indexes and CV exports.`);
+
+assert.ok(mediaCount > 0, "No optimized watch media checked");
+console.log(`Verified ${mediaCount} media references and ${checkedAssets.size} local assets`);

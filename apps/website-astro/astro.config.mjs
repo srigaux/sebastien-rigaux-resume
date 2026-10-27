@@ -34,6 +34,14 @@ const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
 const fastBuild = process.env.BUILD_FAST === "1" || process.env.BUILD_FAST === "true";
 
 export default defineConfig({
+  cacheDir: "./.astro/cache",
+  image: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.prismic.io", pathname: "/bd7d5fa0/**" },
+      { protocol: "https", hostname: "bd7d5fa0.cdn.prismic.io", pathname: "/**" },
+    ],
+    service: { entrypoint: "./src/lib/watch-image-service.ts" },
+  },
   site: "https://sebastien.rigaux.be",
   integrations: [
     react(),
@@ -122,7 +130,7 @@ export default defineConfig({
               allowRules: [/#cc-main/],
             },
           }),
-          playformCompress({}),
+          playformCompress({ Exclude: [(file) => /[/\\]_astro[/\\].*\.(avif|webp|png|gif|svg|ico)$/i.test(file)] }),
         ]),
   ],
   i18n: {

@@ -1,4 +1,5 @@
 ---
+import WatchImage from "@/components/WatchImage.astro";
 import CookieSettings from "@/components/CookieSettings.astro";
 import { pageMarkdownPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
@@ -62,7 +63,7 @@ const schema = {
         {link.sourceLanguage && <span>{t.sourceLanguage} : {link.sourceLanguage}</span>}
       </div>
       <div no-intersect class="[&_p+p]:mt-3 intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9 max-w-[72ch] text-lg leading-[1.8] text-muted sm:text-xl [&_a]:break-words [&_a]:underline [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" set:html={renderSummaryMarkdown(link.summary)} />
-      {link.image && <figure no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9"><img src={link.image.url} alt={link.image.alt} width={link.image.width} height={link.image.height} loading="lazy" class="h-auto max-h-[32rem] w-full object-contain" /></figure>}
+      {link.image && <WatchImage image={link.image} detail class="h-auto max-h-[32rem] w-full object-contain" />}
       <a no-intersect href={link.url} target="_blank" rel="noopener noreferrer" class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9 inline-flex min-h-11 items-center gap-2 border border-accent px-5 py-3 text-base font-semibold text-accent underline-offset-4 hover:bg-accent/10 hover:underline">{t.original} <span aria-hidden="true">↗</span></a>
       <p no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-3 break-all text-sm text-muted">{new URL(link.url).hostname}</p>
       <dl no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-10 grid gap-4 border-t border-rule pt-8 text-sm text-muted sm:grid-cols-2">

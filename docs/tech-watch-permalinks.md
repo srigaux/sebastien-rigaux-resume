@@ -81,3 +81,32 @@ curl -I https://sebastien.rigaux.be/en/tech-watch.md
 ```
 
 Vérifier aussi une fiche et une archive paginée dans chaque langue : statut `200`, en-tête `Link` vers la même canonical HTML que celle contenue dans l'export, et statut `404` pour une fiche inconnue. Ne pas ajouter `noindex` aux exports pour forcer cette consolidation.
+
+## Watch media delivery
+
+Listing thumbnails and permalink images use `WatchImage`; title icons use
+`WatchSiteIcon`. Source URLs in Prismic, Markdown, RSS and social metadata remain
+unchanged. HTML pages serve hashed local Astro assets, with AVIF/WebP/PNG image
+variants and WebP/PNG icons. SVG, ICO and animated media pass through the Astro image
+service without re-encoding. Only this repository's two Prismic CDN origins are
+allowed; CDN format negotiation is removed when reading original media bytes.
+
+Sharp supplies intrinsic dimensions and a tiny SVG-wrapped blurred preview for
+opaque images (under 1 KiB, otherwise a neutral background). Transparent images
+and icons have no preview. No client-side decoder is needed. Responsive widths
+are capped at the source resolution. The first listing item loads eagerly without high priority; subsequent media
+load lazily. The permalink image also stays lazy because it follows the summary; `priority` is available for a verified LCP
+image, not automatically applied to every page.
+
+A missing or invalid optional image is omitted without an empty frame. Invalid
+icons fall back to the discovery-source icon, then the monogram. Build warnings
+prefixed `[watch-media]` include the failing source URL; fix these assets in
+Prismic rather than hiding the warnings. Errors during Astro's later image
+transformation still fail the build.
+
+The `.astro/cache` directory contains Astro's native asset cache and HTTP-aware
+media-inspection metadata. GitHub Actions restores it across builds. The existing
+compression integration excludes generated image assets to avoid re-encoding
+them. `pnpm test:watch`, `pnpm build`, and `pnpm check:watch-build` cover the media
+policy and generated responsive references; browser checks are still needed for
+loading priority and actual viewport selection.

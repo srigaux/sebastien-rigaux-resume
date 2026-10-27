@@ -1,0 +1,19 @@
+---
+import { getImage, Picture } from 'astro:assets';
+import type { WatchImage } from '@/lib/watch-model';
+import { prepareMedia, mediaWidths } from '@/lib/watch-media.mjs';
+interface Props { icon?: WatchImage; fallbackIcon?: WatchImage; monogram: string; eager?: boolean }
+const { icon, fallbackIcon, monogram, eager = false } = Astro.props;
+const media = (icon && await prepareMedia(icon.url)) || (fallbackIcon && await prepareMedia(fallbackIcon.url));
+const original = media?.preserve && await getImage({ src: media.src, width: media.width, height: media.height, format: media.format, preserveOriginal: true });
+const width = media && Math.min(media.width, 72);
+const height = media && Math.round(width! * media.height / media.width);
+const className = 'pointer-events-none mr-2 inline-block relative -top-0.5 size-6 object-contain align-middle';
+---
+{media ? original ? (
+  <img src={original.src} width="24" height="24" alt="" loading={eager ? "eager" : "lazy"} decoding="async" class={className} data-watch-media="original-icon" />
+) : (
+  <Picture src={media.src} width={width!} height={height!} widths={mediaWidths(media.width, true)} sizes="24px" formats={['webp']} fallbackFormat="png" alt="" loading={eager ? "eager" : "lazy"} decoding="async" class={className} data-watch-media="icon" />
+) : (
+  <span aria-hidden="true" class="pointer-events-none mr-2 relative -top-0.5 inline-flex size-6 items-center justify-center rounded-full bg-accent align-middle font-sans text-sm font-bold text-paper">{monogram}</span>
+)}

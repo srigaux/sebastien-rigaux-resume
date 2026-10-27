@@ -1,0 +1,25 @@
+---
+import { getImage, Picture } from 'astro:assets';
+import type { WatchImage } from '@/lib/watch-model';
+import { prepareMedia, mediaWidths, thumbnailSizes, detailSizes } from '@/lib/watch-media.mjs';
+interface Props { image: WatchImage; detail?: boolean; priority?: boolean; eager?: boolean; class?: string }
+const { image, detail = false, priority = false, eager = false, class: className } = Astro.props;
+const media = await prepareMedia(image.url);
+const widths = media ? mediaWidths(media.width, false, detail) : [];
+const original = media?.preserve && await getImage({ src: media.src, width: media.width, height: media.height, format: media.format, preserveOriginal: true });
+const width = widths.at(-1)!;
+const height = media && Math.round(width * media.height / media.width);
+const style = media?.placeholder ? `background-image:url("${media.placeholder}");background-size:${detail ? "contain" : "cover"};background-position:center;background-repeat:no-repeat` : undefined;
+const Wrapper = detail ? 'figure' : 'div';
+const wrapperClass = detail
+  ? 'intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-9'
+  : 'pointer-events-none float-left mt-1.5 mb-1 mr-4 aspect-[1200/630] w-[10.375rem] overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-[14.375rem]';
+---
+{media && <Wrapper class={wrapperClass} no-intersect={detail || undefined}>
+{original ? (
+  <img src={original.src} width={media.width} height={media.height} alt={image.alt} fetchpriority={priority ? "high" : "auto"} loading={priority || eager ? "eager" : "lazy"} decoding={priority ? "sync" : "async"} class={className} data-watch-media="original" />
+) : (
+  <Picture src={media.src} width={width} height={height!} widths={widths} sizes={detail ? detailSizes : thumbnailSizes} formats={['avif', 'webp']} fallbackFormat="png" alt={image.alt} priority={priority} loading={priority || eager ? 'eager' : 'lazy'} decoding={priority ? 'sync' : 'async'} class={className} style={style} data-watch-media="image" />
+)}
+
+</Wrapper>}

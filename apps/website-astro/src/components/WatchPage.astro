@@ -1,4 +1,6 @@
 ---
+import WatchImage from "@/components/WatchImage.astro";
+import WatchSiteIcon from "@/components/WatchSiteIcon.astro";
 import CookieSettings from "@/components/CookieSettings.astro";
 import {
   FileText,
@@ -275,7 +277,6 @@ const dateFormatter = new Intl.DateTimeFormat(
         <div class="divide-y divide-rule border-t border-rule">
           {
             links.map((link, index) => {
-              const icon = link.siteIcon || link.discoveredVia?.icon;
               const FormatIcon = formatIcons[link.format];
               const sourceLanguageTitle =
                 locale === "fr"
@@ -334,23 +335,7 @@ const dateFormatter = new Intl.DateTimeFormat(
                           class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl"
                           lang={link.textLanguage}
                         >
-                          {icon ? (
-                            <img
-                              src={icon.url}
-                              alt=""
-                              width="24"
-                              height="24"
-                              loading="lazy"
-                              class="pointer-events-none mr-2 inline-block relative -top-0.5 size-6 object-contain align-middle"
-                            />
-                          ) : (
-                            <span
-                              aria-hidden="true"
-                              class="pointer-events-none mr-2 relative -top-0.5 inline-flex size-6 items-center justify-center rounded-full bg-accent align-middle font-sans text-sm font-bold text-paper"
-                            >
-                              {monogram}
-                            </span>
-                          )}
+                          <WatchSiteIcon icon={link.siteIcon} fallbackIcon={link.discoveredVia?.icon} monogram={monogram} eager={index === 0} />
                           <ExternalLink
                             href={link.url}
                             newTab
@@ -379,17 +364,7 @@ const dateFormatter = new Intl.DateTimeFormat(
                     </header>
                     <div class="flow-root">
                       {link.image && (
-                        <div class="pointer-events-none float-left mt-1.5 mb-1 mr-4 aspect-[1200/630] w-[10.375rem] overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-[14.375rem]">
-                          <img
-                            src={link.image.url}
-                            alt={link.image.alt}
-                            width={link.image.width}
-                            height={link.image.height}
-                            loading="lazy"
-                            decoding="async"
-                            class="h-full w-full object-cover"
-                          />
-                        </div>
+                        <WatchImage image={link.image} eager={index === 0} class="h-full w-full object-cover" />
                       )}
                       <div
                         class="[&_p+p]:mt-3 pointer-events-none text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]"
