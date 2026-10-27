@@ -1,8 +1,9 @@
 ---
 import Logo from "@/assets/logo-animated.svg";
-import { ArrowUpRight } from "@lucide/astro";
+import { ArrowUpRight, FileDown } from "@lucide/astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import HeroShader from "@/components/HeroShader.astro";
+import { watchPath } from "@/lib/watch-model";
 import { yearsSince } from "@/lib/years";
 import type { Locale, Person } from "@/types";
 
@@ -23,8 +24,8 @@ const about = {
     ],
     socialTitle: "Retrouvez-moi",
     contactTitle: "Contact",
-    pdfLabel: "Voir le CV (PDF)",
-    pdfAriaLabel: "Voir le CV au format PDF dans un nouvel onglet",
+    watchLabel: "Parcourir ma veille",
+    pdfLabel: "Télécharger le CV en PDF",
   },
   en: {
     intro:
@@ -36,8 +37,8 @@ const about = {
     ],
     socialTitle: "Find me online",
     contactTitle: "Contact",
-    pdfLabel: "View résumé (PDF)",
-    pdfAriaLabel: "View the résumé PDF in a new tab",
+    watchLabel: "Browse my tech watch",
+    pdfLabel: "Download my résumé (PDF)",
   },
 }[locale];
 const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
@@ -141,18 +142,25 @@ const paragraphDelays = [
           ))
         }
       </p>
-      <a
-        data-cv-download
-        href={`/pdf/Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
-        aria-label={about.pdfAriaLabel}
-        target="_blank"
-        rel="noopener noreferrer"
-        type="application/pdf"
-        class="mt-8 inline-flex min-h-11 self-start items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline motion-preset-blur-up motion-duration-500 sm:motion-delay-[420ms] transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98] motion-reduce:animate-none motion-reduce:transform-none"
-      >
-        {about.pdfLabel}
-        <ArrowUpRight class="size-4" aria-hidden="true" />
-      </a>
+      <div class="mt-8 flex flex-row flex-wrap items-center gap-3 motion-preset-blur-up motion-duration-500 sm:gap-4 sm:motion-delay-[420ms] motion-reduce:animate-none">
+        <a
+          href={watchPath(locale)}
+          class="inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98]"
+        >
+          {about.watchLabel}
+          <ArrowUpRight class="size-4" aria-hidden="true" />
+        </a>
+        <a
+          data-cv-download
+          href={`/pdf/Sebastien-Rigaux-CV-${locale.toUpperCase()}.pdf`}
+          download
+          type="application/pdf"
+          class="inline-flex min-h-11 items-center gap-2 bg-transparent px-4 py-2 text-sm font-semibold text-accent no-underline transition-[background-color,transform] duration-200 hover:bg-accent/10 focus-visible:bg-accent/10 active:scale-[0.98]"
+        >
+          {about.pdfLabel}
+          <FileDown class="size-4" aria-hidden="true" />
+        </a>
+      </div>
     </div>
   </div>
 
@@ -201,7 +209,7 @@ const paragraphDelays = [
     <aside
       data-cv-contact
       no-intersect
-      class="intersect:motion-preset-blur-up motion-duration-500 intersect-once grid gap-9 border-t border-rule pt-8 sm:grid-cols-2 sm:gap-10 lg:block lg:border-t-0 lg:pt-0"
+      class="intersect:motion-preset-blur-up motion-duration-500 intersect-once grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-6 border-t border-rule pt-8 lg:gap-10 lg:border-t-0 lg:pt-0"
     >
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">
@@ -233,7 +241,7 @@ const paragraphDelays = [
           </p>
         </address>
       </div>
-      <div class="lg:mt-10">
+      <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">{about.socialTitle}</h2>
         <ul class="space-y-2">
           {

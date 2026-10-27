@@ -1,11 +1,13 @@
 ---
 import type { Locale } from "@/types";
+import { watchPath, type WatchTopic } from "@/lib/watch-model";
 
 interface Props {
   locale: Locale;
+  topics: WatchTopic[];
 }
 
-const { locale } = Astro.props;
+const { locale, topics } = Astro.props;
 const content: Record<Locale, {
   title: string;
   languagesTitle: string;
@@ -13,7 +15,7 @@ const content: Record<Locale, {
   watchTitle: string;
   languages: readonly { label: string; level: string }[];
   expertise: readonly { title: string; description: string }[];
-  watch: readonly string[];
+  watch: readonly { label: string; topicUid?: string }[];
 }> = {
   fr: {
     title: "Compétences",
@@ -32,7 +34,14 @@ const content: Record<Locale, {
       { title: "Communication à grande échelle", description: "Messagerie vocale de Microsoft Teams et Skype for Business, à plusieurs millions de messages par jour." },
       { title: "Technologies vocales & IA appliquée", description: "TTS à voix neuronales, STT, IVR et traduction automatique." },
     ],
-    watch: ["Évolutions de l’IA", "React", "Développement frontend", "C#", "Pratiques de tech lead", "Kubernetes"],
+    watch: [
+      { label: "Évolutions de l’IA", topicUid: "ai" },
+      { label: "React", topicUid: "react" },
+      { label: "Développement frontend" },
+      { label: "C#", topicUid: "c-sharp" },
+      { label: "Pratiques de tech lead" },
+      { label: "Kubernetes", topicUid: "kubernetes" },
+    ],
   },
   en: {
     title: "Skills",
@@ -51,10 +60,19 @@ const content: Record<Locale, {
       { title: "Communication at scale", description: "Microsoft Teams and Skype for Business voicemail services processing millions of messages a day." },
       { title: "Speech technology & applied AI", description: "Neural-voice TTS, STT, IVR and automatic translation." },
     ],
-    watch: ["AI developments", "React", "Frontend development", "C#", "Engineering leadership", "Kubernetes"],
+    watch: [
+      { label: "AI developments", topicUid: "ai" },
+      { label: "React", topicUid: "react" },
+      { label: "Frontend development" },
+      { label: "C#", topicUid: "c-sharp" },
+      { label: "Engineering leadership" },
+      { label: "Kubernetes", topicUid: "kubernetes" },
+    ],
   },
 };
 const copy = content[locale];
+const availableTopicUids = new Set(topics.map(({ uid }) => uid));
+const topicTagClass = "inline-flex min-h-11 items-center border border-rule px-3 text-sm text-muted";
 ---
 
 <section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
@@ -92,7 +110,20 @@ const copy = content[locale];
         </ul>
         <h3 class="mb-4 mt-10 text-base font-semibold text-ink">{copy.watchTitle}</h3>
         <ul class="flex flex-wrap gap-2">
-          {copy.watch.map((topic) => <li class="border border-rule px-3 py-1.5 text-sm text-muted">{topic}</li>)}
+          {copy.watch.map((topic) => (
+            <li>
+              {topic.topicUid && availableTopicUids.has(topic.topicUid) ? (
+                <a
+                  href={watchPath(locale, 1, topic.topicUid)}
+                  class={`${topicTagClass} no-underline transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
+                >
+                  {topic.label}
+                </a>
+              ) : (
+                <span class={topicTagClass}>{topic.label}</span>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
     </div>

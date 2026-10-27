@@ -6,6 +6,7 @@ import Experience from "@/components/Experience.astro";
 import Header from "@/components/Header.astro";
 import Skills from "@/components/Skills.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getWatchData } from "@/lib/watch-prismic";
 import type { Locale, Person } from "@/types";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const { topics: watchTopics } = await getWatchData(locale);
 const person: Person = {
   firstName: "Sébastien",
   lastName: "Rigaux",
@@ -117,7 +119,7 @@ const footerLinkClass = "text-muted underline-offset-4 hover:text-accent hover:u
     <About locale={locale} person={person} />
     <Experience locale={locale} />
     <Education locale={locale} />
-    <Skills locale={locale} />
+    <Skills locale={locale} topics={watchTopics} />
   </main>
   <footer class="border-t border-rule">
     <div
