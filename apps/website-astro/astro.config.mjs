@@ -126,8 +126,10 @@ export default defineConfig({
           playformInline({
             Beasties: {
               pruneSource: false,
-              // The JS-generated dialog must be styled before it receives focus.
-              allowRules: [/#cc-main/],
+              // Theme classes are applied by the head script, so they are absent
+              // from the build-time DOM. Keep their tokens and toggle states.
+              // The JS-generated dialog must also be styled before focus.
+              allowRules: [/#cc-main/, /^:root\b/],
             },
           }),
           playformCompress({ Exclude: [(file) => /[/\\]_astro[/\\].*\.(avif|webp|png|gif|svg|ico)$/i.test(file)] }),
