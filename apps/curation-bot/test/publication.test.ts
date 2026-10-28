@@ -195,6 +195,7 @@ it("une réponse de publication perdue reste inconnue sans renvoi aveugle", asyn
   const { item, store } = await approved("u993");
   item.state.publishedIds = ["fr-id", "en-id"];
   let posts = 0;
+  const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: unknown) => {
@@ -214,6 +215,12 @@ it("une réponse de publication perdue reste inconnue sans renvoi aveugle", asyn
   await advance(env, steps, "lost", item, cats);
   expect(item.status).toBe("publication_pending");
   expect(item.state.publicationUnknown).toBe(true);
+  expect(warning.mock.calls.map(([entry]) => entry)).toContainEqual(
+    expect.objectContaining({
+      event: "publication.request.unknown",
+      itemId: item.id,
+    }),
+  );
   expect(posts).toBe(1);
   expect(
     await env.DB.prepare("SELECT status FROM publication_checks").first(),
@@ -225,6 +232,7 @@ it("une réponse de publication perdue reste inconnue sans renvoi aveugle", asyn
   expect(posts).toBe(1);
 });
 it("valide localement avant toute écriture et attend une release précédente", async () => {
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
   const { item, store } = await approved("u994");
   const saved = item.state.draft!;
   item.state.draft = { ...saved, topics: ["unknown"] };
@@ -236,6 +244,12 @@ it("valide localement avant toute écriture et attend une release précédente",
   await store.lock(env.PRISMIC_REPOSITORY, "previous");
   await advance(env, steps, "held", item, cats);
   expect(item.status).toBe("waiting_publish_slot");
+  expect(output.mock.calls.map(([entry]) => entry)).toContainEqual(
+    expect.objectContaining({
+      event: "publication.slot.waiting",
+      itemId: item.id,
+    }),
+  );
   expect(item.state.publicationStarted).toBeUndefined();
   expect(
     (await env.DB.prepare("SELECT * FROM operations").all()).results,
@@ -271,4 +285,49 @@ it("une erreur de notification finale ne garde pas le verrou et sera retentée s
     await env.DB.prepare("SELECT notified FROM publication_checks").first(),
   ).toEqual({ notified: 1 });
   expect(api.searches()).toBe(1);
+  expect(
+    await env.DB.prepare("SELECT attempts FROM publication_checks").first(),
+  ).toEqual({ attempts: 1 });
+});
+
+it("logs publication age, actual checks and the next scheduled check", async () => {
+  const { item } = await pending();
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
+  const started = Date.now() - 120_000;
+  await env.DB.prepare("UPDATE publication_checks SET created_at=?,attempts=2")
+    .bind(started)
+    .run();
+  remote("missing");
+  await reconcilePublications(env);
+  const entry = output.mock.calls
+    .map(([entry]) => entry)
+    .find((entry) => entry.event === "publication.availability.pending");
+  expect(entry).toMatchObject({ itemId: item.id, checks: 3 });
+  expect(entry.pendingMs).toBeGreaterThanOrEqual(120_000);
+  expect(Date.parse(entry.nextCheckAt)).toBeGreaterThan(Date.now());
+  expect(entry.message).toContain("3 vérification(s)");
+});
+
+it("reports the duplicate decision without logging the matching titles or URLs", async () => {
+  const store = new Store(env.DB),
+    existing = fixture("u997"),
+    item = fixture("u998");
+  await store.enqueue(
+    existing.id,
+    997,
+    "1",
+    existing.state,
+    existing.created_at,
+  );
+  remote("missing");
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
+  await advance(env, steps, "g0-c0", item, cats);
+  expect(item.status).toBe("duplicate");
+  const entry = output.mock.calls
+    .map(([entry]) => entry)
+    .find((entry) => entry.event === "item.duplicate");
+  expect(entry).toMatchObject({ itemId: item.id, matchCount: 1 });
+  expect(entry.message).toContain("1 correspondance(s)");
+  expect(JSON.stringify(entry)).not.toContain(item.state.url);
+  expect(JSON.stringify(entry)).not.toContain(existing.state.draft!.fr.title);
 });

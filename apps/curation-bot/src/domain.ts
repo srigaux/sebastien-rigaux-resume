@@ -1,3 +1,4 @@
+import type { ReasonCode } from "@/error-reasons";
 import MarkdownIt from "markdown-it";
 import slugify from "slugify";
 import { log } from "@/observability";
@@ -277,21 +278,27 @@ export function errorText(error: unknown): string {
   return "Le service a rencontré une erreur. Utilisez /reprendre ; consultez les journaux avec l’identifiant de la fiche.";
 }
 export class BotError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly reasonCode: ReasonCode = "business_rule",
+    readonly statusCode?: number,
+  ) {
     super(message);
     this.name = "BotError";
   }
 }
 export class AmbiguousWrite extends BotError {
-  constructor(key: string) {
+  constructor(key: string, statusCode?: number) {
     super(
       `⏸ Prismic a peut-être enregistré une écriture, mais sa réponse manque. Vérifie le brouillon dans sa release de migration avant de reprendre pour éviter un doublon. Les liens en attente sont conservés. Réconciliation nécessaire pour l’opération ${key}.`,
+      "write_unknown",
+      statusCode,
     );
   }
 }
 export function editorialSchema(catalog: Catalog) {
   if (!catalog.topics.length || !catalog.sources.length)
-    throw new BotError("Catalogue éditorial vide.");
+    throw new BotError("Catalogue éditorial vide.", "catalog_empty");
   return draftSchema.extend({
     revisionNote: z
       .string()
@@ -360,6 +367,7 @@ export class MediaRejected extends BotError {
   constructor(readonly filename: string) {
     super(
       `Prismic a refusé le média ${filename}. Une omission doit être confirmée.`,
+      "media_rejected",
     );
   }
 }

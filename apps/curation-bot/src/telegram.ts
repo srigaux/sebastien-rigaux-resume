@@ -882,7 +882,7 @@ export function createBot(env: Env) {
           ),
         { replaceable: !item },
       );
-      await store.enqueue(
+      const inserted = await store.enqueue(
         `u${ctx.update.update_id}`,
         ctx.update.update_id,
         env.TELEGRAM_CHAT_ID,
@@ -896,12 +896,14 @@ export function createBot(env: Env) {
         },
         new Date(message.date * 1000).toISOString(),
       );
-      log("item.queued", {
-        itemId: `u${ctx.update.update_id}`,
-        updateId: ctx.update.update_id,
-        queued: Boolean(item),
-        urlCount: urls.length,
-      });
+      if (inserted)
+        log("item.queued", {
+          itemId: `u${ctx.update.update_id}`,
+          updateId: ctx.update.update_id,
+          queued: true,
+          waitingBehindActive: Boolean(item),
+          urlCount: urls.length,
+        });
       return;
     }
     if (item) await revise();

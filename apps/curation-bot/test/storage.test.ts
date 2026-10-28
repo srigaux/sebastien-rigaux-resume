@@ -209,3 +209,47 @@ describe("journal des écritures Prismic", () => {
     expect(rejected).toHaveBeenCalledTimes(1);
   });
 });
+
+it("logs the specific CMS activity, safe failure reason and replay without sending a write twice", async () => {
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const store = new Store(env.DB);
+  const transport = vi.fn(async () =>
+    Response.json({ id: "fr-doc" }, { status: 201 }),
+  );
+  const request = journaledFetch(store, "u707", transport)!;
+  const url = "https://migration.prismic.io/documents?access_token=secret";
+  // Use the canonical document endpoint; credentials only appear in headers/body.
+  const endpoint = "https://migration.prismic.io/documents";
+  const init = {
+    method: "POST",
+    body: JSON.stringify({ lang: "fr-be", private: "private-body" }),
+    headers: { authorization: "Bearer secret" },
+  };
+  await request(endpoint, init);
+  await request(endpoint, init);
+  expect(transport).toHaveBeenCalledTimes(1);
+  const entries = output.mock.calls.map(([entry]) => entry);
+  expect(entries.find((entry) => entry.replayed === true)).toMatchObject({
+    operation: "prismic.create-fr",
+    activity: "Création du brouillon français",
+    httpStatus: 201,
+  });
+  const lost = journaledFetch(
+    store,
+    "u708",
+    vi.fn(async () => {
+      throw new Error(url);
+    }),
+  )!;
+  await expect(lost(endpoint, init)).rejects.toThrow();
+  expect(errors.mock.calls.at(-1)![0]).toMatchObject({
+    reasonCode: "write_unknown",
+  });
+  expect(errors.mock.calls.at(-1)![0].message).toContain(
+    "rapprochement nécessaire",
+  );
+  expect(
+    JSON.stringify([...output.mock.calls, ...errors.mock.calls]),
+  ).not.toMatch(/private-body|Bearer secret|access_token=secret/);
+});

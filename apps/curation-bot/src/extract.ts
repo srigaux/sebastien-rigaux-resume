@@ -134,6 +134,7 @@ export async function scrape(
     });
     const result = extractResult(page);
     log("extraction.complete", {
+      provider: "context",
       providerRequestId: result.requestId,
       partial: result.partial,
       imageCount: result.imageUrls.length,
@@ -172,8 +173,17 @@ export async function downloadMedia(
           (response.status === 408 ||
             response.status === 429 ||
             response.status >= 500),
-        false,
+        response?.status === 408,
         retryAfter(response?.headers),
+        undefined,
+        response?.status === 429
+          ? "rate_limited"
+          : response?.status === 408
+            ? "timeout"
+            : response && response.status >= 500
+              ? "remote_failed"
+              : "remote_rejected",
+        response?.status,
       );
     const mime =
       response.headers.get("content-type")?.split(";")[0].trim() ?? "";
@@ -276,12 +286,18 @@ export async function collectMedia(
         );
         break;
       } catch (e) {
-        if (i === candidates.length - 1)
+        if (i === candidates.length - 1) {
           result.failures.push({
             kind,
             url,
             reason: e instanceof Error ? e.message : "Média inaccessible",
           });
+          log(
+            "media.unavailable",
+            { mediaKind: kind, candidateCount: candidates.length },
+            "warn",
+          );
+        }
       }
     }
   }

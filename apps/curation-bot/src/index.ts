@@ -91,16 +91,16 @@ export default {
     )
       return new Response("OK");
     const traceId = crypto.randomUUID();
-    log("telegram.accepted", {
-      traceId,
-      updateId: update.update_id,
-      updateType: "message" in update ? "message" : "callback_query",
-    });
-    await env.DB.prepare(
+    const receipt = await env.DB.prepare(
       "INSERT OR IGNORE INTO inbox(update_id,payload,received_at) VALUES(?,?,?)",
     )
       .bind(update.update_id, body, new Date().toISOString())
       .run();
+    log(receipt.meta.changes ? "telegram.accepted" : "telegram.duplicate", {
+      traceId,
+      updateId: update.update_id,
+      updateType: "message" in update ? "message" : "callback_query",
+    });
     ctx.waitUntil(
       withContext({ updateId: update.update_id, traceId }, () =>
         observe("dispatch", {}, () => dispatch(env)).catch((error) =>
@@ -111,9 +111,14 @@ export default {
     return new Response("OK");
   },
   async scheduled(_event: ScheduledController, env: Env) {
-    await observe("scheduled.publications", {}, () =>
-      reconcilePublications(env),
+    await observe(
+      "scheduled.publications",
+      {},
+      () => reconcilePublications(env),
+      { lifecycleLogs: false },
     );
-    await observe("scheduled.dispatch", {}, () => dispatch(env));
+    await observe("scheduled.dispatch", {}, () => dispatch(env), {
+      lifecycleLogs: false,
+    });
   },
 } satisfies ExportedHandler<Env>;

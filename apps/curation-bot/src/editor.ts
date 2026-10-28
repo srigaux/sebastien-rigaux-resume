@@ -56,12 +56,13 @@ export async function generateDraft(
     : undefined;
   const started = Date.now();
   log("editorial.start", {
+    provider: "openai",
     itemId: item.id,
     model: env.OPENAI_MODEL || "gpt-6-luna",
     topicsCount: cats.topics.length,
     sourcesCount: cats.sources.length,
   });
-  const { output } = await generateText({
+  const result = await generateText({
     model: openai(env.OPENAI_MODEL || "gpt-6-luna"),
     maxRetries: 0,
     abortSignal: AbortSignal.timeout(120_000),
@@ -102,8 +103,19 @@ export async function generateDraft(
     ],
     providerOptions: { openai: { store: false, reasoningEffort: "none" } },
   });
-  const draft = assertDraft(output, cats);
+  const usage = result.totalUsage;
+  log("editorial.usage", {
+    provider: "openai",
+    itemId: item.id,
+    model: env.OPENAI_MODEL || "gpt-6-luna",
+    revision: item.state.revision,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+  });
+  const draft = assertDraft(result.output, cats);
   log("editorial.complete", {
+    provider: "openai",
     itemId: item.id,
     durationMs: Date.now() - started,
     topics: draft.topics,
@@ -133,6 +145,6 @@ export async function generateDraft(
     }
   }
   if (!draft.fr.summary.trim() || !draft.en.summary.trim())
-    throw new BotError("Proposition éditoriale vide.");
+    throw new BotError("Proposition éditoriale vide.", "draft_invalid");
   return draft;
 }

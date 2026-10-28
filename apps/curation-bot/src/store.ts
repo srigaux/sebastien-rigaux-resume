@@ -31,12 +31,13 @@ export class Store {
     state: State,
     received: string,
   ) {
-    await this.db
+    const result = await this.db
       .prepare(
         "INSERT OR IGNORE INTO items(id,update_id,chat_id,state,created_at) VALUES(?,?,?,?,?)",
       )
       .bind(id, update, chat, JSON.stringify(state), received)
       .run();
+    return result.meta.changes > 0;
   }
   async clearQueue(chat: string, updateId: number): Promise<number> {
     // A replayed reset cannot remove links received after that command.

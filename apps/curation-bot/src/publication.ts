@@ -1,5 +1,5 @@
 import type { Env, Item } from "@/domain";
-import { errorFields, log } from "@/observability";
+import { errorFields, log, observe, withContext } from "@/observability";
 import { verifyPublication } from "@/prismic";
 import { publicationNotice } from "@/telegram";
 import { Store } from "@/store";
@@ -30,14 +30,19 @@ export async function reconcilePublications(env: Env) {
   const now = Date.now(),
     store = new Store(env.DB);
   const row = await env.DB.prepare(
-    `SELECT p.item_id,p.status FROM publication_checks p
+    `SELECT p.item_id,p.status,p.attempts,p.created_at FROM publication_checks p
     JOIN items i ON i.id=p.item_id WHERE p.lease_until<=? AND p.next_check_at<=?
     AND ((p.status IN ('requesting','accepted','unknown') AND i.status='publication_pending' AND i.active=0)
       OR (p.status='confirmed' AND p.notified=0))
     ORDER BY CASE WHEN p.status='confirmed' THEN 1 ELSE 0 END,p.created_at,p.item_id LIMIT 1`,
   )
     .bind(now, now)
-    .first<{ item_id: string; status: string }>();
+    .first<{
+      item_id: string;
+      status: string;
+      attempts: number;
+      created_at: number;
+    }>();
   if (row) {
     const claim = await env.DB.prepare(
       "UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=? AND notified=0",
@@ -45,17 +50,32 @@ export async function reconcilePublications(env: Env) {
       .bind(now + 120_000, row.item_id, now, now, row.status)
       .run();
     if (claim.meta.changes) {
+      let checks = row.attempts;
       try {
         let item = await store.get(row.item_id);
         if (row.status !== "confirmed") {
-          const available = await verifyPublication(env, item);
+          checks++;
+          const available = await withContext({ itemId: item.id }, () =>
+            observe(
+              "publication.verify",
+              { checks, provider: "prismic" },
+              () => verifyPublication(env, item),
+              { resultFields: (available) => ({ available }) },
+            ),
+          );
           if (!available) {
+            const nextCheckAt = (Math.floor(Date.now() / 60_000) + 1) * 60_000;
             await env.DB.prepare(
               "UPDATE publication_checks SET attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
             )
-              .bind((Math.floor(Date.now() / 60_000) + 1) * 60_000, item.id)
+              .bind(nextCheckAt, item.id)
               .run();
-            log("publication.availability.pending", { itemId: item.id });
+            log("publication.availability.pending", {
+              itemId: item.id,
+              checks,
+              pendingMs: Math.max(0, Date.now() - row.created_at),
+              nextCheckAt: new Date(nextCheckAt).toISOString(),
+            });
           } else {
             await env.DB.batch([
               env.DB.prepare(
@@ -69,7 +89,11 @@ export async function reconcilePublications(env: Env) {
               ).bind(env.PRISMIC_REPOSITORY, item.id),
             ]);
             row.status = "confirmed";
-            log("publication.availability.confirmed", { itemId: item.id });
+            log("publication.availability.confirmed", {
+              itemId: item.id,
+              checks,
+              pendingMs: Math.max(0, Date.now() - row.created_at),
+            });
           }
         }
         if (row.status === "confirmed") {
@@ -83,18 +107,28 @@ export async function reconcilePublications(env: Env) {
         }
       } catch (error) {
         const fields = errorFields(error);
+        const nextCheckAt = (Math.floor(Date.now() / 60_000) + 1) * 60_000;
         await env.DB.prepare(
-          "UPDATE publication_checks SET attempts=attempts+1,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
+          "UPDATE publication_checks SET attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
         )
           .bind(
-            fields.errorType ?? "read_failed",
-            (Math.floor(Date.now() / 60_000) + 1) * 60_000,
+            row.status === "confirmed" ? 0 : 1,
+            fields.reasonCode ?? fields.errorType ?? "read_failed",
+            nextCheckAt,
             row.item_id,
           )
           .run();
         log(
-          "publication.availability.failed",
-          { itemId: row.item_id, ...fields },
+          row.status === "confirmed"
+            ? "publication.notification.failed"
+            : "publication.availability.failed",
+          {
+            itemId: row.item_id,
+            checks,
+            pendingMs: Math.max(0, Date.now() - row.created_at),
+            nextCheckAt: new Date(nextCheckAt).toISOString(),
+            ...fields,
+          },
           "warn",
         );
       }

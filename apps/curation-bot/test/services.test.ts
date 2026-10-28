@@ -48,6 +48,7 @@ it("utilise le SDK Context.dev avec un délai API inférieur au délai client et
   });
 });
 it("conserve les bons médias dans R2 et ne retélécharge que celui en échec", async () => {
+  const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
   let iconCalls = 0,
     imageCalls = 0;
   vi.stubGlobal(
@@ -66,6 +67,21 @@ it("conserve les bons médias dans R2 et ne retélécharge que celui en échec",
   const first = await collectMedia(env, steps(), "media-test", extraction);
   expect(first.image?.size).toBe(3);
   expect(first.failures[0].kind).toBe("icon");
+  const entries = warning.mock.calls.map(([entry]) => entry);
+  expect(entries).toContainEqual(
+    expect.objectContaining({
+      event: "media.unavailable",
+      mediaKind: "icon",
+      candidateCount: 1,
+    }),
+  );
+  expect(entries).toContainEqual(
+    expect.objectContaining({
+      event: "retry.failed",
+      httpStatus: 404,
+      reasonCode: "remote_rejected",
+    }),
+  );
   expect((await env.BUCKET.get(first.image!.key))?.size).toBe(3);
   await collectMedia(env, steps(), "media-test-retry", extraction, first);
   expect(imageCalls).toBe(1);
@@ -110,7 +126,17 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
       });
     }),
   );
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
   const result = await generateDraft(env, item, extraction, cats);
+  const usage = output.mock.calls
+    .map(([entry]) => entry)
+    .find((entry) => entry.event === "editorial.usage");
+  expect(usage).toMatchObject({
+    inputTokens: 100,
+    outputTokens: 200,
+    totalTokens: 300,
+  });
+  expect(JSON.stringify(usage)).not.toContain(extraction.markdown);
   expect(result.credit).toBeNull();
   expect(result.revisionNote).toBe(
     "Résumés recentrés sur la lisibilité des composants.",

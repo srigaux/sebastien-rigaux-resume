@@ -247,6 +247,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     await step.do(`${prefix}-notify-finished`, stepConfig, async () => {
       log("workflow.finished", {
         status: item.status,
+        elapsedMs: Math.max(0, Date.now() - Date.parse(item.created_at)),
         documentIds: item.state.publishedIds,
       });
       if (item.status === "done") await publicationNotice(this.env, item, true);

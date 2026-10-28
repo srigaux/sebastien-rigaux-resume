@@ -1,3 +1,4 @@
+import { log } from "@/observability";
 import { sendPreview, publicationNotice } from "@/telegram";
 import { withTyping, typingSteps } from "@/telegram-typing";
 import {
@@ -48,6 +49,11 @@ async function duplicates(
   if (found.length) {
     item.state.duplicateMatches = found;
     item.status = "duplicate";
+    log("item.duplicate", {
+      itemId: item.id,
+      matchCount: found.length,
+      status: item.status,
+    });
     return true;
   }
   return false;
@@ -175,20 +181,24 @@ export async function advance(
     )
       throw new BotError(
         "Le catalogue Prismic a changé. Corrigez la fiche avant publication.",
+        "catalog_changed",
       );
     if (env.PUBLISH_ENABLED !== "true")
       throw new BotError(
         "Publication désactivée : terminer la procédure d’activation dans le README.",
+        "publication_disabled",
       );
     if (s.media.failures.length)
       throw new BotError(
         "Confirmez l’omission des médias indisponibles avant publication.",
+        "media_rejected",
       );
     const locked = await step.do(`${prefix}-publication-lock`, stepConfig, () =>
       new Store(env.DB).tryLock(env.PRISMIC_REPOSITORY, item.id),
     );
     if (!locked) {
       item.status = "waiting_publish_slot";
+      log("publication.slot.waiting", { itemId: item.id, status: item.status });
       return;
     }
     s.references ??= {
@@ -286,6 +296,17 @@ export async function advance(
         env,
         item,
         s.publicationRequested ? "accepted" : "unknown",
+      );
+      log(
+        s.publicationRequested
+          ? "publication.request.accepted"
+          : "publication.request.unknown",
+        {
+          itemId: item.id,
+          provider: "prismic",
+          status: "publication_pending",
+        },
+        s.publicationRequested ? "info" : "warn",
       );
       return true;
     });

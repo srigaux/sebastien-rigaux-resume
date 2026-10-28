@@ -18,6 +18,9 @@ export async function dispatchQueue(env: Env) {
       itemId: item.id,
       workflowId: id,
       generation: item.generation,
+      ...(item.generation === 0
+        ? { queueWaitMs: Math.max(0, Date.now() - Date.parse(item.created_at)) }
+        : {}),
     });
     try {
       instance = await env.CURATION.create({
