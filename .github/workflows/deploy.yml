@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: 🌐 Publish Astro website
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
   schedule:
-    # Publish newly curated Prismic links throughout the day.
+    # Check for published Prismic changes every four hours; skip unchanged builds.
     - cron: "17 */4 * * *"
     # Refresh the experience-years figure embedded in the static PDFs.
     - cron: "0 6 1 2 *"
@@ -23,7 +23,10 @@ permissions:
   id-token: write
 
 jobs:
+  # Compare Prismic, website sources and the annual PDF refresh period with
+  # the deployed fingerprint. Pushes, manual runs and the annual run force a build.
   check-content:
+    name: 🔎 Check whether publication is needed
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.content.outputs.changed }}
@@ -40,6 +43,7 @@ jobs:
         run: node apps/website-astro/scripts/check-published-content.mjs
 
   build:
+    name: 🛠️ Validate and build Astro website
     needs: check-content
     if: needs.check-content.outputs.changed == 'true'
     runs-on: ubuntu-latest
@@ -48,6 +52,7 @@ jobs:
         working-directory: apps/website-astro
     concurrency:
       group: github-pages-build
+      # A newer build replaces an obsolete one without interrupting deployment.
       cancel-in-progress: true
     steps:
       - name: 📥 Check out repository
@@ -89,10 +94,12 @@ jobs:
           path: apps/website-astro/dist
 
   deploy:
+    name: 🚀 Publish website to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     concurrency:
       group: github-pages-deploy
+      # Let the active deployment finish; retain only the latest pending one.
       cancel-in-progress: false
     environment:
       name: github-pages
