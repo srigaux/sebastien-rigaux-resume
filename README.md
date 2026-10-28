@@ -27,6 +27,8 @@ Le build génère également `llms.txt`, `fr.md`, `en.md` et `llms-full.txt` à 
 
 ## Publication
 
+Les lancements planifiés toutes les quatre heures comparent la référence publiée de Prismic à l’empreinte disponible dans `/deployment-state.json` sur le site. Sans changement de contenu, de sources du site ou de période annuelle de rafraîchissement des PDF (1er février), les jobs de build et de publication sont ignorés, avant même l’installation des dépendances. Les pushs concernés, les lancements manuels et le lancement annuel forcent le build. L’empreinte est incluse dans l’artefact publié : un échec de build ou de déploiement laisse la précédente en place et la prochaine exécution retente la publication. Une erreur API fait échouer le contrôle ; une empreinte absente déclenche le premier build.
+
 Le workflow `.github/workflows/deploy.yml` publie `master` sur GitHub Pages. Dans les paramètres du dépôt, sélectionner **GitHub Actions** comme source Pages. `apps/website-astro/public/CNAME` configure le domaine `sebastien.rigaux.be` ; le DNS doit pointer vers GitHub Pages. Lors de la bascule, retirer ce domaine personnalisé de l'ancien dépôt Pages avant de l'activer sur ce dépôt. Vérifier ensuite `/`, `/en`, le certificat HTTPS et le sitemap. L'ancienne URL `/fr/` redirige immédiatement vers `/` au moyen d'une page HTML statique ; GitHub Pages ne fournit pas de redirection HTTP 301 pour ce cas. La checklist de mise en ligne et de suivi SEO se trouve dans [`SEO_CHECKLIST.md`](SEO_CHECKLIST.md).
 
 Le site est statique : l'âge et les années d'expérience sont calculés au build et rafraîchis au chargement par un petit script. Le CV reste lisible sans JavaScript.
