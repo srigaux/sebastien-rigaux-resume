@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [master]
+    paths:
+      - "apps/website-astro/**"
+      - "apps/cms-prismic/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
   schedule:
     # Publish newly curated Prismic links throughout the day.
@@ -44,7 +51,12 @@ jobs:
           restore-keys: |
             astro-images-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/website-astro/astro.config.mjs', 'apps/website-astro/src/lib/watch-media.mjs', 'apps/website-astro/src/lib/watch-image-service.ts') }}-
       - name: Build with Astro
-        run: pnpm --filter website-astro check && pnpm test:watch && pnpm build && pnpm check:watch-build
+        working-directory: apps/website-astro
+        run: |
+          pnpm check
+          pnpm test
+          pnpm build
+          pnpm check:watch-build
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5.0.0
         with:
