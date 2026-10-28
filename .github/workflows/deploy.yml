@@ -25,38 +25,43 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/website-astro
     concurrency:
       group: github-pages-build
       cancel-in-progress: true
     steps:
-      - name: Checkout
+      - name: 📥 Check out repository
         uses: actions/checkout@v7
-      - name: Setup Node.js
+      - name: 🟢 Set up Node.js
         id: node
         uses: actions/setup-node@v7
         with:
           node-version-file: package.json
-      - name: Setup pnpm
+      - name: 📦 Set up pnpm
         uses: pnpm/setup@v3
         with:
           install: false
-      - name: Install workspace
+      - name: 🔗 Install workspace dependencies
+        working-directory: .
         run: pnpm install --frozen-lockfile
-      - name: Restore Astro build cache
+      - name: ♻️ Restore Astro build cache
         uses: actions/cache@v5
         with:
           path: apps/website-astro/.astro/cache
           key: astro-images-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/website-astro/astro.config.mjs', 'apps/website-astro/src/lib/watch-media.mjs', 'apps/website-astro/src/lib/watch-image-service.ts') }}-${{ github.run_id }}
           restore-keys: |
             astro-images-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/website-astro/astro.config.mjs', 'apps/website-astro/src/lib/watch-media.mjs', 'apps/website-astro/src/lib/watch-image-service.ts') }}-
-      - name: Build with Astro
-        working-directory: apps/website-astro
-        run: |
-          pnpm check
-          pnpm test
-          pnpm build
-          pnpm check:watch-build
-      - name: Upload Pages artifact
+      - name: 🔎 Check Astro types and diagnostics
+        run: pnpm check
+      - name: 🧪 Run website tests
+        run: pnpm test
+      - name: 🛠️ Build Astro site
+        run: pnpm build
+      - name: ✅ Validate tech-watch build output
+        run: pnpm check:watch-build
+      - name: 📤 Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: apps/website-astro/dist
@@ -71,6 +76,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
