@@ -202,7 +202,7 @@ it("presents a compact photo preview once and sends only formatted text on corre
     messages[1]
       .body!.reply_markup.inline_keyboard.flat()
       .map((b: { text: string }) => b.text),
-  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
   const rows = await env.DB.prepare(
     "SELECT revision FROM messages WHERE item_id=? ORDER BY message_id",
   )
@@ -316,7 +316,7 @@ it("replaces the durable receipt with the proposal, tolerates replay and keeps r
     edited.body.reply_markup.inline_keyboard
       .flat()
       .map((button: { text: string }) => button.text),
-  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
   await present(env, item, cats); // Telegram already has this exact proposal.
   expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
   expect(
@@ -709,4 +709,55 @@ it("un échec Telegram de progression ne fait pas échouer une opération Prismi
     }),
   );
   await expect(publicationNotice(env, item, "image")).resolves.toBeUndefined();
+});
+
+it("edits the same proposal through source selection, reselection and none", async () => {
+  const { present } = await import("@/telegram");
+  const { applyAction } = await import("@/flow");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi();
+  const item = fixture("u-source-edit");
+  await present(env, item, cats);
+  const messageId = item.state.proposalMessageId;
+  for (const value of ["src-js", "none"]) {
+    await applyAction(env, {} as never, "source-test", item, cats, {
+      kind: "sources",
+      revision: item.state.revision,
+    });
+    await present(env, item, cats);
+    expect(item.state.proposalMessageId).toBe(messageId);
+    await applyAction(env, {} as never, "source-test", item, cats, {
+      kind: "source",
+      value,
+      revision: item.state.revision,
+    });
+    item.status = "review";
+    await present(env, item, cats);
+    expect(item.state.proposalMessageId).toBe(messageId);
+    await present(env, item, cats); // Replaying presentation must reuse this message.
+    expect(
+      await new Store(env.DB).cache(`last-source:${item.chat_id}`),
+    ).toEqual({ uid: value === "none" ? null : "javascript-weekly" });
+  }
+  const cacheKey = `last-source:${item.chat_id}`;
+  const cached = await env.DB.prepare(
+    "SELECT expires_at FROM cache WHERE key=?",
+  )
+    .bind(cacheKey)
+    .first<{ expires_at: number }>();
+  const remaining = cached!.expires_at - Date.now();
+  expect(remaining).toBeGreaterThan(8 * 60 * 60 * 1000 - 60_000);
+  expect(remaining).toBeLessThanOrEqual(8 * 60 * 60 * 1000);
+  await env.DB.prepare("UPDATE cache SET expires_at=? WHERE key=?")
+    .bind(Date.now() - 1, cacheKey)
+    .run();
+  expect(await new Store(env.DB).cache(cacheKey)).toBeUndefined();
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  const last = calls
+    .filter((call) => call.method === "editMessageText")
+    .at(-1)!;
+  expect(last.body.text).toContain("🔎 Source : <b>Aucune</b>");
+  expect(last.body.reply_markup.inline_keyboard[0][0].text).toBe(
+    "🔎 Choisir la source",
+  );
 });

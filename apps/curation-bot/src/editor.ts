@@ -1,3 +1,4 @@
+import { Store } from "@/store";
 import { log } from "@/observability";
 import { generateText, Output } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -25,10 +26,11 @@ Markdown pour guider la lecture : utilise une à trois expressions courtes en **
 Ajoute volontiers un micro-exemple technique en inline code, sur une seule ligne, lorsqu'il est attesté par la page ou mes consignes et qu'il rend le propos plus concret : classe Tailwind, expression, nom d'API, commande courte, etc. Préserve sa syntaxe et les conditions utiles ; n'invente et ne complète jamais un exemple manquant. Les simples noms de produits ne doivent pas être tous présentés comme du code.
 Liens HTTPS seulement lorsqu'ils apportent une précision utile ; aucun backlink redondant vers la ressource. Aucun titre Markdown, liste, citation Markdown, HTML, image ou bloc de code. Seules les séparations de paragraphes sont autorisées comme retours à la ligne, jamais à l'intérieur d'un exemple de code.
 Les versions FR/EN sont naturelles et présentent les mêmes faits avec le même niveau de certitude. Préserve les versions et conditions de sécurité, attribue les benchmarks, distingue stable/bêta/preview.
-Choisis 2–5 sujets réellement traités parmi le catalogue ; si un seul convient, conserve-le. Jamais de création de sujet ni de sujet ajouté pour atteindre le quota. topics contient uniquement les uid exacts du catalogue, jamais les noms, IDs de documents ou traductions ; aucun doublon. sourceSuggestionUid contient aussi un uid exact ou null.
+Choisis 2–5 sujets réellement traités parmi le catalogue ; si un seul convient, conserve-le. Jamais de création de sujet ni de sujet ajouté pour atteindre le quota. topics contient uniquement les uid exacts du catalogue, jamais les noms, IDs de documents ou traductions ; aucun doublon.
 sourceLanguage correspond à la page originale : EN, FR ou null. publishedOn uniquement pour une date de publication fiable YYYY-MM-DD, jamais une date de crawl ou de mise à jour.
 credit : auteur ou éditeur explicitement identifié, sinon null. creditEvidence : extrait exact du contenu ou des consignes utilisateur attestant ce nom, sinon null. L'auteur extrait des métadonnées est déjà fourni.
-Une source de découverte est un canal de découverte et non nécessairement le site de l'article. sourceSuggestions contient de zéro à quatre sources de découverte probables du catalogue, sans doublon, ordonnées de la plus probable à la moins probable. Pour chacune, donne son uid exact et une reason courte fondée sur des indices de découverte (note utilisateur, URL de newsletter, paramètres de suivi explicites). Le seul domaine de l'article ne prouve pas le canal de découverte. N'invente pas de suggestions pour remplir la liste : renvoie [] en l'absence d'indices. sourceSuggestionUid et sourceSuggestionReason reprennent la première suggestion, ou null. Une source confirmée à null signifie simplement « aucune source choisie » et n'empêche pas de suggérer des sources probables. Les suggestions restent facultatives et ne deviennent jamais une attribution certaine sans choix explicite.
+Une source de découverte est un canal de découverte et non nécessairement le site de l'article. Le seul domaine de l'article ne prouve pas le canal de découverte. Une source confirmée à null signifie simplement « aucune source choisie ».
+sourceRanking classe toutes les sources du catalogue, exactement une fois chacune, de la plus probable à la moins probable, avec uniquement uid et probability entre 0 et 1, sans justification textuelle. Ces probabilités sont des estimations indépendantes, pas des certitudes ni des pourcentages à afficher. Utilise le contexte de l'article, les notes, le suivi explicite et lastDiscoverySource (dernier choix explicite pour ce chat : plusieurs liens peuvent provenir de la même newsletter). La proximité thématique et le dernier choix servent seulement à classer les boutons et ne prouvent aucune attribution. En absence d'indices, donne des probabilités faibles, éventuellement égales. Ne choisis jamais automatiquement une source.
 imageAlt décrit factuellement l'image proposée dans chaque langue. Ne fabrique pas une image ni son attribution.
 revisionNote : null pour une première proposition (previous est null). Pour une correction, rédige en français une phrase courte de 220 caractères maximum, sans Markdown, HTML, numéro de version ni saut de ligne, décrivant les changements réellement effectués par rapport à previous et leur intention éditoriale. Par exemple : « Titres raccourcis et résumés recentrés sur les usages en équipe. » Ne recopie pas une ancienne note et ne prétends pas avoir appliqué une consigne non suivie. Si rien n'a changé, indique-le simplement. Le code affichera la version séparément.
 Pour une correction, garde les faits et les choix explicites de l'utilisateur ; adapte la proposition à sa direction. Renvoie toujours l'intégralité de la proposition structurée.`;
@@ -40,6 +42,9 @@ export async function generateDraft(
   cats: Catalog,
 ): Promise<Draft> {
   const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
+  const lastDiscoverySource = await new Store(env.DB).cache<{
+    uid: string | null;
+  }>(`last-source:${item.chat_id}`);
   const image = item.state.media?.image;
   const imageObject =
     image &&
@@ -76,6 +81,7 @@ export async function generateDraft(
                 instructions: item.state.instructions,
                 selectedOn: item.state.selectedOn,
                 confirmedDiscoverySource: item.state.sourceUid,
+                lastDiscoverySource: lastDiscoverySource?.uid ?? null,
               },
               previous: item.state.draft ?? null,
               catalog: cats,
@@ -101,7 +107,7 @@ export async function generateDraft(
     itemId: item.id,
     durationMs: Date.now() - started,
     topics: draft.topics,
-    sourceSuggestionUid: draft.sourceSuggestionUid,
+    rankedSourcesCount: draft.sourceRanking?.length ?? 0,
   });
   // Attribution must have evidence in the original material or an explicit user
   // correction. A model's unsupported name is never promoted into a credit.

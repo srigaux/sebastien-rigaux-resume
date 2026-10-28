@@ -5,7 +5,7 @@ import {
   duplicateHtml,
   publicationChecklist,
 } from "@/telegram-format";
-import { keyboard } from "@/telegram";
+import { keyboard, sourceKeyboard } from "@/telegram";
 import { formats } from "@/domain";
 import { cats, draft, fixture } from "@test/fixtures";
 
@@ -48,7 +48,7 @@ it("renders Telegram inline HTML, quotes and escaped catalog labels", () => {
     keyboard(item, cats)
       .inline_keyboard.flat()
       .map((button) => button.text),
-  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
 });
 it("does not interpret untrusted HTML or unsafe links and separates code entities", () => {
   expect(
@@ -77,37 +77,57 @@ it("displays the model revision note with its version, and maps every format to 
   }
 });
 
-it("offers ranked optional sources above immediate publication without attributing them", () => {
+it("keeps a source chooser and ranks all sources without attributing one", () => {
   const item = fixture();
   const catalog = {
     ...cats,
     sources: [
       ...cats.sources,
       { id: "src-css", uid: "css-weekly", name: "CSS Weekly" },
+      { id: "src-react", uid: "react-status", name: "React Status" },
     ],
   };
   item.state.sourceUid = null;
-  item.state.draft!.sourceSuggestions = [
-    { uid: "css-weekly", reason: "Lien de newsletter explicite" },
-    { uid: "javascript-weekly", reason: "Paramètre de suivi" },
+  item.state.draft!.sourceRanking = [
+    { uid: "javascript-weekly", probability: 0.2 },
+    { uid: "css-weekly", probability: 0.8 },
+    { uid: "react-status", probability: 0.1 },
   ];
-  const rows = keyboard(item, catalog).inline_keyboard;
-  expect(rows.map((row) => row.map((button) => button.text))).toEqual([
-    ["🔎 Ajouter CSS Weekly"],
-    ["🔎 Ajouter JavaScript Weekly"],
-    ["🚀 Publier", "🗑 Annuler"],
-  ]);
-  expect(rows[0][0]).toMatchObject({
-    callback_data: `${item.id}:1:source:src-css`,
-  });
-  expect(proposalHtml(item, catalog)).toContain("🔎 Source : <b>Aucune</b>");
-  expect(item.state.sourceUid).toBeNull();
-  item.state.sourceUid = "css-weekly";
   expect(
     keyboard(item, catalog)
       .inline_keyboard.flat()
-      .map((button) => button.text),
-  ).toEqual(["🚀 Publier", "🗑 Annuler"]);
+      .map((b) => b.text),
+  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
+  expect(
+    sourceKeyboard(item, catalog)
+      .inline_keyboard.flat()
+      .map((b) => b.text),
+  ).toEqual([
+    "CSS Weekly",
+    "JavaScript Weekly",
+    "React Status",
+    "✓ Aucune source",
+  ]);
+  expect(item.state.sourceUid).toBeNull();
+  item.state.sourceUid = "css-weekly";
+  expect(sourceKeyboard(item, catalog).inline_keyboard[0][0]).toMatchObject({
+    text: "✓ CSS Weekly",
+    callback_data: `${item.id}:1:source:src-css`,
+  });
+  expect(keyboard(item, catalog).inline_keyboard[0][0].text).toBe(
+    "🔎 Choisir la source",
+  );
+  delete item.state.draft!.sourceRanking;
+  expect(
+    sourceKeyboard(item, catalog)
+      .inline_keyboard.flat()
+      .map((b) => b.text),
+  ).toEqual([
+    "JavaScript Weekly",
+    "✓ CSS Weekly",
+    "React Status",
+    "Aucune source",
+  ]);
 });
 
 it("keeps paragraph breaks and inline micro-examples in a single Telegram quotation", () => {

@@ -127,13 +127,25 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             revision: item.state.revision,
           });
           await present(this.env, item, cats, prefix);
-          return item.state.previewImageKey ?? null;
+          return {
+            previewImageKey: item.state.previewImageKey ?? null,
+            proposalMessageId: item.state.proposalMessageId ?? null,
+            sourceEditMessageId: item.state.sourceEditMessageId ?? null,
+          };
         },
       );
       // Restore presentation metadata even when this durable step was replayed.
       // Older executions returned true; retain compatibility across deployment.
       if (typeof previewImageKey === "string")
         item.state.previewImageKey = previewImageKey;
+      if (previewImageKey && typeof previewImageKey === "object") {
+        item.state.previewImageKey =
+          previewImageKey.previewImageKey ?? undefined;
+        item.state.proposalMessageId =
+          previewImageKey.proposalMessageId ?? undefined;
+        item.state.sourceEditMessageId =
+          previewImageKey.sourceEditMessageId ?? undefined;
+      }
       // D1 is the durable inbox. Events only wake the workflow; even if a wakeup
       // races with a deployment or is delivered twice, the action remains in D1.
       let pending = await step.do(`${prefix}-pending`, stepConfig, () =>

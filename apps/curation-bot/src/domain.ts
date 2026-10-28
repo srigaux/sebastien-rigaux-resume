@@ -60,12 +60,10 @@ export const draftSchema = z.object({
   publishedOn: z.string().nullable(),
   credit: z.string().max(120).nullable(),
   creditEvidence: z.string().max(600).nullable(),
-  sourceSuggestionUid: z.string().nullable(),
-  sourceSuggestionReason: z.string().max(400).nullable(),
 });
 export type Draft = z.infer<typeof draftSchema> & {
   revisionNote?: string | null;
-  sourceSuggestions?: { uid: string; reason: string }[];
+  sourceRanking?: { uid: string; probability: number }[];
 };
 export type Entry = { id: string; uid: string; name: string; url?: string };
 export type Catalog = { topics: Entry[]; sources: Entry[] };
@@ -127,6 +125,8 @@ export type State = {
   revisionNote?: string;
   previewImageKey?: string;
   revisionReceiptKey?: string;
+  proposalMessageId?: number;
+  sourceEditMessageId?: number;
   showSources?: boolean;
   showImages?: boolean;
   imageChoice?: string;
@@ -303,22 +303,33 @@ export function editorialSchema(catalog: Catalog) {
       .array(z.enum(catalog.topics.map((entry) => entry.uid)))
       .min(1)
       .max(5),
-    sourceSuggestionUid: z
-      .enum(catalog.sources.map((entry) => entry.uid))
-      .nullable(),
-    sourceSuggestions: z
+    sourceRanking: z
       .array(
         z.object({
           uid: z.enum(catalog.sources.map((entry) => entry.uid)),
-          reason: z.string().min(1).max(240),
+          probability: z.number().min(0).max(1),
         }),
       )
-      .max(4),
+      .length(catalog.sources.length),
   });
 }
 
 export function assertDraft(draft: Draft, catalog: Catalog): Draft {
   draftSchema.parse(draft);
+  if (
+    draft.sourceRanking &&
+    (draft.sourceRanking.length !== catalog.sources.length ||
+      new Set(draft.sourceRanking.map((entry) => entry.uid)).size !==
+        catalog.sources.length ||
+      draft.sourceRanking.some(
+        (entry) =>
+          !catalog.sources.some((source) => source.uid === entry.uid) ||
+          !Number.isFinite(entry.probability) ||
+          entry.probability < 0 ||
+          entry.probability > 1,
+      ))
+  )
+    throw new BotError("Classement des sources invalide.");
   if (
     new Set(draft.topics).size !== draft.topics.length ||
     draft.topics.some((uid) => !catalog.topics.some((t) => t.uid === uid))
@@ -335,21 +346,6 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
       "Le modèle a proposé un sujet inconnu ou répété. Utilisez /reprendre pour réessayer.",
     );
   }
-  if (
-    draft.sourceSuggestions &&
-    (draft.sourceSuggestions.length > 4 ||
-      new Set(draft.sourceSuggestions.map((entry) => entry.uid)).size !==
-        draft.sourceSuggestions.length ||
-      draft.sourceSuggestions.some(
-        (entry) => !catalog.sources.some((source) => source.uid === entry.uid),
-      ))
-  )
-    throw new BotError("Suggestions de sources invalides.");
-  if (
-    draft.sourceSuggestionUid &&
-    !catalog.sources.some((s) => s.uid === draft.sourceSuggestionUid)
-  )
-    throw new BotError("Source suggérée inconnue.");
   if (
     draft.publishedOn &&
     (!/^\d{4}-\d{2}-\d{2}$/.test(draft.publishedOn) ||

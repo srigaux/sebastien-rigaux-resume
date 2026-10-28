@@ -15,7 +15,7 @@ export const cats: Catalog = {
 };
 export const draft: Draft = {
   revisionNote: null,
-  sourceSuggestions: [],
+  sourceRanking: [{ uid: "javascript-weekly", probability: 0.1 }],
   fr: {
     title: "React : structurer les variantes des composants",
     summary:
@@ -34,8 +34,6 @@ export const draft: Draft = {
   publishedOn: null,
   credit: "Jane Doe",
   creditEvidence: "metadata.author",
-  sourceSuggestionUid: null,
-  sourceSuggestionReason: null,
 };
 export const extraction: Extraction = {
   url: "https://example.com/article",

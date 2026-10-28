@@ -81,6 +81,9 @@
     { "uid": "tldr", "name": "TLDR", "url": "https://refer.tldr.tech/0335be35/" },
     { "uid": "bytes-dev", "name": "bytes.dev", "url": "https://bytes.dev/" },
     { "uid": "frontend-focus", "name": "Frontend Focus", "url": "https://frontendfoc.us/" },
-    { "uid": "javascript-weekly", "name": "JavaScript Weekly", "url": "https://javascriptweekly.com/" }
+    { "uid": "javascript-weekly", "name": "JavaScript Weekly", "url": "https://javascriptweekly.com/" },
+    { "uid": "react-status", "name": "React Status", "url": "https://react.statuscode.com/" },
+    { "uid": "react-digest", "name": "React Digest", "url": "https://reactdigest.net/" },
+    { "uid": "this-week-in-react", "name": "This week in React", "url": "https://thisweekinreact.com/" }
   ]
 }

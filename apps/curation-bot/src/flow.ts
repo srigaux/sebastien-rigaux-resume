@@ -149,6 +149,7 @@ export async function advance(
   );
   if (typeof previewKey === "string") s.previewImageKey = previewKey;
   if (!s.draft || s.needsRevision) {
+    delete s.sourceEditMessageId;
     const previous = s.draft;
     s.draft = await retry(step, `${prefix}-generate`, () =>
       withTyping(env, item.chat_id, () =>
@@ -413,6 +414,7 @@ export async function applyAction(
   if (action.kind === "sources" && s.draft) {
     s.showImages = false;
     s.showSources = true;
+    s.sourceEditMessageId = s.proposalMessageId;
     s.revision++;
     s.approvedRevision = undefined;
     item.status = "source";
@@ -423,6 +425,11 @@ export async function applyAction(
     if (action.value !== "none" && !source)
       return "Source inconnue. Rouvrez la liste des sources.";
     s.sourceUid = source?.uid ?? null;
+    await new Store(env.DB).putCache(
+      `last-source:${item.chat_id}`,
+      { uid: s.sourceUid },
+      8 * 60 * 60 * 1000,
+    );
     s.revisionNote = "Source de découverte modifiée.";
     s.showSources = false;
     s.revision++;

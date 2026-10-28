@@ -58,6 +58,28 @@ describe("URL, éditorial et attributions", () => {
     expect(() => webUrl("http://127.0.0.1/a")).toThrow();
     expect(() => webUrl("file:///etc/passwd")).toThrow();
   });
+  it("demande uniquement uid et probabilité pour classer les sources", () => {
+    const schema = editorialSchema(cats);
+    expect(Object.keys(schema.shape.sourceRanking.element.shape)).toEqual([
+      "uid",
+      "probability",
+    ]);
+  });
+  it("rejette un classement incomplet, inconnu ou hors limites", () => {
+    for (const ranking of [
+      [],
+      [{ uid: "invented", probability: 0.5 }],
+      [{ uid: "javascript-weekly", probability: 2 }],
+    ]) {
+      expect(() =>
+        assertDraft({ ...draft, sourceRanking: ranking }, cats),
+      ).toThrow();
+      expect(
+        editorialSchema(cats).safeParse({ ...draft, sourceRanking: ranking })
+          .success,
+      ).toBe(false);
+    }
+  });
   it("calcule la date belge aux frontières UTC et conserve plusieurs liens à désambiguïser", () => {
     expect(dateInBrussels(new Date("2026-10-18T22:30:00Z"))).toBe("2026-10-19");
     expect(
@@ -70,12 +92,6 @@ describe("URL, éditorial et attributions", () => {
     expect(
       editorialSchema(cats).safeParse({ ...draft, topics: ["invented"] })
         .success,
-    ).toBe(false);
-    expect(
-      editorialSchema(cats).safeParse({
-        ...draft,
-        sourceSuggestionUid: "invented",
-      }).success,
     ).toBe(false);
     expect(() =>
       assertDraft({ ...draft, topics: ["invented"] }, cats),
