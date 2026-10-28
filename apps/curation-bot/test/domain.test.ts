@@ -13,6 +13,32 @@ import { retry, RemoteError, retryAfter, type Steps } from "@/retry";
 import { advance, explicitSource, applyAction } from "@/flow";
 import { cats, draft, extraction, fixture } from "@test/fixtures";
 import { env } from "cloudflare:test";
+import { Store } from "@/store";
+
+it("explique une écriture incertaine et ne reprend qu’après réconciliation", async () => {
+  const item = fixture("u-uncertain-resume");
+  const store = new Store(env.DB);
+  item.status = "error";
+  item.state.publicationStarted = true;
+  item.state.error = "Réponse perdue";
+  await store.enqueue(item.id, 100, "1", item.state, item.created_at);
+  await store.begin(
+    "uncertain-create",
+    item.id,
+    "POST https://migration.prismic.io/documents",
+  );
+  const action = { kind: "resume" as const, revision: item.state.revision };
+  expect(
+    await applyAction(env, steps(), "blocked", item, cats, action),
+  ).toContain("réconciliation");
+  expect(item.status).toBe("error");
+  expect(item.state.error).toBe("Réponse perdue");
+  await store.completed("uncertain-create", null, "retryable");
+  expect(
+    await applyAction(env, steps(), "resolved", item, cats, action),
+  ).toBeUndefined();
+  expect(item.status).toBe("queued");
+});
 export function steps() {
   return {
     do: vi.fn(async (_n: string, _c: unknown, fn: () => Promise<unknown>) =>

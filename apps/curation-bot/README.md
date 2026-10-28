@@ -232,6 +232,10 @@ pnpm reconcile confirm-not-applied 'CLE_OPERATION' --remote --reviewed-in-prismi
 
 Puis `/reprendre` dans Telegram. Le script exige une fiche arrêtée en erreur et une opération incertaine ; il ne crée ni ne supprime de contenu Prismic.
 
+Si une tentative de création après une réponse perdue est refusée avec « There is already an existing translation in this language », retrouver la traduction via le sélecteur de langue de la fiche FR. Après vérification, `confirm-success` accepte aussi ce conflit précis avec la réponse `{ "id": "ID_REEL_DE_LA_TRADUCTION" }`. Il ne permet pas de marquer ce conflit retentable. Les réponses déjà connues des autres opérations restent réutilisées.
+
+Chaque échec de traitement apparaît dans un nouveau message Telegram, avec le lien concerné. Le rejeu d’une même étape ne renvoie pas le message ; une nouvelle tentative de reprise peut signaler de nouveau l’erreur, même à version identique.
+
 ## Recette connectée
 
 Après configuration et réservation de la migration :

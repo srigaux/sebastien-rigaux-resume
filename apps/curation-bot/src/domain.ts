@@ -285,7 +285,7 @@ export class BotError extends Error {
 export class AmbiguousWrite extends BotError {
   constructor(key: string) {
     super(
-      `Résultat d’écriture Prismic incertain (${key}). Réconciliation opérateur nécessaire avant reprise.`,
+      `⏸ Prismic a peut-être enregistré une écriture, mais sa réponse manque. Vérifie le brouillon dans sa release de migration avant de reprendre pour éviter un doublon. Les liens en attente sont conservés. Réconciliation nécessaire pour l’opération ${key}.`,
     );
   }
 }

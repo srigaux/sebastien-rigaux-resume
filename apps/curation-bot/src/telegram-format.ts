@@ -174,7 +174,7 @@ export function publicationChecklist(
     );
   const footer =
     stage === "paused"
-      ? "Consulte le message d’erreur, puis utilise /reprendre pour continuer."
+      ? "Le détail du blocage est envoyé dans un nouveau message ci-dessous."
       : activeStage === "verify"
         ? "Prismic finalise la mise en ligne…"
         : undefined;

@@ -311,6 +311,20 @@ export async function applyAction(
       item.status === "waiting_publish_slot" ||
       (!s.publicationStarted && !!s.media?.failures.length))
   ) {
+    if (s.publicationStarted) {
+      const pending = await new Store(env.DB).db
+        .prepare(
+          "SELECT key FROM operations WHERE item_id=? AND status='pending' LIMIT 1",
+        )
+        .bind(item.id)
+        .first<{ key: string }>();
+      if (pending)
+        return (
+          "⏸ Une réponse d’écriture Prismic manque. Relancer pourrait créer un doublon : la reprise attend une réconciliation. Vérifie le brouillon dans la release de migration Prismic, puis fais rapprocher son ID avec le journal de la fiche " +
+          item.id +
+          ". Les liens en file sont conservés. /reset ne peut pas résoudre cette incertitude."
+        );
+    }
     // If an external write is uncertain, replay protection will stop it again.
     // A publish that went live despite a lost response can be reconciled.
     s.error = undefined;
@@ -332,7 +346,7 @@ export async function applyAction(
     return;
   }
   if (s.publicationStarted)
-    return "La migration a commencé. Utilisez /reprendre ; toute modification ou annulation exige une réconciliation opérateur.";
+    return "🔒 La migration a déjà commencé : je conserve les documents et ta file pour éviter une publication incomplète. Une réconciliation dans Prismic est nécessaire avant toute annulation ; /reprendre ne pourra continuer qu’une fois les écritures incertaines résolues.";
   if (action.kind === "cancel") {
     item.status = "cancelled";
     return;

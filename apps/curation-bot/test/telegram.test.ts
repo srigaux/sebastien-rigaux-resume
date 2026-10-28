@@ -5,6 +5,27 @@ import { handleUpdate, clearItemButtons, publicationNotice } from "@/telegram";
 import { Store } from "@/store";
 import { fixture } from "@test/fixtures";
 
+it("envoie une nouvelle erreur après chaque reprise, sans modifier une ancienne proposition", async () => {
+  const { present } = await import("@/telegram");
+  const { cats } = await import("@test/fixtures");
+  telegramApi();
+  const item = fixture("u-error-notice");
+  item.status = "error";
+  item.state.error = "Traduction déjà existante";
+  await present(env, item, cats, "g0-c1");
+  await present(env, item, cats, "g0-c1");
+  await present(env, item, cats, "g0-c2");
+  const calls = vi.mocked(fetch).mock.calls;
+  expect(
+    calls.filter(([url]) => String(url).endsWith("sendMessage")),
+  ).toHaveLength(2);
+  expect(
+    calls.filter(([url]) => String(url).endsWith("editMessageText")),
+  ).toHaveLength(0);
+  const sent = calls.find(([url]) => String(url).endsWith("sendMessage"))!;
+  expect(JSON.parse(String(sent[1]?.body)).text).toContain(item.state.url);
+});
+
 function telegramApi() {
   vi.stubGlobal(
     "fetch",

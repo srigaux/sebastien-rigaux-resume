@@ -516,7 +516,12 @@ export async function sendActionNotice(
   await sendText(env, text);
 }
 
-export async function present(env: Env, item: Item, cats: Catalog) {
+export async function present(
+  env: Env,
+  item: Item,
+  cats: Catalog,
+  attempt?: string,
+) {
   if (item.state.showSources) return sourceMenu(env, item, cats);
   if (item.state.showImages) {
     const object = await env.BUCKET.get(item.state.extractionKey!);
@@ -566,14 +571,18 @@ export async function present(env: Env, item: Item, cats: Catalog) {
     await remember(store, item, messageId);
     return;
   } else if (item.status === "error") {
-    const messageId = await sendProposal(
-      item,
-      cats,
-      api,
-      store,
-      `⚠️ Je n’ai pas pu terminer cette version.\n${escapeHtml(s.error ?? "Utilise /reprendre pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
+    // Errors must appear at the bottom of the chat, even when a resume keeps
+    // the same revision. The attempt key makes durable step replays idempotent.
+    const key = `telegram:error:${item.id}:${attempt ?? `${item.generation}:${s.revision}`}`;
+    await ensureReceipt(store, key, item.id, () =>
+      api.sendMessage(
+        item.chat_id,
+        `⚠️ Je n’ai pas pu terminer cette version.\n🔗 ${escapeHtml(s.url)}\n\n${escapeHtml(s.error ?? "Utilise /reprendre pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
+        { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+      ),
     );
-    await remember(store, item, messageId);
+    const receipt = await readReceiptKey(store, key);
+    if (receipt) await remember(store, item, receipt.messageId);
     return;
   } else if (draft) {
     await sendPreview(env, item);
@@ -740,12 +749,16 @@ export function createBot(env: Env) {
     }
     const command = /^\/(annuler|reprendre)\b/.exec(text)?.[1];
     if (command) {
-      if (item)
+      if (item) {
         await store.addAction(ctx.update.update_id, item, {
           kind: command === "annuler" ? "cancel" : "resume",
           revision: item.state.revision,
         });
-      else
+        if (command === "reprendre")
+          await ctx.reply(
+            `🔄 Je reprends là où on en était !\n🔗 ${item.state.url}`,
+          );
+      } else
         await ctx.reply(
           "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
         );

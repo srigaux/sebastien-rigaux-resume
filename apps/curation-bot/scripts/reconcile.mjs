@@ -54,7 +54,27 @@ if (command === "inspect" && key) {
       `SELECT o.*,i.status AS item_status FROM operations o JOIN items i ON i.id=o.item_id WHERE o.key=${quote(key)}`,
     )[0]?.results ?? [];
   const row = rows[0];
-  if (!row || row.status !== "pending" || row.item_status !== "error")
+  // A retry after a lost creation response can reveal that Prismic already
+  // created the translation. Only an explicitly reviewed success may reconcile
+  // that conflict; it must never be marked safe to retry again.
+  let existingTranslation = false;
+  try {
+    const saved = JSON.parse(row?.response ?? "null");
+    existingTranslation =
+      command === "confirm-success" &&
+      row?.status === "done" &&
+      row.target === "POST https://migration.prismic.io/documents" &&
+      saved?.status === 400 &&
+      JSON.parse(saved.body).message ===
+        "There is already an existing translation in this language for the document referenced in 'alternate_language_id'";
+  } catch {
+    /* Other responses cannot prove an existing translation. */
+  }
+  if (
+    !row ||
+    (row.status !== "pending" && !existingTranslation) ||
+    row.item_status !== "error"
+  )
     throw new Error(
       "Expected a pending operation whose item is stopped in error.",
     );
@@ -87,9 +107,13 @@ if (command === "inspect" && key) {
     };
     status = "done";
   }
-  sql(
-    `UPDATE operations SET status=${quote(status)},response=${response ? quote(JSON.stringify(response)) : "NULL"},updated_at=${quote(new Date().toISOString())} WHERE key=${quote(key)} AND status='pending'`,
+  const result = sql(
+    `UPDATE operations SET status=${quote(status)},response=${response ? quote(JSON.stringify(response)) : "NULL"},updated_at=${quote(new Date().toISOString())} WHERE key=${quote(key)} AND status=${quote(row.status)} AND response IS ${row.response ? quote(row.response) : "NULL"}`,
   );
+  if (result[0]?.meta?.changes !== 1)
+    throw new Error(
+      "Operation changed during reconciliation. Inspect it again.",
+    );
   console.log("Operation reconciled. Use /reprendre in Telegram.");
 } else
   throw new Error(

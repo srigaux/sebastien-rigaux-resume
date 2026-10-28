@@ -126,7 +126,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             status: item.status,
             revision: item.state.revision,
           });
-          await present(this.env, item, cats);
+          await present(this.env, item, cats, prefix);
           return item.state.previewImageKey ?? null;
         },
       );

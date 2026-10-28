@@ -171,7 +171,7 @@ it("affiche les médias terminés, la fiche FR en cours et les étapes suivantes
   );
   expect(paused.text).toContain("✅ Import de l’image");
   expect(paused.text).toContain("⚠️ Création de la fiche FR");
-  expect(paused.text).toContain("/reprendre");
+  expect(paused.text).toContain("nouveau message ci-dessous");
 });
 it("omet les médias absents et ne coche pas une demande de publication encore incertaine", () => {
   const item = fixture();

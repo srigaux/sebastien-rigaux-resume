@@ -192,10 +192,24 @@ export function journaledFetch(
         if ([400, 413, 415, 422].includes(response.status))
           throw new MediaRejected(file instanceof File ? file.name : "inconnu");
       }
-      if (!response.ok)
+      if (!response.ok) {
+        // Only translate known provider errors; never expose arbitrary response
+        // bodies, which can contain request data or credentials.
+        if (response.status === 400) {
+          const body = await response.clone().text();
+          if (
+            body.includes(
+              "There is already an existing translation in this language",
+            )
+          )
+            throw new BotError(
+              "🔗 Prismic indique qu’une traduction existe déjà pour cette fiche. Il faut retrouver son ID dans le sélecteur de langue de la fiche Prismic et réconcilier sa création ; /reprendre seul ne peut pas résoudre ce conflit. Aucun nouveau document ne sera créé en boucle.",
+            );
+        }
         throw new BotError(
           `Prismic a refusé l’opération (HTTP ${response.status}). Vérifiez ses droits et les données de la fiche avant reprise.`,
         );
+      }
       return response;
     };
     if (old?.status === "done" && old.response)

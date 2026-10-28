@@ -90,6 +90,32 @@ describe("inbox, file et verrous D1", () => {
   });
 });
 describe("journal des écritures Prismic", () => {
+  it("explique un conflit de traduction, y compris au rejeu du refus, sans réécriture", async () => {
+    const remote = vi.fn(async () =>
+      Response.json(
+        {
+          message:
+            "There is already an existing translation in this language for the document referenced in 'alternate_language_id'",
+        },
+        { status: 400 },
+      ),
+    );
+    const request = journaledFetch(
+      new Store(env.DB),
+      "u-translation-conflict",
+      remote as typeof fetch,
+    )!;
+    const args = [
+      "https://migration.prismic.io/documents",
+      {
+        method: "POST",
+        body: JSON.stringify({ lang: "en-us", alternate_language_id: "fr-id" }),
+      },
+    ] as const;
+    await expect(request(...args)).rejects.toThrow("traduction existe déjà");
+    await expect(request(...args)).rejects.toThrow("réconcilier");
+    expect(remote).toHaveBeenCalledTimes(1);
+  });
   it("rejoue une réponse connue sans seconde écriture réseau", async () => {
     const remote = vi.fn(async () => Response.json({ id: "fr-id" }));
     const first = journaledFetch(
