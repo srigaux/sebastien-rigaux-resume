@@ -243,6 +243,8 @@ export interface Env {
   PRISMIC_REPOSITORY: string;
   PRISMIC_WRITE_TOKEN: string;
   PRISMIC_ACCESS_TOKEN?: string;
+  PRISMIC_WEBHOOK_SECRET?: string;
+  GITHUB_ACTIONS_TOKEN?: string;
   PUBLISH_ENABLED: string;
 }
 export function webUrl(value: string): string {

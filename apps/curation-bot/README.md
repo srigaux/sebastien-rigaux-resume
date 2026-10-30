@@ -289,3 +289,78 @@ Quand la release est libérée, les liens déjà validés sont prioritaires sur 
 `/file` affiche les titres ou, avant extraction, le domaine et le chemin du lien (sans ses paramètres). Les états sont regroupés en actions à effectuer, préparation, liens validés et mise en ligne. Huit liens sont affichés par page, avec navigation et actualisation du même message. `/file 2` ouvre directement la deuxième page. Les liens publiés ou annulés sont exclus, les identifiants restent disponibles pour les commandes ciblées. Aucun changement de schéma n’est nécessaire.
 
 Le bouton affichant le type actuel utilise le même remplacement de message que les sources. Le LLM renvoie `formatRanking` avec les sept types et leur probabilité dans le même appel que les textes. Les moins probables sont en haut, les plus probables en bas, puis **🧩 Autre** en dernier (le type reste obligatoire). Un clic actualise le type sans régénérer les textes, conserve le bouton pour changer d’avis et invalide l’accord précédent. Le choix manuel est conservé lors des corrections éditoriales suivantes. La classification distingue la nature de la page de son sujet : une analyse de version est un Article ; l’annonce officielle ou les release notes sont une Release. Aucun motif textuel supplémentaire n’est demandé au LLM.
+
+## Reconstruire le site après une publication Prismic
+
+`POST /prismic/webhook` vérifie le secret JSON `secret`, le dépôt `bd7d5fa0`
+(binding `PRISMIC_REPOSITORY`) et le type `api-update`. Une liste `documents`
+non vide déclenche `deploy.yml` sur `master` dans
+`srigaux/sebastien-rigaux-resume`, avec un titre « Prismic publication ».
+Les brouillons et les créations/modifications de releases sont ignorés.
+
+Prismic utilise aussi `releases.deletion` pour une release publiée. Ce payload
+ne distingue pas fiablement publication et suppression : si seul cet événement
+est présent, le Worker déclenche `check-website-updates.yml`. Celui-ci compare
+l’empreinte du contenu publié au site déployé avant de demander le build.
+Le contrôle toutes les 30 minutes et le rafraîchissement annuel restent actifs.
+Aucune migration n’est nécessaire. Des livraisons répétées peuvent lancer
+plusieurs workflows ; les règles de concurrence existantes restent applicables.
+
+### Activation
+
+Depuis `apps/curation-bot` :
+
+1. Créer un jeton GitHub à permissions fines, limité à
+   `srigaux/sebastien-rigaux-resume`, avec **Actions: write**. Prévoir une date
+   d’expiration et un rappel de renouvellement. Le stocker uniquement via
+   `pnpm exec wrangler secret put GITHUB_ACTIONS_TOKEN`.
+2. Générer un secret aléatoire (`openssl rand -hex 32`), le conserver dans le
+   gestionnaire de mots de passe, puis saisir sa valeur avec
+   `pnpm exec wrangler secret put PRISMIC_WEBHOOK_SECRET`.
+3. Exécuter `pnpm deploy`. Sans les deux secrets, la route renvoie `503` ; les
+   routes Telegram et les tâches planifiées restent disponibles.
+4. Dans Prismic `bd7d5fa0`, **Settings → Webhooks**, créer « GitHub Pages » :
+   URL = URL HTTPS du Worker affichée au déploiement + `/prismic/webhook` ;
+   Secret = même valeur que `PRISMIC_WEBHOOK_SECRET`. Activer publication,
+   dépublication et modification/suppression des releases uniquement.
+   Ne pas créer de doublon si ce webhook existe déjà.
+
+La CLI prend également en charge cette création. Exécuter `npx prismic login`
+si la session est expirée, puis `npx prismic task-id` et réutiliser cet identifiant
+sur chaque commande. Depuis `apps/cms-prismic`, la commande est :
+
+```sh
+npx prismic webhook create 'https://WORKER/prismic/webhook' \
+  --repo bd7d5fa0 --name 'GitHub Pages' \
+  --secret "$PRISMIC_WEBHOOK_SECRET" \
+  --trigger documentsPublished --trigger documentsUnpublished \
+  --trigger releasesUpdated \
+  --task-id "$PRISMIC_TASK_ID" \
+  --user-intent 'Configure a Prismic webhook to rebuild and publish the website through GitHub Actions.'
+```
+
+Les variables de cet exemple doivent être définies localement ; ne pas copier
+les valeurs de secrets dans le dépôt ni dans un chat. L’interface Prismic permet
+également de saisir le secret sans le passer comme argument de processus.
+
+### Vérification et maintenance
+
+- « Trigger it » envoie `test-trigger` : réponse `200 Ignored`, sans build.
+- Publier une modification éditoriale prévue, vérifier le `200` dans les logs
+  Prismic, le workflow GitHub, puis le contenu sur `https://sebastien.rigaux.be/`.
+  Une réponse `200 OK` confirme la demande GitHub, pas la fin du déploiement.
+- Tester aussi une publication de release ; elle peut d’abord lancer le contrôle
+  de contenu. Une suppression de release non publiée ne doit pas provoquer de
+  build lorsque le site est déjà à jour.
+- Les logs Worker `prismic.webhook.*` ne contiennent ni secret, ni payload,
+  ni corps de réponse GitHub. Les erreurs GitHub et délais dépassés donnent `503`.
+- Prismic réessaie les réponses autres que `200` toutes les 10 minutes, jusqu’à
+  cinq fois, puis désactive le webhook après cinq échecs consécutifs. Corriger la
+  cause, vérifier/réactiver le webhook dans Prismic et lancer manuellement la
+  publication si nécessaire. Le contrôle périodique reste un secours.
+- Renouveler le jeton via `wrangler secret put GITHUB_ACTIONS_TOKEN` avant son
+  expiration, tester, puis révoquer l’ancien. Pour le secret partagé, mettre à
+  jour Cloudflare et Prismic avec la même nouvelle valeur, puis tester.
+
+Références : [Prismic webhooks](https://prismic.io/docs/webhooks) et
+[GitHub workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).

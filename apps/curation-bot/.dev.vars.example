@@ -8,3 +8,6 @@ PRISMIC_WRITE_TOKEN=replace-me
 # Optional for private Content API access:
 PRISMIC_ACCESS_TOKEN=
 PUBLIC_BOT_URL=https://curation-bot.YOUR-SUBDOMAIN.workers.dev
+# Optional until the Prismic rebuild webhook is activated:
+PRISMIC_WEBHOOK_SECRET=
+GITHUB_ACTIONS_TOKEN=

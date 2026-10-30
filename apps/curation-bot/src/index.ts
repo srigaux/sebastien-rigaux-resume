@@ -4,6 +4,7 @@ import type { Env } from "@/domain";
 import { handleUpdate } from "@/telegram";
 import { reconcilePublications } from "@/publication";
 import { dispatchQueue } from "@/dispatch";
+import { handlePrismicWebhook } from "@/prismic-webhook";
 export { CurationWorkflow } from "@/workflow";
 
 export async function drainInbox(env: Env) {
@@ -51,6 +52,8 @@ export default {
     ctx: ExecutionContext,
   ): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === "/prismic/webhook" && request.method === "POST")
+      return handlePrismicWebhook(request, env);
     if (path === "/health" && request.method === "GET")
       return Response.json({ ok: true });
     if (path !== "/telegram" || request.method !== "POST")
