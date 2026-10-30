@@ -52,18 +52,22 @@ async function main() {
   const config = JSON.parse(await readFile(new URL("../../cms-prismic/prismic.config.json", import.meta.url), "utf8"));
   const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
   // Match the push filter: unrelated bot commits must not cause a scheduled build.
-  const sourcePaths = ["apps/website-astro", "apps/cms-prismic", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".github/workflows/deploy.yml"];
+  const sourcePaths = ["apps/website-astro", "apps/cms-prismic", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".github/workflows/deploy.yml", ".github/workflows/check-website-updates.yml"];
   const sourceRevision = execFileSync("git", ["rev-parse", ...sourcePaths.map((path) => `HEAD:${path}`)], { encoding: "utf8" });
   const result = await checkPublishedContent({
     repositoryName: config.repositoryName,
     sourceRevision,
-    eventName: process.env.GITHUB_EVENT_NAME,
+    eventName: process.env.CONTENT_CHECK_ONLY === "true" ? "schedule" : process.env.GITHUB_EVENT_NAME,
     schedule: event.schedule,
   });
   console.log(result.reason);
-  await appendFile(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nfingerprint=${result.fingerprint}\n`);
+  const checkedAt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Brussels", dateStyle: "short", timeStyle: "short",
+  }).format(new Date());
+  await appendFile(process.env.GITHUB_OUTPUT, `changed=${result.changed}\nfingerprint=${result.fingerprint}\nchecked_at=${checkedAt} (Europe/Brussels)\n`);
   if (process.env.GITHUB_STEP_SUMMARY) {
-    await appendFile(process.env.GITHUB_STEP_SUMMARY, `### Content check\n\n${result.reason}.\n`);
+    const title = result.changed ? "🚀 Publication needed" : "⏭️ No changes — publication skipped";
+    await appendFile(process.env.GITHUB_STEP_SUMMARY, `### ${title}\n\n${result.reason}.\n\nChecked at ${checkedAt} (Europe/Brussels).\n`);
   }
 }
 

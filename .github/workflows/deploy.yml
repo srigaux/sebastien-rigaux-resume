@@ -1,4 +1,5 @@
-name: 🌐 Publish Astro website
+name: 🚀 Publish Astro website
+run-name: ${{ inputs.run_title || github.event.head_commit.message || format('🚀 Manual publication · {0}', github.actor) }}
 
 on:
   push:
@@ -10,12 +11,13 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".github/workflows/deploy.yml"
+      - ".github/workflows/check-website-updates.yml"
   workflow_dispatch:
-  schedule:
-    # Check for published Prismic changes every four hours; skip unchanged builds.
-    - cron: "17 */4 * * *"
-    # Refresh the experience-years figure embedded in the static PDFs.
-    - cron: "0 6 1 2 *"
+    inputs:
+      run_title:
+        description: Optional publication title (filled by the scheduled content check)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -23,10 +25,10 @@ permissions:
   id-token: write
 
 jobs:
-  # Compare Prismic, website sources and the annual PDF refresh period with
-  # the deployed fingerprint. Pushes, manual runs and the annual run force a build.
+  # Capture a fresh fingerprint before building. Every publication run is forced;
+  # the separate scheduled workflow dispatches this one only when needed.
   check-content:
-    name: 🔎 Check whether publication is needed
+    name: 🔎 Capture published content version
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.content.outputs.changed }}
@@ -38,7 +40,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version-file: package.json
-      - name: 🔎 Check published content for changes
+      - name: 🔎 Capture content fingerprint before building
         id: content
         run: node apps/website-astro/scripts/check-published-content.mjs
 

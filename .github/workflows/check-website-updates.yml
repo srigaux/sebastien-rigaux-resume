@@ -1,0 +1,49 @@
+name: 🔎 Check website updates
+run-name: 🔎 Check website updates · run ${{ github.run_number }}
+
+on:
+  schedule:
+    # Twice an hour, away from the busiest start-of-hour scheduling period.
+    - cron: "17,47 * * * *"
+    # Force the annual experience-years refresh in the static PDFs.
+    - cron: "0 6 1 2 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages-content-check
+  cancel-in-progress: false
+
+jobs:
+  check-content:
+    name: 🔎 Check whether publication is needed
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # GITHUB_TOKEN can trigger workflow_dispatch without an additional secret.
+      actions: write
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v7
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+      - name: 🔎 Compare published content with the deployed website
+        id: content
+        env:
+          CONTENT_CHECK_ONLY: "true"
+        run: node apps/website-astro/scripts/check-published-content.mjs
+      - name: ⏭️ Keep the current website — no changes detected
+        if: steps.content.outputs.changed != 'true'
+        run: echo "No publication needed. The deployed website is up to date."
+      - name: 🚀 Request website publication
+        if: steps.content.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          RUN_TITLE: 🚀 Automatic publication · ${{ steps.content.outputs.checked_at }}
+        run: gh workflow run deploy.yml --ref "$DEFAULT_BRANCH" -f run_title="$RUN_TITLE"
