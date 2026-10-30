@@ -7,13 +7,15 @@ import { Store } from "@/store";
 // Keep ordinary propagation asynchronous, but stop presenting hours of missing
 // documents as a normal publication delay. No write is retried by this checker.
 export const MAX_PUBLICATION_CHECKS = 5;
+export const PUBLICATION_FALLBACK_DELAY_MS = 10 * 60_000;
 const RECHECK_DELAYS_MS = [60_000, 120_000, 300_000, 600_000];
-function nextCheck(attempts: number) {
-  return (
+function nextCheck(attempts: number, createdAt = 0) {
+  return Math.max(
+    createdAt + PUBLICATION_FALLBACK_DELAY_MS,
     Date.now() +
-    RECHECK_DELAYS_MS[
-      Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
-    ]
+      RECHECK_DELAYS_MS[
+        Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
+      ],
   );
 }
 
@@ -34,8 +36,42 @@ export async function schedulePublicationCheck(
       ELSE excluded.status END,
     next_check_at=MIN(publication_checks.next_check_at,excluded.next_check_at)`,
   )
-    .bind(item.id, status, now, now)
+    .bind(item.id, status, now, now + PUBLICATION_FALLBACK_DELAY_MS)
     .run();
+}
+
+// IDs are checkpointed before requesting publication. Persist the wake-up even
+// while the workflow is active: the cron can consume it after the workflow parks.
+// The master ref deduplicates deliveries without persisting secrets or payloads.
+export async function recordPublicationWebhook(
+  env: Env,
+  masterRef: string,
+  documentIds: string[],
+  releaseDeleted: boolean,
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE publication_checks SET webhook_ref=?,next_check_at=MIN(next_check_at,?)
+     WHERE status IN ('requesting','accepted','unknown') AND webhook_ref IS NOT ?
+     AND item_id IN (
+       SELECT i.id FROM items i
+       WHERE EXISTS (
+         SELECT 1 FROM json_each(i.state,'$.publishedIds') ids
+         WHERE ids.value IN (SELECT value FROM json_each(?))
+       ) OR (?=1 AND EXISTS (
+         SELECT 1 FROM publication_lock l WHERE l.repository=? AND l.item_id=i.id
+       ))
+     )`,
+  )
+    .bind(
+      masterRef,
+      Date.now(),
+      masterRef,
+      JSON.stringify(documentIds),
+      releaseDeleted && documentIds.length === 0 ? 1 : 0,
+      env.PRISMIC_REPOSITORY,
+    )
+    .run();
+  return result.meta.changes > 0;
 }
 
 // One pending release at most: this bounded pass performs no sleeps and no writes
@@ -91,7 +127,7 @@ export async function reconcilePublications(env: Env) {
           );
           if (!available) {
             const needsAttention = checks >= MAX_PUBLICATION_CHECKS;
-            const nextCheckAt = nextCheck(checks);
+            const nextCheckAt = nextCheck(checks, row.created_at);
             await env.DB.prepare(
               "UPDATE publication_checks SET status=?,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
             )
@@ -155,7 +191,10 @@ export async function reconcilePublications(env: Env) {
         }
       } catch (error) {
         const fields = errorFields(error);
-        const nextCheckAt = nextCheck(checks);
+        const nextCheckAt = nextCheck(
+          checks,
+          row.status === "confirmed" ? 0 : row.created_at,
+        );
         const needsAttention =
           row.status !== "confirmed" && checks >= MAX_PUBLICATION_CHECKS;
         await env.DB.prepare(

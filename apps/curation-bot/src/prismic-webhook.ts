@@ -1,5 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Env } from "@/domain";
+import { recordPublicationWebhook, reconcilePublications } from "@/publication";
+import { dispatchQueue } from "@/dispatch";
 import { errorFields, log } from "@/observability";
 
 const dispatchUrl =
@@ -10,8 +12,12 @@ function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function handlePrismicWebhook(request: Request, env: Env) {
-  if (!env.PRISMIC_WEBHOOK_SECRET || !env.GITHUB_ACTIONS_TOKEN) {
+export async function handlePrismicWebhook(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) {
+  if (!env.PRISMIC_WEBHOOK_SECRET) {
     log("prismic.webhook.unconfigured", {}, "error");
     return new Response("Webhook unavailable", { status: 503 });
   }
@@ -67,6 +73,48 @@ export async function handlePrismicWebhook(request: Request, env: Env) {
   ) {
     log("prismic.webhook.ignored");
     return new Response("Ignored");
+  }
+  // A release's nested IDs are hints, never proof of publication. Reconciliation
+  // always reads both locales from the live API before completing the item.
+  const documentIds = new Set<string>();
+  const collect = (ids: unknown) => {
+    if (Array.isArray(ids))
+      for (const id of ids)
+        if (typeof id === "string" && id) documentIds.add(id);
+  };
+  collect(payload.documents);
+  if (Array.isArray(deletions))
+    for (const release of deletions)
+      if (object(release)) collect(release.documents);
+  try {
+    const awakened = await recordPublicationWebhook(
+      env,
+      payload.masterRef,
+      [...documentIds],
+      releaseDeleted,
+    );
+    if (awakened)
+      ctx.waitUntil(
+        (async () => {
+          await reconcilePublications(env);
+          await dispatchQueue(env);
+        })().catch((error) =>
+          log(
+            "prismic.webhook.confirmation.failed",
+            errorFields(error),
+            "error",
+          ),
+        ),
+      );
+  } catch (error) {
+    log("prismic.webhook.receipt.failed", errorFields(error), "error");
+    return new Response("Publication confirmation unavailable", {
+      status: 503,
+    });
+  }
+  if (!env.GITHUB_ACTIONS_TOKEN) {
+    log("prismic.webhook.unconfigured", {}, "error");
+    return new Response("GitHub unavailable", { status: 503 });
   }
   try {
     const response = await fetch(

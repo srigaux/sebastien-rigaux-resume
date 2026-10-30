@@ -276,9 +276,9 @@ Il chauffe les deux chemins, puis alterne cinq mesures de l’ancienne lecture c
 
 ### Publication bloquée et reprise
 
-Le cron effectue au maximum cinq vérifications de disponibilité, espacées progressivement de 1, 2, 5 et 10 minutes. Cela concerne les documents absents comme les erreurs réseau/API. Après épuisement, le suivi existant passe à `attention`, les lectures distantes s’arrêtent, le message Telegram explique le blocage et `/file` le rend visible. Le verrou est conservé : la release de migration est partagée et il serait dangereux d’y ajouter la sélection suivante sans résoudre la précédente.
+Le webhook est le signal principal de confirmation. Sans confirmation, le premier contrôle de secours a lieu après 10 minutes, au prochain passage du cron. Le suivi effectue au maximum cinq vérifications de disponibilité, espacées ensuite progressivement de 1, 2, 5 et 10 minutes. Une lecture déclenchée par webhook compte également dans ce budget. Cela concerne les documents absents comme les erreurs réseau/API. Après épuisement, le suivi existant passe à `attention`, les lectures distantes s’arrêtent, le message Telegram explique le blocage et `/file` le rend visible. Le verrou est conservé : la release de migration est partagée et il serait dangereux d’y ajouter la sélection suivante sans résoudre la précédente.
 
-Après contrôle ou publication de la paire FR/EN dans Prismic, envoyer `/reprendre u…` pour réarmer une série limitée de vérifications. Cette commande cible aussi une publication inactive, même si la fiche suivante attend son créneau. `/reprendre` sans identifiant privilégie une publication en pause ; sinon il conserve son comportement sur la fiche active. Les deux documents doivent être visibles avant que le bot libère automatiquement le verrou et réveille la sélection approuvée suivante. Une réponse de publication inconnue n’est jamais transformée automatiquement en autorisation de renvoyer l’écriture. Aucune table ni migration supplémentaire n’est nécessaire.
+Après contrôle ou publication de la paire FR/EN dans Prismic, envoyer `/reprendre u…` pour réarmer une série limitée de vérifications. Cette commande cible aussi une publication inactive, même si la fiche suivante attend son créneau. `/reprendre` sans identifiant privilégie une publication en pause ; sinon il conserve son comportement sur la fiche active. Les deux documents doivent être visibles avant que le bot libère automatiquement le verrou et réveille la sélection approuvée suivante. Une réponse de publication inconnue n’est jamais transformée automatiquement en autorisation de renvoyer l’écriture. La migration `0003_publication_webhook.sql` ajoute la référence du dernier webhook reçu à `publication_checks`.
 
 ### Préparation indépendante et affichage de la file
 
@@ -303,7 +303,7 @@ ne distingue pas fiablement publication et suppression : si seul cet événement
 est présent, le Worker déclenche `check-website-updates.yml`. Celui-ci compare
 l’empreinte du contenu publié au site déployé avant de demander le build.
 Le contrôle toutes les 30 minutes et le rafraîchissement annuel restent actifs.
-Aucune migration n’est nécessaire. Des livraisons répétées peuvent lancer
+Appliquer les migrations D1 avant de déployer le Worker. Des livraisons répétées peuvent lancer
 plusieurs workflows ; les règles de concurrence existantes restent applicables.
 
 ### Activation
@@ -364,3 +364,36 @@ les valeurs de secrets dans le dépôt ni dans un chat. L’interface Prismic pe
 
 Références : [Prismic webhooks](https://prismic.io/docs/webhooks) et
 [GitHub workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+
+
+### Confirmation de publication dans Telegram
+
+Le webhook authentifié réveille le suivi d’une fiche à partir des IDs des documents
+(top-level `documents` ou documents des releases supprimées). Si une suppression
+de release ne fournit aucun ID, il réveille uniquement la publication qui détient
+le verrou du dépôt. L’événement ne suffit jamais à annoncer un succès : le bot
+relit les deux versions FR/EN dans le contenu publié avant de confirmer, libérer
+le verrou et préparer la sélection approuvée suivante.
+
+La référence Prismic est enregistrée durablement dans `publication_checks.webhook_ref`
+avant la réponse HTTP. Une livraison répétée avec la même référence ne réveille
+pas une deuxième lecture. Si l’événement arrive pendant que le workflow termine,
+le signal reste enregistré ; le prochain passage du cron le traitera dès que la
+fiche est inactive. La notification réutilise le message de progression existant
+et son reçu de confirmation. Un échec Telegram est retenté séparément, sans
+refaire la publication ni conserver le verrou.
+
+Sans webhook, aucune lecture de disponibilité n’a lieu avant 10 minutes. Si une
+première lecture déclenchée par webhook ne trouve qu’une langue, le suivi attend
+le délai de secours ou un nouvel événement avant de réessayer. Les demandes
+inconnues et les erreurs réseau restent soumises au même budget limité ; les
+écritures Prismic ne sont jamais rejouées par la confirmation. `/reprendre` reste
+une vérification explicite immédiate, y compris après un blocage.
+
+La confirmation Telegram signifie « publié dans Prismic », pas « déployé sur le
+site ». La confirmation du bot est indépendante du succès du déclenchement
+GitHub : l’événement est déjà enregistré même si GitHub renvoie une erreur.
+
+Déploiement de cette évolution : `pnpm exec wrangler d1 migrations apply DB --remote`,
+puis `pnpm deploy`. La migration est additive et compatible avec l’ancien Worker ;
+les suivis existants conservent leur échéance et leur budget de vérifications.

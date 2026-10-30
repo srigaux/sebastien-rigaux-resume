@@ -1,13 +1,27 @@
-import { env } from "cloudflare:test";
+import {
+  env,
+  createExecutionContext,
+  waitOnExecutionContext,
+} from "cloudflare:test";
+import worker from "@/index";
 import { expect, it, vi } from "vitest";
-import { reconcilePublications, schedulePublicationCheck } from "@/publication";
+import {
+  reconcilePublications,
+  schedulePublicationCheck,
+  recordPublicationWebhook,
+  PUBLICATION_FALLBACK_DELAY_MS,
+} from "@/publication";
 import { Store } from "@/store";
 import { cats, extraction, fixture, repository } from "@test/fixtures";
 import { verifyPublication } from "@/prismic";
 import { advance } from "@/flow";
+import type { Env } from "@/domain";
 import type { Steps } from "@/retry";
 
-async function pending(status: "accepted" | "unknown" = "accepted") {
+async function pending(
+  status: "accepted" | "unknown" = "accepted",
+  due = true,
+) {
   const store = new Store(env.DB),
     item = fixture("u990");
   item.state.publishedIds = ["fr-id", "en-id"];
@@ -18,16 +32,24 @@ async function pending(status: "accepted" | "unknown" = "accepted") {
   await store.lock(env.PRISMIC_REPOSITORY, item.id);
   await schedulePublicationCheck(env, item, status);
   await store.finish(item, "publication_pending", env.PRISMIC_REPOSITORY);
+  if (due)
+    await env.DB.prepare(
+      "UPDATE publication_checks SET next_check_at=0 WHERE item_id=?",
+    )
+      .bind(item.id)
+      .run();
   return { store, item };
 }
 function remote(mode: "ready" | "missing" | "partial" | "unauthorized") {
   let searches = 0,
-    writes = 0;
+    writes = 0,
+    successes = 0;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("api.telegram.org"))
+      if (url.includes("api.telegram.org")) {
+        if (String(init?.body).includes("C’est publié")) successes++;
         return Response.json({
           ok: true,
           result: {
@@ -36,6 +58,7 @@ function remote(mode: "ready" | "missing" | "partial" | "unauthorized") {
             chat: { id: 1, type: "private" },
           },
         });
+      }
       if (init?.method === "POST" || init?.method === "PUT") {
         writes++;
         throw new Error("No Prismic write allowed in cron");
@@ -66,7 +89,11 @@ function remote(mode: "ready" | "missing" | "partial" | "unauthorized") {
       });
     }),
   );
-  return { searches: () => searches, writes: () => writes };
+  return {
+    searches: () => searches,
+    writes: () => writes,
+    successes: () => successes,
+  };
 }
 it.each(["accepted", "unknown"] as const)(
   "confirme %s sans réécriture ni comparaison des champs",
@@ -227,6 +254,7 @@ it("une réponse de publication perdue reste inconnue sans renvoi aveugle", asyn
   ).toEqual({ status: "unknown" });
   await store.finish(item, "publication_pending", env.PRISMIC_REPOSITORY);
   remote("ready");
+  await env.DB.prepare("UPDATE publication_checks SET next_check_at=0").run();
   await reconcilePublications(env);
   expect((await store.get(item.id)).status).toBe("done");
   expect(posts).toBe(1);
@@ -420,4 +448,181 @@ it("does not reset the paused budget through routine scheduling or an active lea
     id: item.id,
     scheduled: false,
   });
+});
+
+it("waits ten minutes without webhook, then uses the bounded fallback", async () => {
+  const { item, store } = await pending("accepted", false);
+  const api = remote("ready");
+  const row = await env.DB.prepare(
+    "SELECT created_at,next_check_at FROM publication_checks",
+  ).first<{ created_at: number; next_check_at: number }>();
+  expect(row!.next_check_at - row!.created_at).toBe(
+    PUBLICATION_FALLBACK_DELAY_MS,
+  );
+  await reconcilePublications(env);
+  expect(api.searches()).toBe(0);
+  expect((await store.get(item.id)).status).toBe("publication_pending");
+  await env.DB.prepare("UPDATE publication_checks SET next_check_at=0").run();
+  await reconcilePublications(env);
+  expect(api.searches()).toBe(1);
+  expect((await store.get(item.id)).status).toBe("done");
+});
+
+async function webhook(
+  extra: Record<string, unknown> = {},
+  githubOk = true,
+  bindingsOverride: Partial<Env> = {},
+) {
+  const prior = vi.mocked(fetch).getMockImplementation()!;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: unknown, init?: RequestInit) => {
+      if (String(input).includes("api.github.com"))
+        return new Response(null, { status: githubOk ? 204 : 500 });
+      return prior(input as RequestInfo, init);
+    }),
+  );
+  const ctx = createExecutionContext();
+  const response = await worker.fetch(
+    new Request("https://worker.test/prismic/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "api-update",
+        domain: env.PRISMIC_REPOSITORY,
+        secret: "webhook-secret",
+        masterRef: "published-ref",
+        documents: ["fr-id", "en-id"],
+        ...extra,
+      }),
+    }),
+    {
+      ...env,
+      PRISMIC_WEBHOOK_SECRET: "webhook-secret",
+      GITHUB_ACTIONS_TOKEN: "github-token",
+      ...bindingsOverride,
+    },
+    ctx,
+  );
+  await waitOnExecutionContext(ctx);
+  return response;
+}
+
+it.each(["accepted", "unknown"] as const)(
+  "webhook confirms %s immediately and sends success only once",
+  async (status) => {
+    const { item, store } = await pending(status, false);
+    const api = remote("ready");
+    expect((await webhook()).status).toBe(200);
+    expect((await store.get(item.id)).status).toBe("done");
+    expect(api.searches()).toBe(1);
+    expect(
+      await env.DB.prepare(
+        "SELECT status,notified,webhook_ref FROM publication_checks",
+      ).first(),
+    ).toEqual({
+      status: "confirmed",
+      notified: 1,
+      webhook_ref: "published-ref",
+    });
+    expect(api.successes()).toBe(1);
+    await webhook();
+    await reconcilePublications(env);
+    expect(api.searches()).toBe(1);
+    expect(api.successes()).toBe(1);
+    expect(
+      await env.DB.prepare("SELECT notified FROM publication_checks").first(),
+    ).toEqual({ notified: 1 });
+  },
+);
+
+it("release deletion with nested IDs wakes only a matching publication", async () => {
+  const { item, store } = await pending("accepted", false);
+  const api = remote("ready");
+  await webhook({
+    documents: [],
+    releases: { deletion: [{ documents: ["fr-id", "en-id"] }] },
+  });
+  expect((await store.get(item.id)).status).toBe("done");
+  expect(api.searches()).toBe(1);
+});
+it("a deletion without IDs checks the locked publication without trusting the event", async () => {
+  const { store, item } = await pending("accepted", false);
+  const api = remote("partial");
+  await webhook({
+    documents: [],
+    releases: { deletion: [{ id: "release-id" }] },
+  });
+  expect((await store.get(item.id)).status).toBe("publication_pending");
+  expect(api.searches()).toBe(1);
+  const row = await env.DB.prepare(
+    "SELECT created_at,next_check_at FROM publication_checks",
+  ).first<{ created_at: number; next_check_at: number }>();
+  expect(row!.next_check_at).toBeGreaterThanOrEqual(
+    row!.created_at + PUBLICATION_FALLBACK_DELAY_MS,
+  );
+  await reconcilePublications(env);
+  expect(api.searches()).toBe(1);
+});
+it("does not wake for unrelated IDs, wrong secrets or unpublished release updates", async () => {
+  await pending("accepted", false);
+  const api = remote("ready");
+  await webhook({ documents: ["unrelated"] });
+  await webhook({ secret: "wrong" });
+  await webhook({
+    documents: [],
+    releases: { update: [{ documents: ["fr-id", "en-id"] }] },
+  });
+  expect(api.searches()).toBe(0);
+  expect(
+    await env.DB.prepare("SELECT webhook_ref FROM publication_checks").first(),
+  ).toEqual({ webhook_ref: null });
+});
+it("persists an early webhook until the active workflow parks", async () => {
+  const { store, item } = await pending("accepted", false);
+  await env.DB.prepare(
+    "UPDATE items SET active=1,status='publishing' WHERE id=?",
+  )
+    .bind(item.id)
+    .run();
+  const api = remote("ready");
+  await webhook();
+  expect(api.searches()).toBe(0);
+  await schedulePublicationCheck(env, item, "accepted");
+  await store.finish(item, "publication_pending", env.PRISMIC_REPOSITORY);
+  await reconcilePublications(env);
+  expect(api.searches()).toBe(1);
+  expect((await store.get(item.id)).status).toBe("done");
+});
+it("deduplicates concurrent deliveries and retains confirmation when GitHub fails", async () => {
+  const { store, item } = await pending("accepted", false);
+  const api = remote("ready");
+  expect((await webhook({}, false)).status).toBe(503);
+  expect((await store.get(item.id)).status).toBe("done");
+  expect(api.searches()).toBe(1);
+  expect(
+    await recordPublicationWebhook(env, "published-ref", ["fr-id"], false),
+  ).toBe(false);
+});
+it("persists a wake-up across concurrent webhook receipts", async () => {
+  await pending("accepted", false);
+  const results = await Promise.all([
+    recordPublicationWebhook(env, "same-ref", ["fr-id"], false),
+    recordPublicationWebhook(env, "same-ref", ["en-id"], false),
+  ]);
+  expect(results.sort()).toEqual([false, true]);
+});
+
+it("confirms the bot even when the GitHub token is unconfigured", async () => {
+  const { item, store } = await pending("accepted", false);
+  const api = remote("ready");
+  expect(
+    (await webhook({}, true, { GITHUB_ACTIONS_TOKEN: undefined })).status,
+  ).toBe(503);
+  expect((await store.get(item.id)).status).toBe("done");
+  expect(api.successes()).toBe(1);
+  expect(
+    vi
+      .mocked(fetch)
+      .mock.calls.some(([url]) => String(url).includes("api.github.com")),
+  ).toBe(false);
 });

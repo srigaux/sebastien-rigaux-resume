@@ -53,7 +53,7 @@ export default {
   ): Promise<Response> {
     const path = new URL(request.url).pathname;
     if (path === "/prismic/webhook" && request.method === "POST")
-      return handlePrismicWebhook(request, env);
+      return handlePrismicWebhook(request, env, ctx);
     if (path === "/health" && request.method === "GET")
       return Response.json({ ok: true });
     if (path !== "/telegram" || request.method !== "POST")

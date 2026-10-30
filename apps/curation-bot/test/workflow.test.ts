@@ -2,7 +2,7 @@ import { env, introspectWorkflowInstance } from "cloudflare:test";
 import { it, expect, vi } from "vitest";
 import { Store } from "@/store";
 import { dispatch } from "@/index";
-import { reconcilePublications } from "@/publication";
+import { reconcilePublications, recordPublicationWebhook } from "@/publication";
 import type { Env } from "@/domain";
 import { cats, fixture, extraction } from "@test/fixtures";
 
@@ -246,6 +246,14 @@ it("libère la file dès l’acceptation et garde le verrou jusqu’au contrôle
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
     ).toHaveLength(1);
+    await reconcilePublications(env);
+    expect((await store.get(item.id)).status).toBe("publication_pending");
+    await recordPublicationWebhook(
+      env,
+      "published-ref",
+      (await store.get(item.id)).state.publishedIds!,
+      false,
+    );
     await reconcilePublications(env);
     expect((await store.get(item.id)).status).toBe("done");
     expect(publicationConfirmed).toBe(true);

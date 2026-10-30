@@ -480,11 +480,11 @@ export async function publicationNotice(
     const text = complete
       ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
       : stage === "accepted"
-        ? "🚀 Publication FR/EN acceptée par Prismic !\nLa mise en ligne se finalise. Je la vérifie en arrière-plan, tu peux continuer ta veille."
+        ? "🚀 Publication FR/EN acceptée par Prismic !\nJ’attends sa confirmation ; une vérification de secours est prévue après 10 minutes. Tu peux continuer ta veille."
         : stage === "attention"
           ? `⚠️ Publication bloquée pour ${item.id}.\nLes vérifications automatiques sont arrêtées après plusieurs échecs.\nOuvre la release « migration-api-release » dans Prismic pour vérifier son état avant de publier ou de reprendre. Les brouillons et la file sont conservés ; je ne renvoie pas la demande automatiquement.\nAprès vérification ou publication dans Prismic, envoie /reprendre ${item.id} : je vérifierai les deux versions et libérerai la file si elles sont en ligne, sans recréer les brouillons.`
           : stage === "unconfirmed"
-            ? "⏳ La réponse de publication n’a pas été confirmée.\nJe vérifie les versions FR/EN en arrière-plan, sans renvoyer la demande."
+            ? "⏳ La réponse de publication n’a pas été confirmée.\nJ’attends la confirmation Prismic, avec une vérification de secours après 10 minutes, sans renvoyer la demande."
             : checklist.text;
     const metadata = {
       text,
