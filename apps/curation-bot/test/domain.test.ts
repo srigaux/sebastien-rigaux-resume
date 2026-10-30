@@ -66,6 +66,30 @@ describe("URL, éditorial et attributions", () => {
       "probability",
     ]);
   });
+  it("valide une date sans heure et un crédit nommé dans la sortie éditoriale", () => {
+    const schema = editorialSchema(cats);
+    for (const publishedOn of [null, "2024-02-29", "2026-10-30"]) {
+      expect(schema.safeParse({ ...draft, publishedOn }).success).toBe(true);
+    }
+    for (const publishedOn of [
+      "2026-02-30",
+      "2026-02-29",
+      "2026-10-30T00:00:00Z",
+      "30/10/2026",
+    ]) {
+      expect(schema.safeParse({ ...draft, publishedOn }).success).toBe(false);
+    }
+    for (const credit of [null, "Jane Doe", "Vercel", "@jdoe"]) {
+      expect(schema.safeParse({ ...draft, credit }).success).toBe(true);
+    }
+    for (const credit of [
+      "https://example.com/jane",
+      "www.example.com",
+      "[Jane](https://example.com)",
+    ]) {
+      expect(schema.safeParse({ ...draft, credit }).success).toBe(false);
+    }
+  });
   it("rejette un classement incomplet, inconnu ou hors limites", () => {
     for (const ranking of [
       [],

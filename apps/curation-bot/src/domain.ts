@@ -41,7 +41,10 @@ const copy = z.object({
     .string()
     .min(12)
     .max(110)
-    .refine((v) => !/[\r\n<>]/.test(v)),
+    .refine((v) => !/[\r\n<>]/.test(v))
+    .describe(
+      "Titre en texte simple : sujet identifiable et angle concret, sans Markdown.",
+    ),
   summary: z
     .string()
     .min(20)
@@ -49,18 +52,60 @@ const copy = z.object({
     .refine(
       validSummary,
       "Utiliser un à trois paragraphes courts de Markdown inline, sans bloc ni HTML.",
+    )
+    .describe(
+      "Description éditoriale : apport concret puis détail distinctif, sans réserve systématique. Un à trois paragraphes séparés par \\n\\n, Markdown inline uniquement. Maximum 800 caractères et 140 mots, formatage compris.",
     ),
-  imageAlt: z.string().max(240),
+  imageAlt: z
+    .string()
+    .max(240)
+    .describe(
+      "Description factuelle de l'image jointe dans cette langue ; chaîne vide sans image observable.",
+    ),
 });
 export const draftSchema = z.object({
-  fr: copy,
-  en: copy,
-  format: z.enum(formats),
-  topics: z.array(z.string()).min(1).max(5),
-  sourceLanguage: z.enum(["EN", "FR"]).nullable(),
-  publishedOn: z.string().nullable(),
-  credit: z.string().max(120).nullable(),
-  creditEvidence: z.string().max(600).nullable(),
+  fr: copy.describe(
+    "Version française naturelle pour un lectorat technique, avec les mêmes faits et le même niveau de certitude que la version anglaise.",
+  ),
+  en: copy.describe(
+    "Version anglaise naturelle pour un lectorat technique, avec les mêmes faits et le même niveau de certitude que la version française, sans traduction littérale imposée.",
+  ),
+  format: z
+    .enum(formats)
+    .describe(
+      "Nature de la ressource cible, pas son sujet ni son canal de découverte. Conserver user.confirmedFormat s'il est non nul ; sinon reprendre le premier type de formatRanking.",
+    ),
+  topics: z
+    .array(z.string())
+    .min(1)
+    .max(5)
+    .describe(
+      "UID exacts des sujets réellement traités dans catalog.topics, sans doublon. Viser 2 à 5 sujets ; un seul suffit si aucun autre n'est pertinent.",
+    ),
+  sourceLanguage: z
+    .enum(["EN", "FR"])
+    .nullable()
+    .describe(
+      "Langue de la page originale : EN ou FR ; null pour une autre langue ou si elle reste indéterminée.",
+    ),
+  publishedOn: z.iso
+    .date()
+    .nullable()
+    .describe(
+      "Date de publication fiable au format YYYY-MM-DD, sinon null. Ni date de mise à jour, ni date de sélection ou de crawl.",
+    ),
+  credit: z
+    .string()
+    .max(120)
+    .nullable()
+    .describe(
+      "Nom et/ou prénom, nom d'entreprise ou pseudo explicitement identifié comme auteur ou éditeur, sinon null. Texte simple uniquement, jamais une URL, un lien Markdown ou une adresse de profil. Ne pas inventer un nom à partir d'une URL ni déduire un crédit du canal de découverte.",
+    ),
+  creditEvidence: z
+    .string()
+    .max(600)
+    .nullable()
+    .describe("Extrait exact attestant le nom crédité, sinon null."),
 });
 export type Draft = z.infer<typeof draftSchema> & {
   revisionNote?: string | null;
@@ -311,27 +356,63 @@ export function editorialSchema(catalog: Catalog) {
       .min(1)
       .max(220)
       .regex(/^[^\r\n]*$/)
-      .nullable(),
+      .nullable()
+      .describe(
+        "Null si previous est null ; sinon phrase française sans formatage décrivant les changements réellement effectués par rapport à previous, ou leur absence.",
+      ),
     topics: z
-      .array(z.enum(catalog.topics.map((entry) => entry.uid)))
+      .array(
+        z
+          .enum(catalog.topics.map((entry) => entry.uid))
+          .describe(
+            "UID exact d'un sujet du catalogue, jamais son nom, sa traduction ou son ID de document.",
+          ),
+      )
       .min(1)
-      .max(5),
+      .max(5)
+      .describe(draftSchema.shape.topics.description!),
     formatRanking: z
       .array(
         z.object({
-          format: z.enum(formats),
-          probability: z.number().min(0).max(1),
+          format: z
+            .enum(formats)
+            .describe(
+              "Type candidat pour la nature de la ressource cible, évalué indépendamment du choix confirmé de l'utilisateur.",
+            ),
+          probability: z
+            .number()
+            .min(0)
+            .max(1)
+            .describe(
+              "Probabilité estimée que ce type corresponde à l'objectif et à la structure de la page extraite ; 0 = très improbable, 1 = très probable.",
+            ),
         }),
       )
-      .length(formats.length),
+      .length(formats.length)
+      .describe(
+        "Tous les types exactement une fois, par probabilité décroissante selon la ressource. À égalité, conserver l'ordre des types du schéma.",
+      ),
     sourceRanking: z
       .array(
         z.object({
-          uid: z.enum(catalog.sources.map((entry) => entry.uid)),
-          probability: z.number().min(0).max(1),
+          uid: z
+            .enum(catalog.sources.map((entry) => entry.uid))
+            .describe(
+              "UID exact d'un canal de découverte de catalog.sources, jamais son nom ni son ID de document.",
+            ),
+          probability: z
+            .number()
+            .min(0)
+            .max(1)
+            .describe(
+              "Estimation indépendante de la plausibilité de ce canal de découverte. Faible sans indice ; les valeurs n'ont pas à totaliser 1 et ne valent pas attribution confirmée.",
+            ),
         }),
       )
-      .length(catalog.sources.length),
+      .length(catalog.sources.length)
+      .describe(
+        "Toutes les sources exactement une fois, par probabilité décroissante ; ordre du catalogue à égalité. Estimations indépendantes, faibles sans indice, sans sélection automatique.",
+      ),
   });
 }
 
