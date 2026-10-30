@@ -202,12 +202,7 @@ it("presents a compact photo preview once and sends only formatted text on corre
     messages[1]
       .body!.reply_markup.inline_keyboard.flat()
       .map((b: { text: string }) => b.text),
-  ).toEqual([
-    "🔎 Choisir la source",
-    "🏷️ Choisir le type",
-    "🚀 Publier",
-    "🗑 Annuler",
-  ]);
+  ).toEqual(["🔎 Choisir la source", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
   const rows = await env.DB.prepare(
     "SELECT revision FROM messages WHERE item_id=? ORDER BY message_id",
   )
@@ -321,12 +316,7 @@ it("replaces the durable receipt with the proposal, tolerates replay and keeps r
     edited.body.reply_markup.inline_keyboard
       .flat()
       .map((button: { text: string }) => button.text),
-  ).toEqual([
-    "🔎 Choisir la source",
-    "🏷️ Choisir le type",
-    "🚀 Publier",
-    "🗑 Annuler",
-  ]);
+  ).toEqual(["🔎 Choisir la source", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
   await present(env, item, cats); // Telegram already has this exact proposal.
   expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
   expect(
@@ -892,5 +882,5 @@ it("changes format in the same message, preserves text and rejects stale choices
     last.body.reply_markup.inline_keyboard
       .flat()
       .map((b: { text: string }) => b.text),
-  ).toContain("🏷️ Choisir le type");
+  ).toContain("🧩 Autre");
 });

@@ -48,12 +48,7 @@ it("renders Telegram inline HTML, quotes and escaped catalog labels", () => {
     keyboard(item, cats)
       .inline_keyboard.flat()
       .map((button) => button.text),
-  ).toEqual([
-    "🔎 Choisir la source",
-    "🏷️ Choisir le type",
-    "🚀 Publier",
-    "🗑 Annuler",
-  ]);
+  ).toEqual(["🟨 JavaScript Weekly", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
 });
 it("does not interpret untrusted HTML or unsafe links and separates code entities", () => {
   expect(
@@ -102,12 +97,7 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
     keyboard(item, catalog)
       .inline_keyboard.flat()
       .map((b) => b.text),
-  ).toEqual([
-    "🔎 Choisir la source",
-    "🏷️ Choisir le type",
-    "🚀 Publier",
-    "🗑 Annuler",
-  ]);
+  ).toEqual(["🔎 Choisir la source", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
   expect(
     sourceKeyboard(item, catalog)
       .inline_keyboard.flat()
@@ -125,7 +115,7 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
     callback_data: `${item.id}:1:source:src-css`,
   });
   expect(keyboard(item, catalog).inline_keyboard[0][0].text).toBe(
-    "🔎 Choisir la source",
+    "🎨 CSS Weekly",
   );
   delete item.state.draft!.sourceRanking;
   expect(

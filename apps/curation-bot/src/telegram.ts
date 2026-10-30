@@ -2,6 +2,7 @@ import { queueHtml, QUEUE_PAGE_SIZE, type QueueRow } from "@/queue-format";
 import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
 import {
+  formatLabels,
   escapeHtml,
   proposalHtml,
   duplicateHtml,
@@ -11,6 +12,7 @@ import { errorFields, log } from "@/observability";
 import { Api, Bot, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import type { Update, UserFromGetMe } from "grammy/types";
 import {
+  formats,
   BotError,
   dateInBrussels,
   linksIn,
@@ -54,6 +56,24 @@ let botInfo: UserFromGetMe | undefined;
 function button(item: Item, kind: Action["kind"], value = "") {
   return `${item.id}:${item.state.revision}:${kind}:${value}`;
 }
+const sourceEmojis: Record<string, string> = {
+  "the-ai-report": "🤖",
+  "tldr-ai": "🤖",
+  "c-sharp-digest": "🟣",
+  "dotnet-blog": "🟣",
+  "kube-today": "☸️",
+  learnkube: "☸️",
+  "programming-digest": "💻",
+  "tldr-dev": "💻",
+  tldr: "💻",
+  "bytes-dev": "🟨",
+  "javascript-weekly": "🟨",
+  "frontend-focus": "🎨",
+  "css-weekly": "🎨",
+  "react-status": "⚛️",
+  "react-digest": "⚛️",
+  "this-week-in-react": "⚛️",
+};
 export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
   const kb = new InlineKeyboard();
   if (item.state.choices?.length) {
@@ -71,7 +91,19 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       button(item, "continue"),
     ).row();
   else if (["review", "source"].includes(item.status)) {
-    kb.text("🔎 Choisir la source", button(item, "sources")).row();
+    const source = cats.sources.find(
+      (entry) => entry.uid === item.state.sourceUid,
+    );
+    const sourceLabel = source
+      ? `${sourceEmojis[source.uid] ?? "📰"} ${source.name}`
+      : item.state.sourceUid
+        ? `🔎 ${item.state.sourceUid}`
+        : "🔎 Choisir la source";
+    kb.text(sourceLabel, button(item, "sources")).row();
+    kb.text(
+      formatLabels[item.state.draft?.format ?? "Other"],
+      button(item, "formats"),
+    ).row();
     kb.text("🚀 Publier", button(item, "approve"));
   } else if (item.status === "error") {
     kb.text("Réessayer", button(item, "resume")).row();
@@ -151,27 +183,10 @@ export function sourceKeyboard(item: Item, cats: Catalog): InlineKeyboard {
   const sources = [...cats.sources].sort(
     (a, b) => (probabilities.get(a.uid) ?? 0) - (probabilities.get(b.uid) ?? 0),
   );
-  const emojis: Record<string, string> = {
-    "the-ai-report": "🤖",
-    "tldr-ai": "🤖",
-    "c-sharp-digest": "🟣",
-    "dotnet-blog": "🟣",
-    "kube-today": "☸️",
-    learnkube: "☸️",
-    "programming-digest": "💻",
-    "tldr-dev": "💻",
-    tldr: "💻",
-    "bytes-dev": "🟨",
-    "javascript-weekly": "🟨",
-    "frontend-focus": "🎨",
-    "css-weekly": "🎨",
-    "react-status": "⚛️",
-    "react-digest": "⚛️",
-    "this-week-in-react": "⚛️",
-  };
+
   for (const source of sources) {
     kb.text(
-      `${emojis[source.uid] ?? "📰"} ${item.state.sourceUid === source.uid ? "✓ " : ""}${source.name}`,
+      `${sourceEmojis[source.uid] ?? "📰"} ${item.state.sourceUid === source.uid ? "✓ " : ""}${source.name}`,
       button(item, "source", source.id),
     ).row();
   }
@@ -179,6 +194,40 @@ export function sourceKeyboard(item: Item, cats: Catalog): InlineKeyboard {
     `${item.state.sourceUid == null ? "✓ " : ""}Aucun`,
     button(item, "source", "none"),
   );
+}
+export function formatKeyboard(item: Item): InlineKeyboard {
+  const probabilities = new Map(
+    item.state.draft?.formatRanking?.map((entry) => [
+      entry.format,
+      entry.probability,
+    ]),
+  );
+  const ordered = formats
+    .filter((format) => format !== "Other")
+    .sort((a, b) => (probabilities.get(a) ?? 0) - (probabilities.get(b) ?? 0));
+  const kb = new InlineKeyboard();
+  for (const format of [...ordered, "Other" as const]) {
+    kb.text(
+      `${item.state.draft?.format === format ? "✓ " : ""}${formatLabels[format]}`,
+      button(item, "format", format),
+    ).row();
+  }
+  return kb;
+}
+export async function formatMenu(env: Env, item: Item, cats: Catalog) {
+  const store = new Store(env.DB);
+  const messageId = await sendProposal(
+    item,
+    cats,
+    new Api(env.TELEGRAM_BOT_TOKEN, { fetch }),
+    store,
+    `${proposalHtml(item, cats)}\n\n<i>Choisis le type de la ressource.</i>`,
+    formatKeyboard(item),
+  );
+  item.state.proposalMessageId = messageId;
+  item.state.sourceEditMessageId = messageId;
+  await remember(store, item, messageId);
+  await store.save(item);
 }
 export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   const store = new Store(env.DB);
@@ -591,6 +640,7 @@ export async function present(
   cats: Catalog,
   attempt?: string,
 ) {
+  if (item.state.showFormats) return formatMenu(env, item, cats);
   if (item.state.showSources) return sourceMenu(env, item, cats);
   if (item.state.showImages) {
     const object = await env.BUCKET.get(item.state.extractionKey!);
@@ -756,6 +806,8 @@ export function createBot(env: Env) {
       "resume",
       "omit-media",
       "sources",
+      "formats",
+      "format",
       "images",
       "image",
     ];
