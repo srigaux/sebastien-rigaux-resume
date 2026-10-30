@@ -2,6 +2,7 @@ import { log } from "@/observability";
 import { sendPreview, publicationNotice } from "@/telegram";
 import { withTyping, typingSteps } from "@/telegram-typing";
 import {
+  formats,
   canonicalFor,
   assertDraft,
   webUrl,
@@ -96,6 +97,7 @@ export async function advance(
     item.status === "duplicate" ||
     item.status === "publication_pending" ||
     item.status === "waiting_publish_slot" ||
+    s.showFormats ||
     s.showSources ||
     s.showImages
   )
@@ -401,6 +403,7 @@ export async function applyAction(
     return;
   }
   if (action.kind === "images" && s.draft) {
+    s.showFormats = false;
     s.showImages = true;
     s.showSources = false;
     s.revision++;
@@ -416,6 +419,8 @@ export async function applyAction(
         : extraction.imageUrls[Number(action.value)];
     if (action.value !== "none" && !selected) return "Image inconnue.";
     s.showImages = false;
+    s.showFormats = false;
+    s.showSources = false;
     s.revisionReceiptKey = action.receiptKey;
     s.revisionNote = selected ? "Image modifiée." : "Image retirée.";
     s.imageChoice = selected;
@@ -432,8 +437,32 @@ export async function applyAction(
     item.status = "queued";
     return;
   }
+  if (action.kind === "formats" && s.draft) {
+    s.showSources = false;
+    s.showImages = false;
+    s.showFormats = true;
+    s.sourceEditMessageId = s.proposalMessageId;
+    s.revision++;
+    s.approvedRevision = undefined;
+    item.status = "review";
+    return;
+  }
+  if (action.kind === "format" && s.draft) {
+    const format = formats.find((format) => format === action.value);
+    if (!format) return "Type inconnu. Rouvrez la liste des types.";
+    s.draft.format = format;
+    s.confirmedFormat = format;
+    s.showFormats = false;
+    s.showSources = false;
+    s.revisionNote = "Type de la ressource modifié.";
+    s.revision++;
+    s.approvedRevision = undefined;
+    item.status = "queued";
+    return;
+  }
   if (action.kind === "sources" && s.draft) {
     s.showImages = false;
+    s.showFormats = false;
     s.showSources = true;
     s.sourceEditMessageId = s.proposalMessageId;
     s.revision++;
@@ -468,6 +497,7 @@ export async function applyAction(
     // Also allow publication of older fiches that were awaiting a source.
     if (s.sourceUid === undefined) s.sourceUid = null;
     s.showSources = false;
+    s.showFormats = false;
     s.approvedRevision = s.revision;
     item.status = "queued";
     return;
@@ -495,6 +525,8 @@ export async function applyAction(
       s.instructions.push(action.text);
       s.needsRevision = true;
     }
+    s.showFormats = false;
+    s.showSources = false;
     s.revisionReceiptKey = action.receiptKey;
     s.revision++;
     s.approvedRevision = undefined;

@@ -64,6 +64,7 @@ export const draftSchema = z.object({
 });
 export type Draft = z.infer<typeof draftSchema> & {
   revisionNote?: string | null;
+  formatRanking?: { format: (typeof formats)[number]; probability: number }[];
   sourceRanking?: { uid: string; probability: number }[];
 };
 export type Entry = { id: string; uid: string; name: string; url?: string };
@@ -130,6 +131,8 @@ export type State = {
   proposalMessageId?: number;
   sourceEditMessageId?: number;
   showSources?: boolean;
+  showFormats?: boolean;
+  confirmedFormat?: (typeof formats)[number];
   showImages?: boolean;
   imageChoice?: string;
   imagePending?: boolean;
@@ -171,6 +174,8 @@ export type Action = {
     | "choose"
     | "resume"
     | "omit-media"
+    | "formats"
+    | "format"
     | "sources"
     | "images"
     | "image";
@@ -311,6 +316,14 @@ export function editorialSchema(catalog: Catalog) {
       .array(z.enum(catalog.topics.map((entry) => entry.uid)))
       .min(1)
       .max(5),
+    formatRanking: z
+      .array(
+        z.object({
+          format: z.enum(formats),
+          probability: z.number().min(0).max(1),
+        }),
+      )
+      .length(formats.length),
     sourceRanking: z
       .array(
         z.object({
@@ -324,6 +337,20 @@ export function editorialSchema(catalog: Catalog) {
 
 export function assertDraft(draft: Draft, catalog: Catalog): Draft {
   draftSchema.parse(draft);
+  if (
+    draft.formatRanking &&
+    (draft.formatRanking.length !== formats.length ||
+      new Set(draft.formatRanking.map((entry) => entry.format)).size !==
+        formats.length ||
+      draft.formatRanking.some(
+        (entry) =>
+          !formats.includes(entry.format) ||
+          !Number.isFinite(entry.probability) ||
+          entry.probability < 0 ||
+          entry.probability > 1,
+      ))
+  )
+    throw new BotError("Classement des types invalide.");
   if (
     draft.sourceRanking &&
     (draft.sourceRanking.length !== catalog.sources.length ||

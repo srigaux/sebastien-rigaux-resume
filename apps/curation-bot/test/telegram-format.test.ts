@@ -5,7 +5,7 @@ import {
   duplicateHtml,
   publicationChecklist,
 } from "@/telegram-format";
-import { keyboard, sourceKeyboard } from "@/telegram";
+import { keyboard, sourceKeyboard, formatKeyboard } from "@/telegram";
 import { formats } from "@/domain";
 import { cats, draft, fixture } from "@test/fixtures";
 
@@ -48,7 +48,12 @@ it("renders Telegram inline HTML, quotes and escaped catalog labels", () => {
     keyboard(item, cats)
       .inline_keyboard.flat()
       .map((button) => button.text),
-  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
+  ).toEqual([
+    "🔎 Choisir la source",
+    "🏷️ Choisir le type",
+    "🚀 Publier",
+    "🗑 Annuler",
+  ]);
 });
 it("does not interpret untrusted HTML or unsafe links and separates code entities", () => {
   expect(
@@ -97,7 +102,12 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
     keyboard(item, catalog)
       .inline_keyboard.flat()
       .map((b) => b.text),
-  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
+  ).toEqual([
+    "🔎 Choisir la source",
+    "🏷️ Choisir le type",
+    "🚀 Publier",
+    "🗑 Annuler",
+  ]);
   expect(
     sourceKeyboard(item, catalog)
       .inline_keyboard.flat()
@@ -211,4 +221,26 @@ it("omet les médias absents et ne coche pas une demande de publication encore i
   expect(publicationChecklist(item, "verify").text).toContain(
     "✅ Publication dans Prismic",
   );
+});
+
+it("orders all formats with the likeliest at the bottom and Other last", () => {
+  const item = fixture();
+  item.state.draft!.format = "Release";
+  item.state.draft!.formatRanking = [
+    { format: "Release", probability: 0.9 },
+    { format: "Article", probability: 0.8 },
+    { format: "Other", probability: 1 },
+  ];
+  const buttons = formatKeyboard(item).inline_keyboard.flat();
+  expect(buttons).toHaveLength(7);
+  expect(buttons.slice(-3).map((b) => b.text)).toEqual([
+    "🗒️ Article",
+    "✓ 🚀 Release",
+    "🧩 Autre",
+  ]);
+  expect(buttons.at(-2)).toMatchObject({
+    callback_data: `${item.id}:1:format:Release`,
+  });
+  delete item.state.draft!.formatRanking;
+  expect(formatKeyboard(item).inline_keyboard.flat()).toHaveLength(7);
 });

@@ -56,14 +56,14 @@ function telegramInline(value: string): string {
     })
     .join("");
 }
-const formats: Record<Draft["format"], string> = {
+export const formatLabels: Record<Draft["format"], string> = {
   Article: "🗒️ Article",
   Video: "🎬 Vidéo",
   Repository: "📦 Repository",
-  Release: "🚀 Nouveauté",
+  Release: "🚀 Release",
   Documentation: "📚 Documentation",
   Tool: "🛠️ Outil",
-  Other: "🔎 Ressource",
+  Other: "🧩 Autre",
 };
 export function proposalHtml(item: Item, cats: Catalog): string {
   const s = item.state,
@@ -94,7 +94,7 @@ export function proposalHtml(item: Item, cats: Catalog): string {
     `🇬🇧 <b>${escapeHtml(draft.en.title)}</b>`,
     `<blockquote>${telegramMarkdown(draft.en.summary)}</blockquote>`,
     "",
-    `<b>${formats[draft.format]}</b>`,
+    `<b>${formatLabels[draft.format]}</b>`,
     `🏷️ ${topics.join(" · ")}`,
     `🔎 Source : <b>${escapeHtml(source.slice(0, 200))}</b>`,
     ...(draft.credit?.trim()

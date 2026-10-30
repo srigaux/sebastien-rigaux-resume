@@ -90,6 +90,7 @@ it("conserve les bons médias dans R2 et ne retélécharge que celui en échec",
 it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", async () => {
   const item = fixture();
   item.state.instructions = ["Insiste sur la lisibilité."];
+  item.state.confirmedFormat = "Release";
   let body: Record<string, unknown> = {};
   vi.stubGlobal(
     "fetch",
@@ -138,6 +139,15 @@ it("envoie le contexte complet à OpenAI et rejette un crédit sans preuve", asy
   });
   expect(JSON.stringify(usage)).not.toContain(extraction.markdown);
   expect(result.credit).toBeNull();
+  expect(result.format).toBe("Release");
+  const messages = body.input as {
+    role: string;
+    content: { text: string }[];
+  }[];
+  const context = JSON.parse(
+    messages.find((message) => message.role === "user")!.content[0].text,
+  );
+  expect(context.user.confirmedFormat).toBe("Release");
   expect(result.revisionNote).toBe(
     "Résumés recentrés sur la lisibilité des composants.",
   );

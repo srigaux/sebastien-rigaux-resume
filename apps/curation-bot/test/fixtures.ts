@@ -1,3 +1,4 @@
+import { formats } from "@/domain";
 import type { Catalog, Draft, Extraction, Item } from "@/domain";
 export const cats: Catalog = {
   topics: [
@@ -15,6 +16,10 @@ export const cats: Catalog = {
 };
 export const draft: Draft = {
   revisionNote: null,
+  formatRanking: formats.map((format) => ({
+    format,
+    probability: format === "Article" ? 0.9 : 0.01,
+  })),
   sourceRanking: [{ uid: "javascript-weekly", probability: 0.1 }],
   fr: {
     title: "React : structurer les variantes des composants",

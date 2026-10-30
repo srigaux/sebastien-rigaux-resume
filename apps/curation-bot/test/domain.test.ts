@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  formats,
   canonicalFor,
   assertDraft,
   editorialSchema,
@@ -328,4 +329,19 @@ it("autorise un à trois paragraphes et les micro-exemples inline, sans listes n
         assertDraft({ ...draft, fr: { ...draft.fr, summary: value } }, cats),
       value,
     ).toThrow();
+});
+
+it("requires a complete valid format ranking and rejects duplicates", () => {
+  for (const ranking of [
+    [],
+    formats.map(() => ({ format: "Article" as const, probability: 0.5 })),
+    formats.map((format) => ({ format, probability: 2 })),
+  ]) {
+    expect(() =>
+      assertDraft({ ...draft, formatRanking: ranking }, cats),
+    ).toThrow();
+  }
+  expect(
+    editorialSchema(cats).safeParse({ ...draft, formatRanking: [] }).success,
+  ).toBe(false);
 });

@@ -202,7 +202,12 @@ it("presents a compact photo preview once and sends only formatted text on corre
     messages[1]
       .body!.reply_markup.inline_keyboard.flat()
       .map((b: { text: string }) => b.text),
-  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
+  ).toEqual([
+    "🔎 Choisir la source",
+    "🏷️ Choisir le type",
+    "🚀 Publier",
+    "🗑 Annuler",
+  ]);
   const rows = await env.DB.prepare(
     "SELECT revision FROM messages WHERE item_id=? ORDER BY message_id",
   )
@@ -316,7 +321,12 @@ it("replaces the durable receipt with the proposal, tolerates replay and keeps r
     edited.body.reply_markup.inline_keyboard
       .flat()
       .map((button: { text: string }) => button.text),
-  ).toEqual(["🔎 Choisir la source", "🚀 Publier", "🗑 Annuler"]);
+  ).toEqual([
+    "🔎 Choisir la source",
+    "🏷️ Choisir le type",
+    "🚀 Publier",
+    "🗑 Annuler",
+  ]);
   await present(env, item, cats); // Telegram already has this exact proposal.
   expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
   expect(
@@ -825,4 +835,62 @@ it("renders a paginated queue with titles and keeps the active review intact whe
   await handleUpdate(env, update(851, `/annuler ${parked.id}`));
   expect((await store.get(parked.id)).status).toBe("cancelled");
   expect((await store.active("1"))?.id).toBe(active.id);
+});
+
+it("changes format in the same message, preserves text and rejects stale choices", async () => {
+  const { present } = await import("@/telegram");
+  const { applyAction } = await import("@/flow");
+  const { cats } = await import("@test/fixtures");
+  const calls = receiptApi();
+  const item = fixture("u-format-edit");
+  const original = structuredClone(item.state.draft!);
+  await present(env, item, cats);
+  const messageId = item.state.proposalMessageId;
+  for (const value of ["Release", "Other"]) {
+    await applyAction(env, {} as never, "type-test", item, cats, {
+      kind: "formats",
+      revision: item.state.revision,
+    });
+    await present(env, item, cats);
+    const rev = item.state.revision;
+    expect(
+      await applyAction(env, {} as never, "type-test", item, cats, {
+        kind: "format",
+        value: "invented",
+        revision: rev,
+      }),
+    ).toBeTruthy();
+    expect(item.state.revision).toBe(rev);
+    await applyAction(env, {} as never, "type-test", item, cats, {
+      kind: "format",
+      value,
+      revision: rev,
+    });
+    expect(item.state.approvedRevision).toBeUndefined();
+    expect(
+      await applyAction(env, {} as never, "type-test", item, cats, {
+        kind: "format",
+        value: "Video",
+        revision: rev,
+      }),
+    ).toBeTruthy();
+    item.status = "review";
+    await present(env, item, cats);
+    await present(env, item, cats);
+    expect(item.state.proposalMessageId).toBe(messageId);
+    expect(item.state.draft!.format).toBe(value);
+    expect(item.state.confirmedFormat).toBe(value);
+    expect(item.state.draft!.fr).toEqual(original.fr);
+    expect(item.state.draft!.en).toEqual(original.en);
+  }
+  expect(calls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
+  const last = calls
+    .filter((call) => call.method === "editMessageText")
+    .at(-1)!;
+  expect(last.body.text).toContain("🧩 Autre");
+  expect(
+    last.body.reply_markup.inline_keyboard
+      .flat()
+      .map((b: { text: string }) => b.text),
+  ).toContain("🏷️ Choisir le type");
 });

@@ -30,6 +30,8 @@ Choisis 2–5 sujets réellement traités parmi le catalogue ; si un seul convie
 sourceLanguage correspond à la page originale : EN, FR ou null. publishedOn uniquement pour une date de publication fiable YYYY-MM-DD, jamais une date de crawl ou de mise à jour.
 credit : auteur ou éditeur explicitement identifié, sinon null. creditEvidence : extrait exact du contenu ou des consignes utilisateur attestant ce nom, sinon null. L'auteur extrait des métadonnées est déjà fourni.
 Une source de découverte est un canal de découverte et non nécessairement le site de l'article. Le seul domaine de l'article ne prouve pas le canal de découverte. Une source confirmée à null signifie simplement « aucune source choisie ».
+format désigne la nature de la ressource cible, pas son sujet ni la newsletter qui l’a relayée. Article : analyse, tutoriel, comparaison, retour d’expérience ou article de blog. Release : annonce officielle d’une version, changelog ou release notes ; un article qui explique une version reste Article. Documentation : référence officielle, guide ou manuel maintenu comme documentation, pas un tutoriel de blog. Repository : page du dépôt de code lui-même, pas un article à propos de ce dépôt. Tool : page d’un outil utilisable ou d’un produit, pas une analyse de cet outil. Video : vidéo ou page dont la vidéo est le contenu principal, pas un article qui contient une vidéo secondaire. Other : aucun de ces types ne convient. Appuie-toi sur la page extraite, son objectif et sa structure ; le domaine seul ne suffit pas.
+formatRanking contient chacun des sept types exactement une fois, avec uniquement format (valeur exacte) et probability entre 0 et 1. Classe-les du plus au moins probable. format choisit le type le plus probable, sauf si confirmedFormat impose un choix explicite de l’utilisateur à conserver pour les corrections. Ne laisse pas une consigne de réécriture ou le sujet technique modifier un type confirmé.
 sourceRanking classe toutes les sources du catalogue, exactement une fois chacune, de la plus probable à la moins probable, avec uniquement uid et probability entre 0 et 1, sans justification textuelle. Ces probabilités sont des estimations indépendantes, pas des certitudes ni des pourcentages à afficher. Utilise le contexte de l'article, les notes, le suivi explicite et lastDiscoverySource (dernier choix explicite pour ce chat : plusieurs liens peuvent provenir de la même newsletter). La proximité thématique et le dernier choix servent seulement à classer les boutons et ne prouvent aucune attribution. En absence d'indices, donne des probabilités faibles, éventuellement égales. Ne choisis jamais automatiquement une source.
 imageAlt décrit factuellement l'image proposée dans chaque langue. Ne fabrique pas une image ni son attribution.
 revisionNote : null pour une première proposition (previous est null). Pour une correction, rédige en français une phrase courte de 220 caractères maximum, sans Markdown, HTML, numéro de version ni saut de ligne, décrivant les changements réellement effectués par rapport à previous et leur intention éditoriale. Par exemple : « Titres raccourcis et résumés recentrés sur les usages en équipe. » Ne recopie pas une ancienne note et ne prétends pas avoir appliqué une consigne non suivie. Si rien n'a changé, indique-le simplement. Le code affichera la version séparément.
@@ -81,6 +83,7 @@ export async function generateDraft(
                 revision: item.state.revision,
                 instructions: item.state.instructions,
                 selectedOn: item.state.selectedOn,
+                confirmedFormat: item.state.confirmedFormat ?? null,
                 confirmedDiscoverySource: item.state.sourceUid,
                 lastDiscoverySource: lastDiscoverySource?.uid ?? null,
               },
@@ -114,6 +117,7 @@ export async function generateDraft(
     totalTokens: usage.totalTokens,
   });
   const draft = assertDraft(result.output, cats);
+  if (item.state.confirmedFormat) draft.format = item.state.confirmedFormat;
   log("editorial.complete", {
     provider: "openai",
     itemId: item.id,

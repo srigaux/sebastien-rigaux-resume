@@ -77,9 +77,12 @@ export function queueHtml(rows: QueueRow[], page: number) {
   const pages = Math.ceil(total / QUEUE_PAGE_SIZE);
   const text = [
     `<b>📚 Ta file · ${total} lien${total > 1 ? "s" : ""}</b>`,
-    ...[...groups].map(
-      ([group, entries]) => `${group}\n\n${entries.join("\n\n")}`,
-    ),
+    [...groups]
+      .map(
+        ([group, entries]) =>
+          `${group}\n\n${entries.join("\n\n────────────\n\n")}`,
+      )
+      .join("\n\n────────────\n\n"),
     ...(rows[0].blocked
       ? [
           "💡 Une publication attend une intervention dans Prismic. Tu peux continuer à préparer et valider les autres liens ; leur publication attendra la résolution du blocage.",
