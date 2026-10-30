@@ -331,3 +331,93 @@ it("reports the duplicate decision without logging the matching titles or URLs",
   expect(JSON.stringify(entry)).not.toContain(item.state.url);
   expect(JSON.stringify(entry)).not.toContain(existing.state.draft!.fr.title);
 });
+
+it.each(["missing", "unauthorized"] as const)(
+  "bounds %s checks, then pauses without releasing the lock or rewriting documents",
+  async (mode) => {
+    const { item } = await pending();
+    const api = remote(mode);
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      await env.DB.prepare(
+        "UPDATE publication_checks SET next_check_at=0",
+      ).run();
+      const before = Date.now();
+      await reconcilePublications(env);
+      const row = await env.DB.prepare(
+        "SELECT status,attempts,next_check_at FROM publication_checks",
+      ).first<{ status: string; attempts: number; next_check_at: number }>();
+      expect(row?.attempts).toBe(attempt);
+      if (attempt < 5)
+        expect(row!.next_check_at - before).toBeGreaterThanOrEqual(
+          [60_000, 120_000, 300_000, 600_000][attempt - 1],
+        );
+    }
+    expect(
+      await env.DB.prepare("SELECT status FROM publication_checks").first(),
+    ).toEqual({ status: "attention" });
+    const calls = vi.mocked(fetch).mock.calls.length;
+    await reconcilePublications(env);
+    expect(vi.mocked(fetch).mock.calls.length).toBe(calls);
+    expect(api.writes()).toBe(0);
+    expect(
+      await env.DB.prepare("SELECT item_id FROM publication_lock").first(),
+    ).toEqual({ item_id: item.id });
+  },
+);
+it("recovers through an explicit bounded recheck after manual publication, without replaying writes", async () => {
+  const { item, store } = await pending("unknown");
+  await env.DB.prepare(
+    "UPDATE publication_checks SET status='attention',attempts=5",
+  ).run();
+  remote("missing");
+  await reconcilePublications(env);
+  expect(
+    await store.resumePublicationCheck("wrong-chat", item.id),
+  ).toBeUndefined();
+  expect(await store.resumePublicationCheck("1", item.id)).toEqual({
+    id: item.id,
+    scheduled: true,
+  });
+  expect(
+    await env.DB.prepare(
+      "SELECT status,attempts FROM publication_checks",
+    ).first(),
+  ).toEqual({ status: "unknown", attempts: 0 });
+  const api = remote("ready");
+  await reconcilePublications(env);
+  expect((await store.get(item.id)).status).toBe("done");
+  expect(api.writes()).toBe(0);
+  expect(
+    (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
+  ).toHaveLength(0);
+});
+it("pauses legacy jobs over budget without another remote availability request", async () => {
+  await pending("unknown");
+  await env.DB.prepare("UPDATE publication_checks SET attempts=512").run();
+  const api = remote("missing");
+  await reconcilePublications(env);
+  expect(api.searches()).toBe(0);
+  expect(
+    await env.DB.prepare(
+      "SELECT status,attempts FROM publication_checks",
+    ).first(),
+  ).toEqual({ status: "attention", attempts: 512 });
+});
+it("does not reset the paused budget through routine scheduling or an active lease", async () => {
+  const { item, store } = await pending();
+  await env.DB.prepare(
+    "UPDATE publication_checks SET status='attention',attempts=5,lease_until=?",
+  )
+    .bind(Date.now() + 60_000)
+    .run();
+  await schedulePublicationCheck(env, item, "accepted");
+  expect(
+    await env.DB.prepare(
+      "SELECT status,attempts FROM publication_checks",
+    ).first(),
+  ).toEqual({ status: "attention", attempts: 5 });
+  expect(await store.resumePublicationCheck("1", item.id)).toEqual({
+    id: item.id,
+    scheduled: false,
+  });
+});

@@ -64,6 +64,8 @@ function safeId(value: unknown) {
     : undefined;
 }
 const descriptions: Record<string, string> = {
+  "publication.attention":
+    "Publication bloquée ; intervention nécessaire dans la release Prismic",
   "item.duplicate": "Doublon détecté ; votre décision est attendue",
   "publication.slot.waiting":
     "Publication en attente de la fin d’une autre publication",

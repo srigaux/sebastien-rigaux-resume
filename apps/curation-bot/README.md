@@ -273,3 +273,9 @@ node --env-file=.dev.vars scripts/benchmark-publication.mjs FR_DOCUMENT_ID EN_DO
 ```
 
 Il chauffe les deux chemins, puis alterne cinq mesures de l’ancienne lecture complète (`getByID` pour chaque langue) et de la lecture allégée (`getByIDs` avec sélection des champs). Il indique les médianes de durée, nombre de requêtes et taille des réponses JSON décompressées. Les erreurs SDK ne sont pas affichées brut pour éviter les URL contenant un token. Ces mesures Node.js locales ne mesurent ni le CPU Cloudflare, ni le délai de propagation après une nouvelle publication, ni le temps de migration Prismic.
+
+### Publication bloquée et reprise
+
+Le cron effectue au maximum cinq vérifications de disponibilité, espacées progressivement de 1, 2, 5 et 10 minutes. Cela concerne les documents absents comme les erreurs réseau/API. Après épuisement, le suivi existant passe à `attention`, les lectures distantes s’arrêtent, le message Telegram explique le blocage et `/file` le rend visible. Le verrou est conservé : la release de migration est partagée et il serait dangereux d’y ajouter la sélection suivante sans résoudre la précédente.
+
+Après contrôle ou publication de la paire FR/EN dans Prismic, envoyer `/reprendre u…` pour réarmer une série limitée de vérifications. Cette commande cible aussi une publication inactive, même si la fiche suivante attend son créneau. `/reprendre` sans identifiant privilégie une publication en pause ; sinon il conserve son comportement sur la fiche active. Les deux documents doivent être visibles avant que le bot libère automatiquement le verrou et réveille la sélection approuvée suivante. Une réponse de publication inconnue n’est jamais transformée automatiquement en autorisation de renvoyer l’écriture. Aucune table ni migration supplémentaire n’est nécessaire.

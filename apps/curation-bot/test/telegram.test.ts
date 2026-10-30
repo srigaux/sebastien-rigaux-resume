@@ -761,3 +761,33 @@ it("edits the same proposal through source selection, reselection and none", asy
     "🔎 Choisir la source",
   );
 });
+
+it("can resume an inactive publication while another item is waiting for its slot", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    first = fixture("u880"),
+    next = fixture("u881");
+  await store.enqueue(first.id, 880, "1", first.state, first.created_at);
+  await store.claim("1");
+  await store.finish(first, "publication_pending");
+  await env.DB.prepare(
+    "INSERT INTO publication_checks(item_id,status,created_at,next_check_at,attempts) VALUES(?,'attention',?,0,5)",
+  )
+    .bind(first.id, Date.now())
+    .run();
+  await store.enqueue(next.id, 881, "1", next.state, next.created_at);
+  await store.claim("1");
+  await store.save(next, "waiting_publish_slot");
+  await handleUpdate(env, update(882, "/reprendre u880"));
+  expect(
+    await env.DB.prepare(
+      "SELECT status,attempts FROM publication_checks WHERE item_id=?",
+    )
+      .bind(first.id)
+      .first(),
+  ).toEqual({ status: "unknown", attempts: 0 });
+  expect(await store.nextAction(next.id)).toBeUndefined();
+  expect((await store.get(next.id)).status).toBe("waiting_publish_slot");
+  await handleUpdate(env, update(883, "/reprendre u999999"));
+  expect(await store.nextAction(next.id)).toBeUndefined();
+});

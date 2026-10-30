@@ -4,6 +4,19 @@ import { verifyPublication } from "@/prismic";
 import { publicationNotice } from "@/telegram";
 import { Store } from "@/store";
 
+// Keep ordinary propagation asynchronous, but stop presenting hours of missing
+// documents as a normal publication delay. No write is retried by this checker.
+export const MAX_PUBLICATION_CHECKS = 5;
+const RECHECK_DELAYS_MS = [60_000, 120_000, 300_000, 600_000];
+function nextCheck(attempts: number) {
+  return (
+    Date.now() +
+    RECHECK_DELAYS_MS[
+      Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
+    ]
+  );
+}
+
 type CheckStatus = "requesting" | "accepted" | "unknown" | "attention";
 
 export async function schedulePublicationCheck(
@@ -16,6 +29,7 @@ export async function schedulePublicationCheck(
     `INSERT INTO publication_checks(item_id,status,created_at,next_check_at)
     VALUES(?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET
     status=CASE WHEN publication_checks.status='confirmed' THEN 'confirmed'
+      WHEN publication_checks.status='attention' THEN 'attention'
       WHEN publication_checks.status='accepted' AND excluded.status='requesting' THEN 'accepted'
       ELSE excluded.status END,
     next_check_at=MIN(publication_checks.next_check_at,excluded.next_check_at)`,
@@ -54,6 +68,18 @@ export async function reconcilePublications(env: Env) {
       try {
         let item = await store.get(row.item_id);
         if (row.status !== "confirmed") {
+          // Old deployments may already have exceeded the budget. Do not issue
+          // hundreds more reads just because the state survived a deployment.
+          if (checks >= MAX_PUBLICATION_CHECKS) {
+            await env.DB.prepare(
+              "UPDATE publication_checks SET status='attention',lease_until=0 WHERE item_id=?",
+            )
+              .bind(item.id)
+              .run();
+            log("publication.attention", { itemId: item.id, checks }, "warn");
+            await publicationNotice(env, item, "attention");
+            return;
+          }
           checks++;
           const available = await withContext({ itemId: item.id }, () =>
             observe(
@@ -64,17 +90,39 @@ export async function reconcilePublications(env: Env) {
             ),
           );
           if (!available) {
-            const nextCheckAt = (Math.floor(Date.now() / 60_000) + 1) * 60_000;
+            const needsAttention = checks >= MAX_PUBLICATION_CHECKS;
+            const nextCheckAt = nextCheck(checks);
             await env.DB.prepare(
-              "UPDATE publication_checks SET attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
+              "UPDATE publication_checks SET status=?,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
             )
-              .bind(nextCheckAt, item.id)
+              .bind(
+                needsAttention ? "attention" : row.status,
+                nextCheckAt,
+                item.id,
+              )
               .run();
+            if (needsAttention) {
+              if (row.status !== "attention")
+                log(
+                  "publication.attention",
+                  {
+                    itemId: item.id,
+                    checks,
+                    pendingMs: Math.max(0, Date.now() - row.created_at),
+                  },
+                  "warn",
+                );
+              // Stop remote reads. The user can re-arm this check explicitly
+              // after resolving the migration release; no write is replayed.
+              await publicationNotice(env, item, "attention");
+            }
             log("publication.availability.pending", {
               itemId: item.id,
               checks,
               pendingMs: Math.max(0, Date.now() - row.created_at),
-              nextCheckAt: new Date(nextCheckAt).toISOString(),
+              ...(needsAttention
+                ? {}
+                : { nextCheckAt: new Date(nextCheckAt).toISOString() }),
             });
           } else {
             await env.DB.batch([
@@ -107,17 +155,32 @@ export async function reconcilePublications(env: Env) {
         }
       } catch (error) {
         const fields = errorFields(error);
-        const nextCheckAt = (Math.floor(Date.now() / 60_000) + 1) * 60_000;
+        const nextCheckAt = nextCheck(checks);
+        const needsAttention =
+          row.status !== "confirmed" && checks >= MAX_PUBLICATION_CHECKS;
         await env.DB.prepare(
-          "UPDATE publication_checks SET attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
+          "UPDATE publication_checks SET status=?,attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
         )
           .bind(
+            needsAttention ? "attention" : row.status,
             row.status === "confirmed" ? 0 : 1,
             fields.reasonCode ?? fields.errorType ?? "read_failed",
             nextCheckAt,
             row.item_id,
           )
           .run();
+        if (needsAttention) {
+          log(
+            "publication.attention",
+            { itemId: row.item_id, checks, ...fields },
+            "warn",
+          );
+          await publicationNotice(
+            env,
+            await store.get(row.item_id),
+            "attention",
+          );
+        }
         log(
           row.status === "confirmed"
             ? "publication.notification.failed"
@@ -126,7 +189,9 @@ export async function reconcilePublications(env: Env) {
             itemId: row.item_id,
             checks,
             pendingMs: Math.max(0, Date.now() - row.created_at),
-            nextCheckAt: new Date(nextCheckAt).toISOString(),
+            ...(needsAttention
+              ? {}
+              : { nextCheckAt: new Date(nextCheckAt).toISOString() }),
             ...fields,
           },
           "warn",

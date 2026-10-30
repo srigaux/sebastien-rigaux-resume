@@ -388,9 +388,11 @@ export async function publicationNotice(
       ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
       : stage === "accepted"
         ? "🚀 Publication FR/EN acceptée par Prismic !\nLa mise en ligne se finalise. Je la vérifie en arrière-plan, tu peux continuer ta veille."
-        : stage === "unconfirmed"
-          ? "⏳ La réponse de publication n’a pas été confirmée.\nJe vérifie les versions FR/EN en arrière-plan, sans renvoyer la demande."
-          : checklist.text;
+        : stage === "attention"
+          ? `⚠️ Publication bloquée pour ${item.id}.\nLes vérifications automatiques sont arrêtées après plusieurs échecs.\nOuvre la release « migration-api-release » dans Prismic pour vérifier son état avant de publier ou de reprendre. Les brouillons et la file sont conservés ; je ne renvoie pas la demande automatiquement.\nAprès vérification ou publication dans Prismic, envoie /reprendre ${item.id} : je vérifierai les deux versions et libérerai la file si elles sont en ligne, sans recréer les brouillons.`
+          : stage === "unconfirmed"
+            ? "⏳ La réponse de publication n’a pas été confirmée.\nJe vérifie les versions FR/EN en arrière-plan, sans renvoyer la demande."
+            : checklist.text;
     const metadata = {
       text,
       complete,
@@ -738,15 +740,19 @@ export function createBot(env: Env) {
     if (/^\/file\b/.test(text)) {
       const rows = await store.db
         .prepare(
-          "SELECT id,status FROM items WHERE chat_id=? AND status NOT IN ('done','cancelled') ORDER BY created_at,id LIMIT 30",
+          "SELECT i.id,i.status,p.status AS publication_check_status FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled') ORDER BY i.created_at,i.id LIMIT 30",
         )
         .bind(env.TELEGRAM_CHAT_ID)
-        .all<{ id: string; status: string }>();
+        .all<{
+          id: string;
+          status: string;
+          publication_check_status: string | null;
+        }>();
       await ctx.reply(
         rows.results
           .map(
             (r) =>
-              `${r.id} : ${r.status === "publication_pending" ? "mise en ligne en cours de confirmation" : r.status === "waiting_publish_slot" ? "prête, en attente de publication" : r.status}`,
+              `${r.id} : ${r.status === "publication_pending" ? (r.publication_check_status === "attention" ? "publication bloquée — intervention nécessaire dans Prismic" : "mise en ligne en cours de confirmation") : r.status === "waiting_publish_slot" ? "prête, en attente de publication" : r.status}`,
           )
           .join("\n") ||
           "📭 La file est vide. Tu peux m’envoyer un nouveau lien !",
@@ -756,12 +762,12 @@ export function createBot(env: Env) {
     if (/^\/statut\b/.test(text)) {
       const pending = await store.db
         .prepare(
-          "SELECT COUNT(*) AS count FROM items WHERE chat_id=? AND status='publication_pending'",
+          "SELECT COUNT(*) AS count,SUM(CASE WHEN p.status='attention' THEN 1 ELSE 0 END) AS attention FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id WHERE i.chat_id=? AND i.status='publication_pending'",
         )
         .bind(env.TELEGRAM_CHAT_ID)
-        .first<{ count: number }>();
+        .first<{ count: number; attention: number | null }>();
       const background = pending?.count
-        ? `\n⏳ ${pending.count} publication(s) en cours de confirmation, vérifiées chaque minute.`
+        ? `\n⏳ ${pending.count} publication(s) en cours de confirmation ; ${pending.attention ?? 0} en pause, à vérifier dans Prismic. Les vérifications automatiques sont limitées à 5 essais.`
         : "";
       await ctx.reply(
         (item
@@ -775,6 +781,29 @@ export function createBot(env: Env) {
     }
     const command = /^\/(annuler|reprendre)\b/.exec(text)?.[1];
     if (command) {
+      if (command === "reprendre") {
+        const requestedId = /^\/reprendre(?:@\w+)?\s+(u\d+)\s*$/.exec(
+          text,
+        )?.[1];
+        const check = await store.resumePublicationCheck(
+          env.TELEGRAM_CHAT_ID,
+          requestedId,
+        );
+        if (check) {
+          await ctx.reply(
+            check.scheduled
+              ? `🔎 Je relance une vérification limitée pour ${check.id}. Si les versions FR/EN sont en ligne, je libérerai automatiquement la file. Aucun brouillon n’est recréé et aucune demande de publication n’est renvoyée.`
+              : `🔎 Une vérification de ${check.id} est déjà en cours.`,
+          );
+          return;
+        }
+        if (requestedId) {
+          await ctx.reply(
+            `Aucune publication en attente de confirmation pour ${requestedId}.`,
+          );
+          return;
+        }
+      }
       if (item) {
         await store.addAction(ctx.update.update_id, item, {
           kind: command === "annuler" ? "cancel" : "resume",

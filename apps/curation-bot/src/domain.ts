@@ -104,7 +104,8 @@ export type PublicationStage =
   | "verify"
   | "paused"
   | "accepted"
-  | "unconfirmed";
+  | "unconfirmed"
+  | "attention";
 export type Stage =
   | "queued"
   | "choose"

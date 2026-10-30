@@ -102,6 +102,28 @@ export class Store {
       .bind(update, item.id, JSON.stringify(action))
       .run();
   }
+  async resumePublicationCheck(chat: string, id?: string) {
+    const row = await this.db
+      .prepare(
+        `SELECT p.item_id,p.status FROM publication_checks p JOIN items i ON i.id=p.item_id
+       WHERE i.chat_id=? AND i.status='publication_pending' AND i.active=0
+       AND p.status IN ('requesting','accepted','unknown','attention') AND (? IS NULL OR i.id=?)
+       AND (? IS NOT NULL OR p.status='attention')
+       ORDER BY CASE WHEN p.status='attention' THEN 0 ELSE 1 END,p.created_at LIMIT 1`,
+      )
+      .bind(chat, id ?? null, id ?? null, id ?? null)
+      .first<{ item_id: string; status: string }>();
+    if (!row) return undefined;
+    const result = await this.db
+      .prepare(
+        `UPDATE publication_checks SET status=CASE WHEN status='attention' THEN 'unknown' ELSE status END,
+       attempts=CASE WHEN status='attention' THEN 0 ELSE attempts END,next_check_at=0,notified=0
+       WHERE item_id=? AND status=? AND lease_until<=?`,
+      )
+      .bind(row.item_id, row.status, Date.now())
+      .run();
+    return { id: row.item_id, scheduled: result.meta.changes > 0 };
+  }
   async pendingCancellation(item: Item) {
     const row = await this.db
       .prepare(
