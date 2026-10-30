@@ -4,7 +4,7 @@ import { Store } from "@/store";
 import { dispatch } from "@/index";
 import { reconcilePublications } from "@/publication";
 import type { Env } from "@/domain";
-import { cats, fixture } from "@test/fixtures";
+import { cats, fixture, extraction } from "@test/fixtures";
 
 async function queuedChoice(store: Store, id: string, update: number) {
   const next = fixture(id);
@@ -403,4 +403,57 @@ it("ne termine pas un workflow si la publication a déjà commencé", async () =
   expect(instance.terminate).not.toHaveBeenCalled();
   expect(instance.sendEvent).toHaveBeenCalled();
   expect((await store.get(item.id)).active).toBe(1);
+});
+
+it("parks an approved publication behind an uncertain release and starts the next preparation workflow", async () => {
+  const store = new Store(env.DB),
+    item = fixture("u860");
+  item.state.approvedRevision = item.state.revision;
+  item.state.extractionKey = "extractions/u860";
+  item.state.checked = [item.state.url];
+  await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction));
+  await store.enqueue(item.id, 860, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 60_000);
+  await store.lock(env.PRISMIC_REPOSITORY, "uncertain-older-publication");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({
+        ok: true,
+        result: {
+          message_id: 500,
+          date: 1,
+          chat: { id: 1, type: "private" },
+          text: "ok",
+        },
+      }),
+    ),
+  );
+  const id = "workflow-test-park-publication";
+  const inspector = await introspectWorkflowInstance(env.CURATION, id);
+  const next = await queuedChoice(store, "u861", 861);
+  try {
+    await env.CURATION.create({ id, params: { id: item.id, generation: 0 } });
+    await inspector.waitForStatus("complete");
+    await next.waitForStepResult({ name: "g0-c0-present" });
+    expect(await store.get(item.id)).toMatchObject({
+      active: 0,
+      status: "waiting_publish_slot",
+    });
+    expect((await store.active("1"))?.id).toBe("u861");
+    expect(
+      await env.DB.prepare("SELECT item_id FROM publication_lock").first(),
+    ).toEqual({ item_id: "uncertain-older-publication" });
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([url]) =>
+          String(url).includes("migration.prismic.io"),
+        ),
+    ).toBe(false);
+  } finally {
+    await inspector.dispose();
+    await next.dispose();
+  }
 });

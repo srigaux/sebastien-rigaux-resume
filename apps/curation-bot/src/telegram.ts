@@ -1,3 +1,4 @@
+import { queueHtml, QUEUE_PAGE_SIZE, type QueueRow } from "@/queue-format";
 import commands from "@/commands.json";
 import { withTyping } from "@/telegram-typing";
 import {
@@ -21,6 +22,34 @@ import {
 } from "@/domain";
 import { Store } from "@/store";
 
+async function queueView(env: Env, page: number) {
+  const rows = await env.DB.prepare(
+    `SELECT i.id,i.status,i.active,json_extract(i.state,'$.draft.fr.title') AS title,
+      json_extract(i.state,'$.url') AS url,p.status AS publication_check_status,
+      COUNT(*) OVER() AS total_count,
+      MAX(CASE WHEN i.status='publication_pending' AND p.status='attention' THEN 1 ELSE 0 END) OVER() AS blocked
+      FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id
+      WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled')
+      ORDER BY CASE WHEN p.status='attention' OR i.status='error' THEN 0 WHEN i.active=1 THEN 1
+        WHEN i.status='waiting_publish_slot' THEN 2 WHEN i.status='publication_pending' THEN 3 ELSE 4 END,i.created_at,i.id
+      LIMIT ? OFFSET ?`,
+  )
+    .bind(env.TELEGRAM_CHAT_ID, QUEUE_PAGE_SIZE, (page - 1) * QUEUE_PAGE_SIZE)
+    .all<QueueRow>();
+  const { text, pages } = queueHtml(rows.results, page);
+  const kb = new InlineKeyboard();
+  if (page > 1) kb.text("← Précédents", `queue:${page - 1}`);
+  kb.text("🔄 Actualiser", `queue:${page}`);
+  if (page < pages) kb.text("Suivants →", `queue:${page + 1}`);
+  return {
+    text,
+    options: {
+      parse_mode: "HTML" as const,
+      link_preview_options: { is_disabled: true },
+      reply_markup: kb,
+    },
+  };
+}
 let botInfo: UserFromGetMe | undefined;
 function button(item: Item, kind: Action["kind"], value = "") {
   return `${item.id}:${item.state.revision}:${kind}:${value}`;
@@ -116,25 +145,38 @@ export async function clearItemButtons(env: Env, item: Item) {
 export function sourceKeyboard(item: Item, cats: Catalog): InlineKeyboard {
   const kb = new InlineKeyboard();
   const ranking = item.state.draft?.sourceRanking;
-  const ordered = [...(ranking ?? [])].sort(
-    (a, b) => b.probability - a.probability,
+  const probabilities = new Map(
+    ranking?.map((entry) => [entry.uid, entry.probability]),
   );
-  const uids = [
-    ...new Set([
-      ...ordered.map((entry) => entry.uid),
-      ...cats.sources.map((source) => source.uid),
-    ]),
-  ];
-  for (const uid of uids) {
-    const source = cats.sources.find((entry) => entry.uid === uid);
-    if (source)
-      kb.text(
-        `${item.state.sourceUid === uid ? "✓ " : ""}${source.name}`,
-        button(item, "source", source.id),
-      ).row();
+  const sources = [...cats.sources].sort(
+    (a, b) => (probabilities.get(a.uid) ?? 0) - (probabilities.get(b.uid) ?? 0),
+  );
+  const emojis: Record<string, string> = {
+    "the-ai-report": "🤖",
+    "tldr-ai": "🤖",
+    "c-sharp-digest": "🟣",
+    "dotnet-blog": "🟣",
+    "kube-today": "☸️",
+    learnkube: "☸️",
+    "programming-digest": "💻",
+    "tldr-dev": "💻",
+    tldr: "💻",
+    "bytes-dev": "🟨",
+    "javascript-weekly": "🟨",
+    "frontend-focus": "🎨",
+    "css-weekly": "🎨",
+    "react-status": "⚛️",
+    "react-digest": "⚛️",
+    "this-week-in-react": "⚛️",
+  };
+  for (const source of sources) {
+    kb.text(
+      `${emojis[source.uid] ?? "📰"} ${item.state.sourceUid === source.uid ? "✓ " : ""}${source.name}`,
+      button(item, "source", source.id),
+    ).row();
   }
   return kb.text(
-    `${item.state.sourceUid == null ? "✓ " : ""}Aucune source`,
+    `${item.state.sourceUid == null ? "✓ " : ""}Aucun`,
     button(item, "source", "none"),
   );
 }
@@ -145,7 +187,7 @@ export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
     cats,
     new Api(env.TELEGRAM_BOT_TOKEN, { fetch }),
     store,
-    `${proposalHtml(item, cats)}\n\n<i>Choisis une source de découverte ou « Aucune source ».</i>`,
+    `${proposalHtml(item, cats)}\n\n<i>Choisis une source de découverte ou « Aucun ».</i>`,
     sourceKeyboard(item, cats),
   );
   item.state.proposalMessageId = messageId;
@@ -593,7 +635,7 @@ export async function present(
       cats,
       api,
       store,
-      "⏳ Ta sélection est prête ! J’attends que Prismic termine la publication précédente avant d’envoyer celle-ci.\nTu peux encore l’annuler.",
+      "⏳ Ta sélection est validée et attend son tour de publication. Je continue à préparer les liens suivants pendant cette attente.\nElle sera publiée automatiquement dès que Prismic sera disponible. Tu peux encore l’annuler.",
     );
     await remember(store, item, messageId);
     return;
@@ -640,7 +682,63 @@ export function createBot(env: Env) {
     await next();
   });
   bot.on("callback_query:data", async (ctx) => {
+    const queuePage = /^queue:([1-9]\d{0,5})$/.exec(ctx.callbackQuery.data);
+    if (queuePage) {
+      const view = await queueView(env, Number(queuePage[1]));
+      try {
+        await ctx.editMessageText(view.text, view.options);
+      } catch (error) {
+        if (!isNotModified(error)) throw error;
+      }
+      await ctx.answerCallbackQuery();
+      return;
+    }
     const [id, rev, kind, value] = ctx.callbackQuery.data.split(":");
+    if (!Number.isSafeInteger(Number(rev)) || Number(rev) < 0) {
+      await ctx.answerCallbackQuery({
+        text: "Ce bouton n’est plus utilisable. Ouvre /file pour voir les liens en attente.",
+      });
+      return;
+    }
+    if (kind === "resume") {
+      const parked = await new Store(env.DB).get(id).catch(() => undefined);
+      if (
+        parked?.chat_id === env.TELEGRAM_CHAT_ID &&
+        parked.state.revision === Number(rev)
+      ) {
+        const resumed = await new Store(env.DB).resumeParkedPublication(
+          env.TELEGRAM_CHAT_ID,
+          id,
+        );
+        if (resumed) {
+          await ctx.answerCallbackQuery({
+            text:
+              resumed === "queued"
+                ? "🔄 Reprise enregistrée."
+                : "⚠️ Une écriture Prismic doit être réconciliée avant reprise.",
+            show_alert: resumed === "blocked",
+          });
+          return;
+        }
+      }
+    }
+
+    if (
+      kind === "cancel" &&
+      (await new Store(env.DB).cancelParked(
+        env.TELEGRAM_CHAT_ID,
+        id,
+        Number(rev),
+      ))
+    ) {
+      await ctx.editMessageReplyMarkup({
+        reply_markup: { inline_keyboard: [] },
+      });
+      await ctx.answerCallbackQuery({
+        text: "🗑 Lien retiré de la file de publication.",
+      });
+      return;
+    }
     const store = new Store(env.DB),
       item = await store.active(env.TELEGRAM_CHAT_ID);
     if (!item || item.id !== id || item.state.revision !== Number(rev)) {
@@ -738,25 +836,15 @@ export function createBot(env: Env) {
       return;
     }
     if (/^\/file\b/.test(text)) {
-      const rows = await store.db
-        .prepare(
-          "SELECT i.id,i.status,p.status AS publication_check_status FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled') ORDER BY i.created_at,i.id LIMIT 30",
-        )
-        .bind(env.TELEGRAM_CHAT_ID)
-        .all<{
-          id: string;
-          status: string;
-          publication_check_status: string | null;
-        }>();
-      await ctx.reply(
-        rows.results
-          .map(
-            (r) =>
-              `${r.id} : ${r.status === "publication_pending" ? (r.publication_check_status === "attention" ? "publication bloquée — intervention nécessaire dans Prismic" : "mise en ligne en cours de confirmation") : r.status === "waiting_publish_slot" ? "prête, en attente de publication" : r.status}`,
-          )
-          .join("\n") ||
-          "📭 La file est vide. Tu peux m’envoyer un nouveau lien !",
-      );
+      const match = /^\/file(?:@\w+)?(?:\s+([1-9]\d{0,5}))?\s*$/.exec(text);
+      if (!match) {
+        await ctx.reply(
+          "Pour voir ta file : /file ou /file 2 pour la page suivante.",
+        );
+        return;
+      }
+      const view = await queueView(env, Number(match[1] ?? 1));
+      await ctx.reply(view.text, view.options);
       return;
     }
     if (/^\/statut\b/.test(text)) {
@@ -781,6 +869,23 @@ export function createBot(env: Env) {
     }
     const command = /^\/(annuler|reprendre)\b/.exec(text)?.[1];
     if (command) {
+      const cancelId = /^\/annuler(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1];
+      if (cancelId) {
+        if (await store.cancelParked(env.TELEGRAM_CHAT_ID, cancelId))
+          await ctx.reply(
+            `🗑 ${cancelId} est retiré de la file de publication. Les autres liens sont conservés.`,
+          );
+        else if (item?.id === cancelId)
+          await store.addAction(ctx.update.update_id, item, {
+            kind: "cancel",
+            revision: item.state.revision,
+          });
+        else
+          await ctx.reply(
+            "Ce lien ne peut pas être annulé ici : il est déjà en publication ou n’attend plus son tour.",
+          );
+        return;
+      }
       if (command === "reprendre") {
         const requestedId = /^\/reprendre(?:@\w+)?\s+(u\d+)\s*$/.exec(
           text,
@@ -798,8 +903,24 @@ export function createBot(env: Env) {
           return;
         }
         if (requestedId) {
+          const resumed = await store.resumeParkedPublication(
+            env.TELEGRAM_CHAT_ID,
+            requestedId,
+          );
+          if (!resumed && item?.id === requestedId) {
+            await store.addAction(ctx.update.update_id, item, {
+              kind: "resume",
+              revision: item.state.revision,
+            });
+            await ctx.reply(`🔄 Je reprends le traitement de ${requestedId}.`);
+            return;
+          }
           await ctx.reply(
-            `Aucune publication en attente de confirmation pour ${requestedId}.`,
+            resumed === "queued"
+              ? `🔄 La reprise de ${requestedId} est enregistrée. Elle réutilisera les écritures déjà confirmées.`
+              : resumed === "blocked"
+                ? `⚠️ ${requestedId} contient une écriture Prismic sans réponse certaine. Elle doit être réconciliée avant reprise. Les autres liens peuvent continuer à être préparés.`
+                : `Aucune publication à reprendre pour ${requestedId}.`,
           );
           return;
         }

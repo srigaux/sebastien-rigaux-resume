@@ -791,3 +791,38 @@ it("can resume an inactive publication while another item is waiting for its slo
   await handleUpdate(env, update(883, "/reprendre u999999"));
   expect(await store.nextAction(next.id)).toBeUndefined();
 });
+
+it("renders a paginated queue with titles and keeps the active review intact when cancelling a parked draft", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    parked = fixture("u820"),
+    active = fixture("u821");
+  parked.state.approvedRevision = parked.state.revision;
+  await store.enqueue(parked.id, 820, "1", parked.state, parked.created_at);
+  await store.claim("1");
+  await store.save(parked, "waiting_publish_slot");
+  await store.parkPublication(parked);
+  await store.lock(env.PRISMIC_REPOSITORY, "older");
+  await store.enqueue(active.id, 821, "1", active.state, active.created_at);
+  await store.claim("1");
+  await store.save(active, "review");
+  for (let i = 0; i < 9; i++) {
+    const next = fixture(`u${830 + i}`);
+    await store.enqueue(next.id, 830 + i, "1", next.state, next.created_at);
+  }
+  await handleUpdate(env, update(850, "/file"));
+  const response = vi
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => String(url).endsWith("sendMessage"))
+    .at(-1)!;
+  const body = JSON.parse(String(response[1]?.body));
+  expect(body.parse_mode).toBe("HTML");
+  expect(body.text).toContain("11 liens");
+  expect(body.text).toContain(parked.state.draft!.fr.title);
+  expect(body.text).toContain("Page 1/2");
+  expect(JSON.stringify(body.reply_markup)).toContain("queue:2");
+  expect(body.text).not.toContain("waiting_publish_slot");
+  await handleUpdate(env, update(851, `/annuler ${parked.id}`));
+  expect((await store.get(parked.id)).status).toBe("cancelled");
+  expect((await store.active("1"))?.id).toBe(active.id);
+});

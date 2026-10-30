@@ -85,6 +85,19 @@ export async function dispatchQueue(env: Env) {
     await store.rotate(item);
     return;
   }
+  // Also wake workflows from older deployments which were already waiting
+  // on an input event when their publication slot became blocked.
+  if (
+    item.status === "waiting_publish_slot" &&
+    !item.state.publicationStarted &&
+    item.state.approvedRevision === item.state.revision
+  ) {
+    await store.addAction(
+      -(item.update_id * 1000 + item.state.revision),
+      item,
+      { kind: "resume", revision: item.state.revision },
+    );
+  }
   if (await store.nextAction(item.id))
     await instance.sendEvent({ type: "input", payload: { id: item.id } });
 }

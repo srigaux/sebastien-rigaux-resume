@@ -103,15 +103,15 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
       .inline_keyboard.flat()
       .map((b) => b.text),
   ).toEqual([
-    "CSS Weekly",
-    "JavaScript Weekly",
-    "React Status",
-    "✓ Aucune source",
+    "⚛️ React Status",
+    "🟨 JavaScript Weekly",
+    "🎨 CSS Weekly",
+    "✓ Aucun",
   ]);
   expect(item.state.sourceUid).toBeNull();
   item.state.sourceUid = "css-weekly";
-  expect(sourceKeyboard(item, catalog).inline_keyboard[0][0]).toMatchObject({
-    text: "✓ CSS Weekly",
+  expect(sourceKeyboard(item, catalog).inline_keyboard[2][0]).toMatchObject({
+    text: "🎨 ✓ CSS Weekly",
     callback_data: `${item.id}:1:source:src-css`,
   });
   expect(keyboard(item, catalog).inline_keyboard[0][0].text).toBe(
@@ -123,10 +123,10 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
       .inline_keyboard.flat()
       .map((b) => b.text),
   ).toEqual([
-    "JavaScript Weekly",
-    "✓ CSS Weekly",
-    "React Status",
-    "Aucune source",
+    "🟨 JavaScript Weekly",
+    "🎨 ✓ CSS Weekly",
+    "⚛️ React Status",
+    "Aucun",
   ]);
 });
 

@@ -134,6 +134,22 @@ export class CurationWorkflow extends WorkflowEntrypoint<
           };
         },
       );
+      if (
+        item.status === "waiting_publish_slot" ||
+        (item.status === "error" && item.state.publicationStarted)
+      ) {
+        // An approved draft waiting for the publisher must not monopolize the
+        // single conversational slot. Claim it in a new generation once safe.
+        await step.do(`${prefix}-park-publication`, stepConfig, async () => {
+          await store.parkPublication(item);
+          return true;
+        });
+        await step.do(`${prefix}-prepare-next-item`, stepConfig, async () => {
+          await dispatchQueue(this.env);
+          return true;
+        });
+        return;
+      }
       // Restore presentation metadata even when this durable step was replayed.
       // Older executions returned true; retain compatibility across deployment.
       if (typeof previewImageKey === "string")

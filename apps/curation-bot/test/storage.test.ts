@@ -253,3 +253,72 @@ it("logs the specific CMS activity, safe failure reason and replay without sendi
     JSON.stringify([...output.mock.calls, ...errors.mock.calls]),
   ).not.toMatch(/private-body|Bearer secret|access_token=secret/);
 });
+
+it("lets preparation continue while approved drafts wait, then claims them fairly in a new generation", async () => {
+  const store = new Store(env.DB),
+    first = fixture("u810"),
+    second = fixture("u811");
+  first.state.approvedRevision = first.state.revision;
+  await store.enqueue(first.id, 810, "1", first.state, first.created_at);
+  await store.claim("1");
+  await store.lock(env.PRISMIC_REPOSITORY, "older-publication");
+  await store.save(first, "waiting_publish_slot");
+  await store.parkPublication(first);
+  await store.enqueue(second.id, 811, "1", second.state, second.created_at);
+  expect((await store.claim("1"))?.id).toBe(second.id);
+  await store.save(second, "review");
+  // Releasing the publication lock must not interrupt the human's current review.
+  await store.unlock(env.PRISMIC_REPOSITORY, "older-publication");
+  expect((await store.claim("1"))?.id).toBe(second.id);
+  await store.finish(second, "cancelled");
+  const resumed = await store.claim("1");
+  expect(resumed).toMatchObject({
+    id: first.id,
+    generation: 1,
+    status: "queued",
+  });
+  expect(resumed?.state.approvedRevision).toBe(first.state.revision);
+});
+it("keeps uncertain writes protected while releasing the conversational slot and requires reconciliation before retry", async () => {
+  const store = new Store(env.DB),
+    item = fixture("u812");
+  item.state.publicationStarted = true;
+  await store.enqueue(item.id, 812, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.lock(env.PRISMIC_REPOSITORY, item.id);
+  await store.save(item, "error");
+  await store.begin(
+    `${item.id}:unknown`,
+    item.id,
+    "POST https://migration.prismic.io/documents",
+    {},
+  );
+  await store.parkPublication(item);
+  expect((await store.get(item.id)).active).toBe(0);
+  expect(
+    await store.resumeParkedPublication("other-chat", item.id),
+  ).toBeUndefined();
+  expect(await store.resumeParkedPublication("1", item.id)).toBe("blocked");
+  expect(await store.cancelParked("1", item.id)).toBe(false);
+  await store.completed(`${item.id}:unknown`, { status: 201 });
+  expect(await store.resumeParkedPublication("1", item.id)).toBe("queued");
+  expect(await store.resumeParkedPublication("1", item.id)).toBeUndefined();
+  expect((await store.get(item.id)).generation).toBe(1);
+});
+it("cancels only an unstarted parked publication with the matching revision", async () => {
+  const store = new Store(env.DB),
+    item = fixture("u813");
+  item.state.approvedRevision = item.state.revision;
+  await store.enqueue(item.id, 813, "1", item.state, item.created_at);
+  await store.claim("1");
+  await store.save(item, "waiting_publish_slot");
+  await store.parkPublication(item);
+  expect(await store.cancelParked("1", item.id, item.state.revision - 1)).toBe(
+    false,
+  );
+  expect(await store.cancelParked("other-chat", item.id)).toBe(false);
+  expect(await store.cancelParked("1", item.id, item.state.revision)).toBe(
+    true,
+  );
+  expect(await store.claim("1")).toBeUndefined();
+});

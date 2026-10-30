@@ -43,7 +43,7 @@ export class Store {
     // A replayed reset cannot remove links received after that command.
     const result = await this.db
       .prepare(
-        "UPDATE items SET status='cancelled' WHERE chat_id=? AND active=0 AND status='queued' AND update_id<=? AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0",
+        "UPDATE items SET status='cancelled' WHERE chat_id=? AND active=0 AND status IN ('queued','waiting_publish_slot') AND update_id<=? AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0",
       )
       .bind(chat, updateId)
       .run();
@@ -52,11 +52,52 @@ export class Store {
   async claim(chat: string): Promise<Item | undefined> {
     await this.db
       .prepare(
-        `UPDATE items SET active=1 WHERE id=(SELECT id FROM items WHERE chat_id=? AND status='queued' AND active=0 ORDER BY created_at,id LIMIT 1) AND NOT EXISTS(SELECT 1 FROM items WHERE chat_id=? AND active=1)`,
+        `UPDATE items SET active=1,
+          generation=generation+CASE WHEN status='waiting_publish_slot' THEN 1 ELSE 0 END,status='queued'
+          WHERE id=(SELECT id FROM items WHERE chat_id=? AND active=0 AND
+            (status='queued' OR (status='waiting_publish_slot'
+              AND json_extract(state,'$.approvedRevision')=json_extract(state,'$.revision')
+              AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0
+              AND NOT EXISTS(SELECT 1 FROM publication_lock)))
+            ORDER BY CASE WHEN status='waiting_publish_slot' THEN 0 ELSE 1 END,created_at,id LIMIT 1)
+          AND NOT EXISTS(SELECT 1 FROM items WHERE chat_id=? AND active=1)`,
       )
       .bind(chat, chat)
       .run();
     return this.active(chat);
+  }
+  async parkPublication(item: Item) {
+    return this.db
+      .prepare(
+        "UPDATE items SET active=0 WHERE id=? AND active=1 AND generation=? AND ((status='waiting_publish_slot' AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0 AND json_extract(state,'$.approvedRevision')=json_extract(state,'$.revision')) OR (status='error' AND json_extract(state,'$.publicationStarted')=1))",
+      )
+      .bind(item.id, item.generation)
+      .run();
+  }
+  async resumeParkedPublication(chat: string, id: string) {
+    const row = await this.db
+      .prepare(
+        "SELECT id FROM items WHERE id=? AND chat_id=? AND active=0 AND status='error' AND json_extract(state,'$.publicationStarted')=1",
+      )
+      .bind(id, chat)
+      .first();
+    if (!row) return undefined;
+    const result = await this.db
+      .prepare(
+        "UPDATE items SET status='queued',generation=generation+1 WHERE id=? AND chat_id=? AND active=0 AND status='error' AND NOT EXISTS(SELECT 1 FROM operations WHERE item_id=? AND status='pending' AND target LIKE '%prismic.io%')",
+      )
+      .bind(id, chat, id)
+      .run();
+    return result.meta.changes ? ("queued" as const) : ("blocked" as const);
+  }
+  async cancelParked(chat: string, id: string, revision?: number) {
+    const result = await this.db
+      .prepare(
+        "UPDATE items SET status='cancelled',generation=generation+1 WHERE id=? AND chat_id=? AND active=0 AND status='waiting_publish_slot' AND COALESCE(json_extract(state,'$.publicationStarted'),0)=0 AND (? IS NULL OR json_extract(state,'$.revision')=?)",
+      )
+      .bind(id, chat, revision ?? null, revision ?? null)
+      .run();
+    return result.meta.changes > 0;
   }
   async finish(
     item: Item,
