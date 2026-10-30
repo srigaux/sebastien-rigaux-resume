@@ -76,6 +76,8 @@ const sourceEmojis: Record<string, string> = {
 };
 export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
   const kb = new InlineKeyboard();
+  const showApproval =
+    !item.state.choices?.length && ["review", "source"].includes(item.status);
   if (item.state.choices?.length) {
     item.state.choices.forEach((url, i) =>
       kb
@@ -90,7 +92,7 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       "✨ Créer une nouvelle proposition",
       button(item, "continue"),
     ).row();
-  else if (["review", "source"].includes(item.status)) {
+  else if (showApproval) {
     const source = cats.sources.find(
       (entry) => entry.uid === item.state.sourceUid,
     );
@@ -99,12 +101,11 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       : item.state.sourceUid
         ? `🔎 ${item.state.sourceUid}`
         : "🔎 Choisir la source";
-    kb.text(sourceLabel, button(item, "sources")).row();
+    kb.text(sourceLabel, button(item, "sources"));
     kb.text(
       formatLabels[item.state.draft?.format ?? "Other"],
       button(item, "formats"),
     ).row();
-    kb.text("🚀 Publier", button(item, "approve"));
   } else if (item.status === "error") {
     kb.text("Réessayer", button(item, "resume")).row();
   }
@@ -118,6 +119,7 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
       .row();
   if (!item.state.publicationStarted)
     kb.text("🗑 Annuler", button(item, "cancel"));
+  if (showApproval) kb.text("🚀 Publier", button(item, "approve"));
   return kb;
 }
 export async function sendText(env: Env, text: string, kb?: InlineKeyboard) {

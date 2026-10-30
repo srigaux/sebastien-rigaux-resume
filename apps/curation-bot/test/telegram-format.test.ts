@@ -48,7 +48,7 @@ it("renders Telegram inline HTML, quotes and escaped catalog labels", () => {
     keyboard(item, cats)
       .inline_keyboard.flat()
       .map((button) => button.text),
-  ).toEqual(["🟨 JavaScript Weekly", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
+  ).toEqual(["🟨 JavaScript Weekly", "🗒️ Article", "🗑 Annuler", "🚀 Publier"]);
 });
 it("does not interpret untrusted HTML or unsafe links and separates code entities", () => {
   expect(
@@ -94,10 +94,13 @@ it("keeps a source chooser and ranks all sources without attributing one", () =>
     { uid: "react-status", probability: 0.1 },
   ];
   expect(
-    keyboard(item, catalog)
-      .inline_keyboard.flat()
-      .map((b) => b.text),
-  ).toEqual(["🔎 Choisir la source", "🗒️ Article", "🚀 Publier", "🗑 Annuler"]);
+    keyboard(item, catalog).inline_keyboard.map((row) =>
+      row.map((button) => button.text),
+    ),
+  ).toEqual([
+    ["🔎 Choisir la source", "🗒️ Article"],
+    ["🗑 Annuler", "🚀 Publier"],
+  ]);
   expect(
     sourceKeyboard(item, catalog)
       .inline_keyboard.flat()
