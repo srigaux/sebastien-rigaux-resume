@@ -17,6 +17,7 @@ import { pageMarkdownPath, watchRssPath } from "@/lib/urls";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import ExternalLink from "@/components/ExternalLink.astro";
 import Header from "@/components/Header.astro";
+import WatchSearch from "@/components/WatchSearch.astro";
 import { WATCH_PAGE_SIZE, watchPath, watchLinkTarget } from "@/lib/watch-model";
 import { renderSummaryMarkdown } from "@/lib/watch-markdown";
 import type { WatchPageProps } from "@/lib/watch-pages";
@@ -215,14 +216,17 @@ const dateFormatter = new Intl.DateTimeFormat(
           <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">
             {intro}
           </p>
+          <div class="mt-5 flex items-center gap-3">
           <a
             href={watchRssPath(locale)}
-            class="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
+            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
           >
             <Rss size={18} aria-hidden="true" />
             {locale === "fr" ? "S’abonner" : "Subscribe"}
             <span class="sr-only"> RSS</span>
           </a>
+          <span data-watch-search-trigger class="inline-flex" />
+          </div>
         </section>
       ) : (
         <header
@@ -250,22 +254,28 @@ const dateFormatter = new Intl.DateTimeFormat(
               {t.page} {page} {t.of} {totalPages}
             </p>
           </div>
+          <div class="mt-5 flex items-center gap-3">
           <a
             href={watchRssPath(locale)}
-            class="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
+            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
           >
             <Rss size={18} aria-hidden="true" />
             {locale === "fr" ? "S’abonner" : "Subscribe"}
             <span class="sr-only"> RSS</span>
           </a>
+          <span data-watch-search-trigger class="inline-flex" />
+          </div>
         </header>
       )
     }
 
+    <div>
+      <WatchSearch locale={locale} />
+    </div>
     <div
+      data-watch-browse
       class:list={[
-        "grid gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16",
-        page === 1 ? "pt-8 sm:pt-10 lg:pt-12" : "pt-6 sm:pt-8",
+        "mt-8 sm:mt-10 lg:mt-12 grid [&[hidden]]:hidden gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16",
       ]}
     >
       <section aria-label={topic?.name || t.all} class="min-w-0">
