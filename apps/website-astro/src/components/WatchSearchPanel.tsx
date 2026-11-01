@@ -28,7 +28,7 @@ const copy = {
 };
 const formats = ["Article", "Video", "Repository", "Release", "Documentation", "Tool", "Other"];
 type WatchHit = WatchSearchHit;
-type Results = { query: string; hits: WatchHit[]; nbHits: number; nbPages: number };
+type Results = { formatCounts: Record<string, number>; totalBeforeFormat: number; query: string; hits: WatchHit[]; nbHits: number; nbPages: number };
 let clientPromise: Promise<ReturnType<typeof import("algoliasearch/lite").liteClient>> | undefined;
 function getClient() {
   return clientPromise ??= import("algoliasearch/lite").then(({ liteClient }) => liteClient(ALGOLIA_APP_ID, ALGOLIA_SEARCH_API_KEY)).catch(error => { clientPromise = undefined; throw error; });
@@ -94,7 +94,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
     query.trim() ? url.searchParams.set("q", query.trim()) : url.searchParams.delete("q");
     format ? url.searchParams.set("format", format) : url.searchParams.delete("format");
     history.replaceState(history.state, "", url);
-    if (!active) { setState("idle"); setResults(null); return; }
+    if (!expanded) { setState("idle"); setResults(null); return; }
     let cancelled = false;
     setState("loading");
     const timer = window.setTimeout(async () => {
@@ -102,15 +102,21 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
         const [client, { renderSummaryMarkdown }] = await Promise.all([getClient(), import("@/lib/watch-markdown")]);
         const response = await client.search<WatchHit>({ requests: [{
           indexName: ALGOLIA_INDEX_NAME,
-          query: query.trim(), filters: `locale:${locale}${format ? ` AND format:${format}` : ""}`, hitsPerPage: 10, page, attributesToRetrieve: ["title", "summary", "path", "format", "topics", "topicDetails", "selectedOn", "url", "image", "siteIcon", "source", "credit", "sourceLanguage", "textLanguage"], attributesToHighlight: []
-        }] });
+          query: query.trim(), filters: `locale:${locale}${format ? ` AND format:${format}` : ""}`, hitsPerPage: 10, page, attributesToRetrieve: ["title", "summary", "path", "format", "topics", "topicDetails", "selectedOn", "url", "image", "siteIcon", "source", "credit", "sourceLanguage", "textLanguage"], attributesToHighlight: [], facets: ["format"]
+        }, ...(format ? [{
+          // Count alternative formats without applying this facet's own filter.
+          indexName: ALGOLIA_INDEX_NAME, query: query.trim(), filters: `locale:${locale}`,
+          facets: ["format"], hitsPerPage: 0, analytics: false,
+        }] : [])] });
         const result = response.results[0];
         if (!result || !("hits" in result)) throw new Error("Unexpected search response");
-        if (!cancelled) { setResults({ query: query.trim(), hits: result.hits.map((hit: WatchHit) => ({ ...hit, summaryHtml: renderSummaryMarkdown(hit.summary) })), nbHits: result.nbHits ?? 0, nbPages: result.nbPages ?? 0 }); setState("ready"); }
+        const facetResult = format ? response.results[1] : result;
+        if (!facetResult || !("hits" in facetResult)) throw new Error("Unexpected facet response");
+        if (!cancelled) { setResults({ formatCounts: facetResult.facets?.format ?? {}, totalBeforeFormat: facetResult.nbHits ?? 0, query: query.trim(), hits: result.hits.map((hit: WatchHit) => ({ ...hit, summaryHtml: renderSummaryMarkdown(hit.summary) })), nbHits: result.nbHits ?? 0, nbPages: result.nbPages ?? 0 }); setState("ready"); }
       } catch { if (!cancelled) setState("error"); }
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [query, format, page, locale, active, revision, initialized]);
+  }, [query, format, page, locale, expanded, revision, initialized]);
 
   function clear() { setQuery(""); setFormat(""); setPage(0); input.current?.focus(); }
   function close() {
@@ -145,9 +151,10 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
             {query && <button type="button" onClick={() => { setQuery(""); setPage(0); input.current?.focus(); }} aria-label={t.clear} className="-mr-2 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-accent/10 hover:text-accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="size-5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>}
           </div>
           <label className="sr-only" htmlFor="watch-format">{t.format}</label>
-          <div className="relative sm:w-56 sm:shrink-0">
+          <div className="relative sm:w-64 sm:shrink-0">
           <select id="watch-format" value={format} onChange={event => { setFormat(event.target.value); setPage(0); }} className="min-h-12 w-full cursor-pointer appearance-none rounded-sm border border-muted bg-paper py-3 pr-12 pl-4 text-base leading-normal text-ink">
-            <option value="">{t.all}</option>{formats.map((value, i) => <option key={value} value={value}>{t.formats[i]}</option>)}
+            <option value="">{t.all}{results ? ` (${results.totalBeforeFormat})` : ""}</option>
+            {formats.filter(value => !results || (results.formatCounts?.[value] ?? 0) > 0 || value === format).map(value => <option key={value} value={value}>{t.formats[formats.indexOf(value)]}{results ? ` (${results.formatCounts?.[value] ?? 0})` : ""}</option>)}
           </select>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </div>
