@@ -227,6 +227,17 @@ L’acceptation et la confirmation concernent Prismic ; le site Astro attend sa 
 
 ### Réconcilier une écriture incertaine
 
+Le parcours habituel se fait maintenant dans Telegram : `/reprendre` (ou `/reprendre u…`) ouvre une résolution guidée pour une erreur de publication isolée. Les nouveaux messages d’erreur proposent aussi **🛠 Débloquer dans Prismic**.
+
+- Le bot recherche les documents publiés par UID **et par URL de l’article**, y compris après renommage du slug. Une correspondance doit être confirmée avant réutilisation de son ID ; aucune création n’est déduite d’une absence de résultat.
+- Pour un brouillon non accessible à la Content API, répondre **au message de résolution** avec son URL d’édition Prismic. Le bot demande de confirmer la sélection, la langue et, pour une traduction, sa fiche d’origine.
+- Si aucun document publié ne correspond, l’utilisateur peut confirmer son absence après vérification des brouillons et de la release. Il faut deux actions et au moins deux minutes depuis l’écriture incertaine. Un échec de lecture ou un conflit de traduction existante ne permet pas ce choix.
+- Une écriture de champs peut être réappliquée sur le même ID après accord ; un import média peut être retenté après avertissement explicite d’un possible doublon d’asset. Une publication à réponse perdue est confiée à la vérification cron et n’est pas renvoyée.
+
+Les questions sont persistées dans D1 pendant une heure et liées à l’opération exacte, à la version et à la génération arrêtée. Une seule question est actuelle par fiche ; les anciennes confirmations sont refusées. Les décisions sont conservées dans le journal `operations` sous `recovery.review`. Le verrou reste détenu jusqu’à la reprise et à la confirmation habituelle de publication. Aucune migration D1 supplémentaire n’est requise. L’absence sur le site public n’est pas utilisée comme preuve d’absence, car le build peut être en retard.
+
+Le script ci-dessous reste disponible pour les cas non couverts par le dialogue.
+
 La fiche reste en erreur et le verrou de publication reste détenu. Ne pas annuler la fiche, supprimer le verrou ni effacer le journal pour « débloquer » l’import.
 
 ```sh

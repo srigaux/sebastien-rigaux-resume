@@ -23,6 +23,7 @@ import {
   type PublicationStage,
 } from "@/domain";
 import { Store } from "@/store";
+import { beginRecovery, recoveryCallback, recoveryReply } from "@/recovery";
 
 async function queueView(env: Env, page: number) {
   const rows = await env.DB.prepare(
@@ -700,7 +701,18 @@ export async function present(
       api.sendMessage(
         item.chat_id,
         `⚠️ Je n’ai pas pu terminer cette version.\n🔗 ${escapeHtml(s.url)}\n\n${escapeHtml(s.error ?? "Utilise /reprendre pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
-        { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+        {
+          parse_mode: "HTML",
+          link_preview_options: { is_disabled: true },
+          ...(s.publicationStarted
+            ? {
+                reply_markup: new InlineKeyboard().text(
+                  "🛠 Débloquer dans Prismic",
+                  `recover-open:${item.id}`,
+                ),
+              }
+            : {}),
+        },
       ),
     );
     const receipt = await readReceiptKey(store, key);
@@ -735,6 +747,26 @@ export function createBot(env: Env) {
     await next();
   });
   bot.on("callback_query:data", async (ctx) => {
+    const recoveryId = /^recover-open:(u\d+)$/.exec(
+      ctx.callbackQuery.data,
+    )?.[1];
+    if (recoveryId) {
+      await ctx.answerCallbackQuery({ text: "🔎 Je vérifie…" });
+      if (!(await beginRecovery(env, recoveryId)))
+        await ctx.reply(
+          "🔄 Utilise /reprendre pour vérifier l’état actuel de cette fiche.",
+        );
+      return;
+    }
+    if (ctx.callbackQuery.data.startsWith("recover:")) {
+      await ctx.answerCallbackQuery({ text: "🔎 Je vérifie…" });
+      await recoveryCallback(
+        env,
+        ctx.callbackQuery.data,
+        ctx.callbackQuery.message?.message_id ?? 0,
+      );
+      return;
+    }
     const queuePage = /^queue:([1-9]\d{0,5})$/.exec(ctx.callbackQuery.data);
     if (queuePage) {
       const view = await queueView(env, Number(queuePage[1]));
@@ -771,6 +803,7 @@ export function createBot(env: Env) {
                 : "⚠️ Une écriture Prismic doit être réconciliée avant reprise.",
             show_alert: resumed === "blocked",
           });
+          if (resumed === "blocked") await beginRecovery(env, id);
           return;
         }
       }
@@ -841,6 +874,8 @@ export function createBot(env: Env) {
       item = await store.active(env.TELEGRAM_CHAT_ID);
     const message = ctx.message!;
     const text = message.text ?? message.caption ?? "";
+    if (await recoveryReply(env, message.reply_to_message?.message_id, text))
+      return;
     const revise = async () => {
       if (!item) return;
       const key = `telegram:revision:${item.id}:${ctx.update.update_id}`;
@@ -975,6 +1010,7 @@ export function createBot(env: Env) {
           return;
         }
         if (requestedId) {
+          if (await beginRecovery(env, requestedId)) return;
           const resumed = await store.resumeParkedPublication(
             env.TELEGRAM_CHAT_ID,
             requestedId,

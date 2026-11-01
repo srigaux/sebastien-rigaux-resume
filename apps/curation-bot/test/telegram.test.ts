@@ -20,6 +20,7 @@ it("retrouve le verrou d’une publication inactive avec les commandes sans iden
     "missing-write",
     failed.id,
     "POST https://migration.prismic.io/documents",
+    { uid: "article", lang: "fr-be" },
   );
   await store.parkPublication(failed);
   waiting.state.approvedRevision = waiting.state.revision;
@@ -34,7 +35,7 @@ it("retrouve le verrou d’une publication inactive avec les commandes sans iden
     .map(([, init]) => JSON.parse(String(init?.body)).text);
   expect(replies[0]).toContain("u967");
   expect(replies[0]).toContain("1 lien(s) validé(s)");
-  expect(replies[1]).toContain("doit être réconciliée");
+  expect(replies[1]).toContain("Je cherche");
   expect(replies[2]).toContain("ne peux pas l’annuler");
   expect(replies.join(" ")).not.toContain("Rien en cours");
   expect((await store.get(failed.id)).status).toBe("error");

@@ -293,9 +293,9 @@ export function journaledFetch(
         } else {
           const claimed = await store.db
             .prepare(
-              "UPDATE operations SET status='pending' WHERE key=? AND status='retryable'",
+              "UPDATE operations SET status='pending',updated_at=? WHERE key=? AND status='retryable'",
             )
-            .bind(key)
+            .bind(new Date().toISOString(), key)
             .run();
           if (!claimed.meta.changes) throw new AmbiguousWrite(key);
         }
