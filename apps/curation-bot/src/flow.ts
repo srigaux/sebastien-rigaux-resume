@@ -1,5 +1,6 @@
 import { log } from "@/observability";
-import { sendPreview, publicationNotice } from "@/telegram";
+import { analysisNotice, publicationNotice } from "@/telegram";
+import type { AnalysisStage } from "@/telegram-format";
 import { withTyping, typingSteps } from "@/telegram-typing";
 import {
   formats,
@@ -106,11 +107,20 @@ export async function advance(
     item.status = "choose";
     return;
   }
+  const progress = async (stage: AnalysisStage) => {
+    if (s.draft) return;
+    await step.do(`${prefix}-analysis-${stage}`, stepConfig, async () => {
+      await analysisNotice(env, item, stage);
+      return true;
+    });
+  };
   if (!s.extractionKey) {
+    await progress("duplicates");
     if (
       await duplicates(env, step, `${prefix}-duplicates-original`, item, s.url)
     )
       return;
+    await progress("extract");
     const extraction = await scrape(
       env,
       typingSteps(env, item.chat_id, step),
@@ -129,6 +139,7 @@ export async function advance(
     s.url = canonicalFor(extraction.url, extraction.metadata.canonicalUrl);
     await checkpoint(env, step, `${prefix}-checkpoint-extraction`, item);
   }
+  await progress("canonical");
   if (await duplicates(env, step, `${prefix}-duplicates-resolved`, item, s.url))
     return;
   const extraction = await step.do(
@@ -142,6 +153,7 @@ export async function advance(
     ? { ...extraction, imageUrls: [s.imageChoice] }
     : extraction;
   if (!s.media || s.imagePending) {
+    await progress("media");
     s.media = await collectMedia(
       env,
       typingSteps(env, item.chat_id, step),
@@ -152,11 +164,8 @@ export async function advance(
     s.imagePending = false;
     await checkpoint(env, step, `${prefix}-checkpoint-media`, item);
   }
-  const previewKey = await step.do(`${prefix}-preview`, stepConfig, () =>
-    sendPreview(env, item),
-  );
-  if (typeof previewKey === "string") s.previewImageKey = previewKey;
   if (!s.draft || s.needsRevision) {
+    await progress("generate");
     delete s.sourceEditMessageId;
     const previous = s.draft;
     s.draft = await retry(step, `${prefix}-generate`, () =>

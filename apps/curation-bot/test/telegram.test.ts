@@ -5,6 +5,80 @@ import { handleUpdate, clearItemButtons, publicationNotice } from "@/telegram";
 import { Store } from "@/store";
 import { fixture } from "@test/fixtures";
 
+it.each([false, true])(
+  "met à jour une checklist puis la remplace par la proposition sans média : file=%s",
+  async (queued) => {
+    const { analysisNotice, present } = await import("@/telegram");
+    const { cats } = await import("@test/fixtures");
+    const calls = receiptApi(),
+      store = new Store(env.DB),
+      item = fixture("u970");
+    item.state.draft = undefined;
+    await store.enqueue(item.id, 970, "1", item.state, item.created_at);
+    await store.claim("1");
+    await store.begin(
+      `telegram:receipt:${item.id}`,
+      item.id,
+      "telegram.receipt",
+    );
+    await store.completed(`telegram:receipt:${item.id}`, {
+      messageId: 42,
+      replaceable: !queued,
+    });
+    await analysisNotice(env, item, "catalog");
+    await analysisNotice(env, item, "extract");
+    await analysisNotice(env, item, "extract");
+    await analysisNotice(env, item, "generate");
+    const generation = calls.find(
+      (c) =>
+        c.method === "editMessageText" &&
+        String(c.body.text).includes("⏳ Rédaction"),
+    )!;
+    expect(generation.body.text).toContain("✅ Lecture de l’article");
+    expect(
+      calls.filter((c) =>
+        String(c.body.text).includes("⏳ Lecture de l’article"),
+      ),
+    ).toHaveLength(1);
+    item.state.draft = fixture().state.draft;
+    await present(env, item, cats);
+    expect(
+      calls.some((c) =>
+        ["sendPhoto", "sendDocument", "editMessageMedia"].includes(c.method),
+      ),
+    ).toBe(false);
+    const final = calls.filter((c) => c.method === "editMessageText").at(-1)!;
+    expect(final.body.text).toContain("🇫🇷");
+    expect(final.body.message_id).toBe(generation.body.message_id);
+    expect(
+      calls.some(
+        (c) => c.method === "editMessageText" && c.body.message_id === 42,
+      ),
+    ).toBe(!queued);
+  },
+);
+
+it("une erreur de progression Telegram n’interrompt pas l’analyse et une annulation retire les boutons", async () => {
+  const { analysisNotice } = await import("@/telegram");
+  const item = fixture("u971");
+  item.state.draft = undefined;
+  const store = new Store(env.DB);
+  await store.enqueue(item.id, 971, "1", item.state, item.created_at);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw new Error("network");
+    }),
+  );
+  await expect(analysisNotice(env, item, "extract")).resolves.toBeUndefined();
+  const calls = receiptApi();
+  await analysisNotice(env, item, "extract");
+  await analysisNotice(env, item, "paused");
+  expect(calls.at(-1)!.body.text).toContain("⚠️ Lecture de l’article");
+  await analysisNotice(env, item, "cancelled");
+  expect(calls.at(-1)!.body.reply_markup.inline_keyboard).toEqual([]);
+});
+
 it("retrouve le verrou d’une publication inactive avec les commandes sans identifiant", async () => {
   telegramApi();
   const store = new Store(env.DB),
@@ -180,7 +254,7 @@ it("n’enregistre pas une ancienne réponse et déduplique les callbacks", asyn
   ).toHaveLength(1);
 });
 
-it("presents a compact photo preview once and sends only formatted text on corrections", async () => {
+it("présente les textes sans envoyer les médias, y compris lors des corrections", async () => {
   const { present } = await import("@/telegram");
   const { cats } = await import("@test/fixtures");
   const calls: { method: string; body?: Record<string, any> }[] = [];
@@ -227,13 +301,12 @@ it("presents a compact photo preview once and sends only formatted text on corre
   await store.enqueue(item.id, 100, "1", item.state, item.created_at);
   await store.claim("1");
   await present(env, item, cats);
-  expect(item.state.previewImageKey).toBe("test/image");
-  expect((await store.get(item.id)).state.previewImageKey).toBe("test/image");
+  expect(item.state.previewImageKey).toBeUndefined();
   item.state.revision = 2;
   item.state.revisionNote = "titres modifiés.";
   item.state.draft!.fr.title = "React : une organisation plus simple";
   await present(env, item, cats);
-  expect(calls.filter((call) => call.method === "sendPhoto")).toHaveLength(1);
+  expect(calls.filter((call) => call.method === "sendPhoto")).toHaveLength(0);
   expect(calls.filter((call) => call.method === "sendDocument")).toHaveLength(
     0,
   );

@@ -1,6 +1,48 @@
 import MarkdownIt from "markdown-it";
 import type { Catalog, Draft, Item, PublicationStage } from "@/domain";
 
+export const analysisStages = [
+  "catalog",
+  "duplicates",
+  "extract",
+  "canonical",
+  "media",
+  "generate",
+] as const;
+export type AnalysisStage = (typeof analysisStages)[number];
+export function analysisHtml(
+  item: Item,
+  stage: AnalysisStage,
+  paused = false,
+  cancelled = false,
+) {
+  const labels = [
+    "Catégories et sources",
+    "Recherche de doublons",
+    "Lecture de l’article et de ses métadonnées",
+    "Vérification du lien final",
+    "Préparation des médias pour Prismic",
+    "Rédaction des titres et résumés FR/EN",
+  ];
+  const current = analysisStages.indexOf(stage);
+  return [
+    cancelled
+      ? "🗑 Analyse annulée"
+      : paused
+        ? "⏸ Analyse en pause"
+        : "🔎 Je prépare ta sélection…",
+    escapeHtml(item.state.url),
+    "",
+    ...labels.map(
+      (label, index) =>
+        `${index < current ? (index === 4 && item.state.media?.failures.length ? "⚠️" : "✅") : index === current ? (paused ? "⚠️" : cancelled ? "▫️" : "⏳") : "▫️"} ${label}`,
+    ),
+    ...(paused
+      ? ["", "Le détail du blocage est envoyé dans un nouveau message."]
+      : []),
+  ].join("\n");
+}
+
 const markdown = new MarkdownIt({ html: false, linkify: false, breaks: false });
 markdown.disable(["image", "autolink"]);
 markdown.validateLink = (url) => /^https:\/\//i.test(url);

@@ -16,6 +16,7 @@ import {
   clearItemButtons,
   publicationNotice,
   retryWaitNotice,
+  analysisNotice,
 } from "@/telegram";
 
 export class CurationWorkflow extends WorkflowEntrypoint<
@@ -93,6 +94,15 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         ReturnType<typeof catalog>
       >;
       try {
+        if (
+          item.status === "queued" &&
+          !item.state.draft &&
+          !item.state.choices?.length
+        )
+          await step.do(`${prefix}-analysis-catalog`, stepConfig, async () => {
+            await analysisNotice(this.env, item, "catalog");
+            return true;
+          });
         cats = await retry(step, `${prefix}-catalog`, () => catalog(this.env));
         await advance(this.env, step, prefix, item, cats);
       } catch (error) {
@@ -100,6 +110,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         item.state.error = errorText(error);
         if (item.state.publicationStarted)
           await publicationNotice(this.env, item, "paused");
+        else await analysisNotice(this.env, item, "paused");
         log(
           "workflow.failed",
           { phase: "advance", ...errorFields(error) },
@@ -256,6 +267,11 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     });
   }
   private async finish(step: Steps, prefix: string, item: Item, store: Store) {
+    if (item.status === "cancelled")
+      await step.do(`${prefix}-analysis-cancelled`, stepConfig, async () => {
+        await analysisNotice(this.env, item, "cancelled");
+        return true;
+      });
     await step.do(`${prefix}-clear-finished-buttons`, stepConfig, async () => {
       await clearItemButtons(this.env, item);
       return true;

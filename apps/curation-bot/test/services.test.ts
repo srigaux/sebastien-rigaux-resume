@@ -301,7 +301,7 @@ it("ne réessaie pas une authentification Context.dev refusée", async () => {
   expect(remote).toHaveBeenCalledTimes(1);
 });
 
-it("sends the image before OpenAI and keeps the early preview outside approval targets", async () => {
+it("affiche la progression avant OpenAI sans envoyer d’image ni créer de cible de validation anticipée", async () => {
   const { advance } = await import("@/flow");
   const { present } = await import("@/telegram");
   const { Store } = await import("@/store");
@@ -374,16 +374,17 @@ it("sends the image before OpenAI and keeps the early preview outside approval t
     }),
   );
   await advance(env, steps(), "early", item, cats);
-  expect(order.indexOf("sendPhoto")).toBeLessThan(order.indexOf("openai"));
+  expect(order.indexOf("sendMessage")).toBeLessThan(order.indexOf("openai"));
+  expect(order).not.toContain("sendPhoto");
+  expect(order).not.toContain("sendDocument");
+  expect(order).not.toContain("editMessageMedia");
   expect(order).toContain("sendChatAction");
   expect(
     (await env.DB.prepare("SELECT * FROM messages").all()).results,
   ).toHaveLength(0);
-  expect((await store.get(item.id)).state.previewImageKey).toBe(
-    "media/early.png",
-  );
+  expect((await store.get(item.id)).state.previewImageKey).toBeUndefined();
   await present(env, item, cats);
-  expect(order.filter((method) => method === "sendPhoto")).toHaveLength(1);
+  expect(order.filter((method) => method === "sendPhoto")).toHaveLength(0);
   expect(
     (await env.DB.prepare("SELECT message_id FROM messages").all()).results,
   ).toEqual([{ message_id: 11 }]);

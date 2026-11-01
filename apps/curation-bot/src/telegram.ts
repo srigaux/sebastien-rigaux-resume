@@ -23,6 +23,7 @@ import {
   type PublicationStage,
 } from "@/domain";
 import { Store } from "@/store";
+import { analysisHtml, type AnalysisStage } from "@/telegram-format";
 import { beginRecovery, recoveryCallback, recoveryReply } from "@/recovery";
 
 async function queueView(env: Env, page: number) {
@@ -534,6 +535,60 @@ export async function publicationNotice(
   }
 }
 
+export async function analysisNotice(
+  env: Env,
+  item: Item,
+  stage: AnalysisStage | "paused" | "cancelled",
+) {
+  if (item.state.draft || item.state.publicationStarted) return;
+  try {
+    const store = new Store(env.DB),
+      key = `telegram:analysis:${item.id}`;
+    const old = await store.operation(key);
+    const previous = old?.response
+      ? (JSON.parse(old.response) as { text: string; stage: AnalysisStage })
+      : undefined;
+    const active =
+      stage === "paused" || stage === "cancelled"
+        ? (previous?.stage ?? "catalog")
+        : stage;
+    const text = analysisHtml(
+      item,
+      active,
+      stage === "paused",
+      stage === "cancelled",
+    );
+    if (previous?.text === text) return;
+    await sendProposal(
+      item,
+      { topics: [], sources: [] },
+      new Api(env.TELEGRAM_BOT_TOKEN, { fetch, timeoutSeconds: 10 }),
+      store,
+      text,
+      stage === "paused" || stage === "cancelled"
+        ? new InlineKeyboard([])
+        : new InlineKeyboard().text("🗑 Annuler", button(item, "cancel")),
+    );
+    await store.db
+      .prepare(
+        "INSERT INTO operations(key,item_id,target,status,response,updated_at) VALUES(?,?,'telegram.analysis','done',?,?) ON CONFLICT(key) DO UPDATE SET status='done',response=excluded.response,updated_at=excluded.updated_at",
+      )
+      .bind(
+        key,
+        item.id,
+        JSON.stringify({ text, stage: active }),
+        new Date().toISOString(),
+      )
+      .run();
+  } catch (error) {
+    log(
+      "telegram.analysis_progress.failed",
+      { itemId: item.id, ...errorFields(error) },
+      "warn",
+    );
+  }
+}
+
 async function sendProposal(
   item: Item,
   cats: Catalog,
@@ -719,7 +774,6 @@ export async function present(
     if (receipt) await remember(store, item, receipt.messageId);
     return;
   } else if (draft) {
-    await sendPreview(env, item);
     const messageId = await sendProposal(item, cats, api, store);
     s.proposalMessageId = messageId;
     await remember(store, item, messageId);
