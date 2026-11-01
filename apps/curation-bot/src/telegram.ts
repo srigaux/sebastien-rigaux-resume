@@ -29,7 +29,8 @@ async function queueView(env: Env, page: number) {
     `SELECT i.id,i.status,i.active,json_extract(i.state,'$.draft.fr.title') AS title,
       json_extract(i.state,'$.url') AS url,p.status AS publication_check_status,
       COUNT(*) OVER() AS total_count,
-      MAX(CASE WHEN i.status='publication_pending' AND p.status='attention' THEN 1 ELSE 0 END) OVER() AS blocked
+      MAX(CASE WHEN (i.status='publication_pending' AND p.status='attention') OR
+        (i.status='error' AND EXISTS(SELECT 1 FROM publication_lock l WHERE l.item_id=i.id)) THEN 1 ELSE 0 END) OVER() AS blocked
       FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id
       WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled')
       ORDER BY CASE WHEN p.status='attention' OR i.status='error' THEN 0 WHEN i.active=1 THEN 1
@@ -902,6 +903,13 @@ export function createBot(env: Env) {
       return;
     }
     if (/^\/statut\b/.test(text)) {
+      const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID);
+      const waiting = await store.db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM items WHERE chat_id=? AND status='waiting_publish_slot'",
+        )
+        .bind(env.TELEGRAM_CHAT_ID)
+        .first<{ count: number }>();
       const pending = await store.db
         .prepare(
           "SELECT COUNT(*) AS count,SUM(CASE WHEN p.status='attention' THEN 1 ELSE 0 END) AS attention FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id WHERE i.chat_id=? AND i.status='publication_pending'",
@@ -914,10 +922,18 @@ export function createBot(env: Env) {
       await ctx.reply(
         (item
           ? `${item.id} — ${item.status === "waiting_publish_slot" ? "prête, en attente de Prismic" : item.status}, version ${item.state.revision}${item.state.error ? "\n" + item.state.error : ""}`
-          : background
-            ? "☕ Aucune fiche en cours de préparation."
-            : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !") +
-          background,
+          : blocker || waiting?.count
+            ? "📚 Aucune fiche en cours de préparation."
+            : background
+              ? "☕ Aucune fiche en cours de préparation."
+              : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !") +
+          background +
+          (blocker && blocker.status === "error"
+            ? `\n\n🔒 Les publications attendent la résolution de ${blocker.id}.\n🔗 ${blocker.state.url}\n${blocker.state.error ?? "Une écriture Prismic est en pause."}\n/reprendre ${blocker.id}`
+            : "") +
+          (waiting?.count
+            ? `\n\n⏳ ${waiting.count} lien(s) validé(s) en attente de publication.`
+            : ""),
       );
       return;
     }
@@ -941,9 +957,11 @@ export function createBot(env: Env) {
         return;
       }
       if (command === "reprendre") {
-        const requestedId = /^\/reprendre(?:@\w+)?\s+(u\d+)\s*$/.exec(
-          text,
-        )?.[1];
+        const requestedId =
+          /^\/reprendre(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1] ??
+          (!item || item.status === "waiting_publish_slot"
+            ? (await store.publicationBlocker(env.TELEGRAM_CHAT_ID))?.id
+            : undefined);
         const check = await store.resumePublicationCheck(
           env.TELEGRAM_CHAT_ID,
           requestedId,
@@ -988,10 +1006,14 @@ export function createBot(env: Env) {
           await ctx.reply(
             `🔄 Je reprends là où on en était !\n🔗 ${item.state.url}`,
           );
-      } else
+      } else {
+        const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID);
         await ctx.reply(
-          "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
+          blocker
+            ? `🔒 La publication de ${blocker.id} est bloquée après le début de sa migration Prismic. Je ne peux pas l’annuler sans vérifier ses écritures.\n${blocker.state.error ?? "Vérifie son état dans Prismic."}\n\nLes autres liens sont conservés. Pour retirer un lien validé en attente, utilise /annuler suivi de son identifiant (/file).`
+            : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
         );
+      }
       return;
     }
     if (/^\//.test(text)) {

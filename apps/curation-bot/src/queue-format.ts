@@ -24,7 +24,9 @@ function label(row: QueueRow): [string, string] {
   if (row.status === "waiting_publish_slot")
     return [
       "✅ Validés, prêts à publier",
-      "Publication automatique dès que Prismic est disponible",
+      row.blocked
+        ? "Publication après résolution du blocage Prismic"
+        : "Publication automatique dès que Prismic est disponible",
     ];
   if (row.status === "review")
     return ["👀 À valider", "Ta proposition attend ta réponse dans Telegram"];

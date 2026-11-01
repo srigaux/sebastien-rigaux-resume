@@ -5,6 +5,50 @@ import { handleUpdate, clearItemButtons, publicationNotice } from "@/telegram";
 import { Store } from "@/store";
 import { fixture } from "@test/fixtures";
 
+it("retrouve le verrou d’une publication inactive avec les commandes sans identifiant", async () => {
+  telegramApi();
+  const store = new Store(env.DB),
+    failed = fixture("u967"),
+    waiting = fixture("u974");
+  failed.state.publicationStarted = true;
+  failed.state.error = "Réponse Prismic manquante";
+  await store.enqueue(failed.id, 967, "1", failed.state, failed.created_at);
+  await store.claim("1");
+  await store.save(failed, "error");
+  await store.lock(env.PRISMIC_REPOSITORY, failed.id);
+  await store.begin(
+    "missing-write",
+    failed.id,
+    "POST https://migration.prismic.io/documents",
+  );
+  await store.parkPublication(failed);
+  waiting.state.approvedRevision = waiting.state.revision;
+  await store.enqueue(waiting.id, 974, "1", waiting.state, waiting.created_at);
+  await store.save(waiting, "waiting_publish_slot");
+  await handleUpdate(env, update(975, "/statut"));
+  await handleUpdate(env, update(976, "/reprendre"));
+  await handleUpdate(env, update(977, "/annuler"));
+  const replies = vi
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => String(url).endsWith("sendMessage"))
+    .map(([, init]) => JSON.parse(String(init?.body)).text);
+  expect(replies[0]).toContain("u967");
+  expect(replies[0]).toContain("1 lien(s) validé(s)");
+  expect(replies[1]).toContain("doit être réconciliée");
+  expect(replies[2]).toContain("ne peux pas l’annuler");
+  expect(replies.join(" ")).not.toContain("Rien en cours");
+  expect((await store.get(failed.id)).status).toBe("error");
+  expect((await store.get(waiting.id)).status).toBe("waiting_publish_slot");
+  await store.completed("missing-write", { id: "fr-existing" });
+  await handleUpdate(env, update(978, "/reprendre"));
+  expect((await store.get(failed.id)).status).toBe("queued");
+  expect((await store.get(failed.id)).generation).toBe(1);
+  expect((await store.get(failed.id)).state.error).toBeUndefined();
+  expect((await store.get(waiting.id)).state.approvedRevision).toBe(
+    waiting.state.revision,
+  );
+});
+
 it("envoie une nouvelle erreur après chaque reprise, sans modifier une ancienne proposition", async () => {
   const { present } = await import("@/telegram");
   const { cats } = await import("@test/fixtures");

@@ -74,6 +74,15 @@ export class Store {
       .bind(item.id, item.generation)
       .run();
   }
+  async publicationBlocker(chat: string): Promise<Item | undefined> {
+    const row = await this.db
+      .prepare(
+        "SELECT i.id FROM publication_lock l JOIN items i ON i.id=l.item_id WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled') ORDER BY i.created_at,i.id LIMIT 1",
+      )
+      .bind(chat)
+      .first<{ id: string }>();
+    return row ? this.get(row.id) : undefined;
+  }
   async resumeParkedPublication(chat: string, id: string) {
     const row = await this.db
       .prepare(
@@ -84,7 +93,7 @@ export class Store {
     if (!row) return undefined;
     const result = await this.db
       .prepare(
-        "UPDATE items SET status='queued',generation=generation+1 WHERE id=? AND chat_id=? AND active=0 AND status='error' AND NOT EXISTS(SELECT 1 FROM operations WHERE item_id=? AND status='pending' AND target LIKE '%prismic.io%')",
+        "UPDATE items SET status='queued',generation=generation+1,state=json_remove(state,'$.error') WHERE id=? AND chat_id=? AND active=0 AND status='error' AND NOT EXISTS(SELECT 1 FROM operations WHERE item_id=? AND status='pending' AND target LIKE '%prismic.io%')",
       )
       .bind(id, chat, id)
       .run();
