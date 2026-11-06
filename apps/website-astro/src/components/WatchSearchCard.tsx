@@ -4,6 +4,7 @@ import type { Locale } from "@/types";
 
 export type WatchSearchHit = {
   objectID: string;
+  locale?: Locale;
   title: string;
   summary: string;
   summaryHtml: string;
@@ -57,16 +58,20 @@ export default function WatchSearchCard({ hit, locale, title }: { hit: WatchSear
   const [failedImage, setFailedImage] = useState(false);
   const date = hit.selectedOn && !Number.isNaN(Date.parse(hit.selectedOn)) ? new Intl.DateTimeFormat(locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(hit.selectedOn)) : "";
   const external = locale === "fr" ? "Ouvrir le lien original" : "Open original link";
+  const contentLanguage = hit.textLanguage || hit.locale;
   const language = hit.sourceLanguage?.toUpperCase();
+  const sourceLanguageTitle = locale === "fr"
+    ? `Langue de la source : ${language === "EN" ? "anglais" : "français"}`
+    : `Source language: ${language === "FR" ? "French" : "English"}`;
   return <article className="relative isolate min-w-0 py-8 sm:py-10">
     <header className="mb-5">
       <div className="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         {date && <time dateTime={hit.selectedOn} aria-label={`${locale === "fr" ? "Sélectionné le" : "Selected on"} ${date}`}>{date}</time>}
         {date && <span aria-hidden="true">·</span>}
         <span className="inline-flex items-center gap-1.5"><FormatIcon format={hit.format}/>{hit.format}</span>
-        {language && language.toLowerCase() !== locale && <><span aria-hidden="true">·</span><span className="border border-rule px-1.5 py-0.5 font-semibold tracking-wide" aria-label={`${locale === "fr" ? "Langue de la source" : "Source language"} : ${language}`}>{language}</span></>}
+        {language && language.toLowerCase() !== locale && <><span aria-hidden="true">·</span><span className="border border-rule px-1.5 py-0.5 font-semibold tracking-wide" title={sourceLanguageTitle} aria-label={sourceLanguageTitle}>{language}</span></>}
       </div>
-      <h2 lang={hit.textLanguage} className="pr-8 font-display text-xl leading-snug font-semibold tracking-tight sm:text-2xl">
+      <h2 lang={contentLanguage} className="pr-8 font-display text-xl leading-snug font-semibold tracking-tight sm:text-2xl">
         <SiteIcon hit={hit} monogram={domain.charAt(0).toUpperCase()}/>
         {original ? <a href={original} target="_blank" rel="noopener noreferrer" aria-label={`${hit.title} — ${external}`} className="text-ink hover:text-accent after:absolute after:inset-0 after:z-0 after:content-['']">{title}</a> : title}
       </h2>
@@ -77,7 +82,7 @@ export default function WatchSearchCard({ hit, locale, title }: { hit: WatchSear
     </header>
     <div className="flow-root">
       {image && !failedImage && <div className="pointer-events-none float-left mt-1.5 mr-4 mb-1 aspect-[1200/630] w-[10.375rem] overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-[14.375rem]"><img src={image} alt={hit.image?.alt || ""} width={hit.image?.width} height={hit.image?.height} loading="lazy" decoding="async" onError={() => setFailedImage(true)} className="h-full w-full object-cover"/></div>}
-      <div lang={hit.textLanguage} className="pointer-events-none text-base leading-[1.75] break-words text-muted [&_p+p]:mt-3 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" dangerouslySetInnerHTML={{ __html: hit.summaryHtml }}/>
+      <div lang={contentLanguage} className="pointer-events-none text-base leading-[1.75] break-words text-muted [&_p+p]:mt-3 [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]" dangerouslySetInnerHTML={{ __html: hit.summaryHtml }}/>
     </div>
     <div className="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
       {hit.topicDetails?.length ? hit.topicDetails.map(topic => <a key={topic.uid} href={watchPath(locale, 1, topic.uid)} className="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted transition-colors hover:bg-accent/10 hover:text-accent">{topic.name}</a>) : hit.topics?.map(topic => <span key={topic} className="rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted">{topic}</span>)}

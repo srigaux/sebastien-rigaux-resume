@@ -7,7 +7,7 @@ import { ALGOLIA_APP_ID, ALGOLIA_SEARCH_API_KEY, ALGOLIA_INDEX_NAME } from "@/li
 const copy = {
   fr: {
     close: "Fermer la recherche", label: "Rechercher dans la veille", placeholder: "Un outil, une technologie, une idée…",
-    hint: "Recherchez dans toute la veille, tous sujets confondus.", all: "Tous les formats",
+    hint: "Recherchez dans toute la veille, en français et en anglais.", all: "Tous les formats",
     original: "Ouvrir le lien original", clear: "Effacer la recherche", browse: "Revenir aux liens", loading: "Recherche en cours…",
     empty: "Aucun lien trouvé", advice: "Essayez un terme plus général ou un autre format.",
     error: "La recherche est momentanément indisponible.", retry: "Réessayer",
@@ -17,7 +17,7 @@ const copy = {
   },
   en: {
     close: "Close search", label: "Search the tech watch", placeholder: "A tool, a technology, an idea…",
-    hint: "Search the entire tech watch, across all topics.", all: "All formats",
+    hint: "Search the entire tech watch, in French and English.", all: "All formats",
     original: "Open original link", clear: "Clear search", browse: "Back to browsing", loading: "Searching…",
     empty: "No links found", advice: "Try a broader term or a different format.",
     error: "Search is temporarily unavailable.", retry: "Try again",
@@ -102,17 +102,21 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
         const [client, { renderSummaryMarkdown }] = await Promise.all([getClient(), import("@/lib/watch-markdown")]);
         const response = await client.search<WatchHit>({ requests: [{
           indexName: ALGOLIA_INDEX_NAME,
-          query: query.trim(), filters: `locale:${locale}${format ? ` AND format:${format}` : ""}`, hitsPerPage: 10, page, attributesToRetrieve: ["title", "summary", "path", "format", "topics", "topicDetails", "selectedOn", "url", "image", "siteIcon", "source", "credit", "sourceLanguage", "textLanguage"], attributesToHighlight: [], facets: ["format"]
+          // The index must group translations with attributeForDistinct: "url".
+          // Prefer the page language before distinct chooses a group's variant.
+          optionalFilters: [`locale:${locale}`],
+          query: query.trim(), filters: `(locale:fr OR locale:en)${format ? ` AND format:${format}` : ""}`, distinct: 1, facetingAfterDistinct: true, hitsPerPage: 10, page, attributesToRetrieve: ["title", "summary", "path", "format", "topics", "topicDetails", "selectedOn", "url", "image", "siteIcon", "source", "credit", "sourceLanguage", "textLanguage", "locale"], attributesToHighlight: [], facets: ["format"]
         }, ...(format ? [{
           // Count alternative formats without applying this facet's own filter.
-          indexName: ALGOLIA_INDEX_NAME, query: query.trim(), filters: `locale:${locale}`,
-          facets: ["format"], hitsPerPage: 0, analytics: false,
+          indexName: ALGOLIA_INDEX_NAME, query: query.trim(), filters: "(locale:fr OR locale:en)",
+          optionalFilters: [`locale:${locale}`],
+          facets: ["format"], distinct: 1, facetingAfterDistinct: true, hitsPerPage: 0, analytics: false,
         }] : [])] });
         const result = response.results[0];
         if (!result || !("hits" in result)) throw new Error("Unexpected search response");
         const facetResult = format ? response.results[1] : result;
         if (!facetResult || !("hits" in facetResult)) throw new Error("Unexpected facet response");
-        if (!cancelled) { setResults({ formatCounts: facetResult.facets?.format ?? {}, totalBeforeFormat: facetResult.nbHits ?? 0, query: query.trim(), hits: result.hits.map((hit: WatchHit) => ({ ...hit, summaryHtml: renderSummaryMarkdown(hit.summary) })), nbHits: result.nbHits ?? 0, nbPages: result.nbPages ?? 0 }); setState("ready"); }
+        if (!cancelled) { setResults({ formatCounts: facetResult.facets?.format ?? {}, totalBeforeFormat: facetResult.nbHits ?? 0, query: query.trim(), hits: result.hits.map((hit: WatchHit) => ({ ...hit, summaryHtml: renderSummaryMarkdown(hit.summary, query.trim()) })), nbHits: result.nbHits ?? 0, nbPages: result.nbPages ?? 0 }); setState("ready"); }
       } catch { if (!cancelled) setState("error"); }
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };

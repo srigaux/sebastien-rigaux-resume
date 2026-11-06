@@ -75,3 +75,22 @@ test("watch summaries preserve paragraphs and micro-examples in HTML and Markdow
   assert.equal(summaryText(summary), "Un repository GitHub pour clarifier les composants. La classe flex items-center gap-2 sert d'exemple concret.");
   assert.ok(watchLinkMarkdown({ ...link, summary }, site).includes(summary));
 });
+
+test("search highlights summary text while preserving Markdown and link destinations", () => {
+  const html = renderSummaryMarkdown("**React** et [React docs](https://react.dev).\n\nExemple : `React.createElement`.", "react");
+  assert.equal((html.match(/<mark /g) ?? []).length, 3);
+  assert.match(html, /<strong><mark [^>]+>React<\/mark><\/strong>/);
+  assert.match(html, /href="https:\/\/react.dev"/);
+  assert.match(html, /<code><mark [^>]+>React<\/mark>\.createElement<\/code>/);
+  assert.ok(html.includes("</p>\n<p>"));
+  assert.ok(!html.includes('href="https://<mark'));
+});
+
+test("summary highlighting escapes HTML and treats regex punctuation literally", () => {
+  const html = renderSummaryMarkdown("C++ et <script>alert(1)</script>", "C++ script");
+  assert.equal((html.match(/<mark /g) ?? []).length, 3);
+  assert.match(html, /<mark [^>]+>C\+\+<\/mark>/);
+  assert.ok(!html.includes("<script>"));
+  assert.ok(html.includes("&lt;"));
+  assert.ok(!renderSummaryMarkdown("Un résumé", "  ").includes("<mark"));
+});

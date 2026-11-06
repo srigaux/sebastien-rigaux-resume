@@ -12,9 +12,26 @@ markdown.renderer.rules.link_open = (tokens, index, options, _env, self) => {
   return self.renderToken(tokens, index, options);
 };
 
-export function renderSummaryMarkdown(summary: string): string {
+// Highlight parsed text only: never insert marks into Markdown syntax or URLs.
+function highlightedText(text: string, expression?: unknown): string {
+  const escape = markdown.utils.escapeHtml;
+  if (!(expression instanceof RegExp)) return escape(text);
+  return text.split(expression).map((part, index) => index % 2
+    ? `<mark class="bg-accent/15 text-inherit underline decoration-accent/50 underline-offset-4">${escape(part)}</mark>`
+    : escape(part)).join("");
+}
+
+markdown.renderer.rules.text = (tokens, index, _options, env) =>
+  highlightedText(tokens[index].content, env?.highlightExpression);
+markdown.renderer.rules.code_inline = (tokens, index, _options, env) =>
+  `<code>${highlightedText(tokens[index].content, env?.highlightExpression)}</code>`;
+
+export function renderSummaryMarkdown(summary: string, query = ""): string {
+  const terms = query.trim().split(/\s+/).filter(Boolean)
+    .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const env = { highlightExpression: terms.length ? new RegExp(`(${terms.join("|")})`, "gi") : undefined };
   return summary.trim().split(/\n[ \t]*\n+/)
-    .map((paragraph) => `<p>${markdown.renderInline(paragraph)}</p>`).join("\n");
+    .map((paragraph) => `<p>${markdown.renderInline(paragraph, env)}</p>`).join("\n");
 }
 
 export function summaryText(summary: string): string {
