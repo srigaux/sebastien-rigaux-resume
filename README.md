@@ -159,6 +159,36 @@ Le build n'est pas exécuté par le hook. En CI, le paquet Lefthook n'installe p
 les hooks lorsque `CI=true` ; les validations doivent être lancées explicitement
 par le workflow pour protéger aussi les contributions sans hooks locaux.
 
+## Hooks Codex
+
+`.codex/hooks.json` complète les hooks Git pour les modifications réalisées dans
+Codex. Après avoir ouvert ce projet, vérifier et activer les hooks dans
+**Settings > Hooks** (ou `/hooks` dans le CLI). Le projet et les définitions des
+hooks doivent être approuvés ; un fichier présent dans Git ne suffit pas à les
+activer. Envoyer ensuite un nouveau message pour établir l'état initial du tour.
+Voir la [documentation OpenAI](https://learn.chatgpt.com/docs/hooks).
+
+- `UserPromptSubmit` capture l'état initial des fichiers : une question sans
+  modification ne déclenche pas de validation et les changements préexistants
+  ne sont pas reformatés s'ils restent inchangés.
+- `PostToolUse` observe les éditions et les commandes shell. Après un changement,
+  il lance ESLint avec correction puis Prettier sur les fichiers concernés. Les
+  imports inutilisés restent en place pour ne pas retirer ceux prévus pour une
+  édition suivante. Les diagnostics restants sont vérifiés à la fin.
+- `Stop` rattrape les changements d'outils non observés et lance `pnpm prepush`
+  sur tout le dépôt. Il réutilise une validation réussie lorsque le contenu est
+  inchangé et peut demander une seule reprise automatique en cas d'échec.
+
+Ces hooks sont synchrones, sérialisés entre appels concurrents et inactifs en
+mode Plan. Ils ne modifient pas l'index Git, ne suivent pas les liens symboliques
+et n'utilisent pas `lint-staged`. L'état et les diagnostics restent dans
+`.local/codex-quality/`. Les tests métier restent à lancer selon le changement.
+Le hook `pre-push` Git reste une validation indépendante.
+
+```sh
+pnpm test:codex-hooks
+```
+
 ## Publication
 
 Le workflow **🔎 Check website updates** (`.github/workflows/check-website-updates.yml`) compare la référence publiée de Prismic à l’empreinte disponible dans `/deployment-state.json` sur le site, deux fois par heure (minutes 17 et 47, selon le planning UTC de GitHub). Sans changement de contenu, de sources du site ou de période annuelle de rafraîchissement des PDF (1er février), il termine avec le résumé « ⏭️ No changes — publication skipped », sans créer de run de publication. Le contrôle reste marqué comme réussi dans GitHub, puisqu’il a bien été exécuté. Il peut également être lancé manuellement pour effectuer la même comparaison.

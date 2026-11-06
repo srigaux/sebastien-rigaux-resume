@@ -27,6 +27,7 @@
     "check": "pnpm -r --if-present check",
     "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
     "test:watch": "pnpm --filter website-astro test && node --test tests/*.test.mjs",
+    "test:codex-hooks": "node --test tests/codex-quality-hooks.test.mjs",
     "check:watch-build": "pnpm --filter website-astro check:watch-build",
     "lint": "pnpm lint:root && pnpm -r --no-bail --if-present lint",
     "lint:fix": "pnpm lint:root --fix && pnpm -r --no-bail --if-present lint:fix",

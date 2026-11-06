@@ -1,0 +1,41 @@
+{
+  "description": "Targeted ESLint/Prettier corrections after edits; full quality gate before finishing.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/codex/quality-hook.mjs\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write|Bash)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/codex/quality-hook.mjs\"",
+            "timeout": 300,
+            "statusMessage": "Formatting changed files"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/tools/codex/quality-hook.mjs\"",
+            "timeout": 300,
+            "statusMessage": "Checking Prettier, ESLint and types"
+          }
+        ]
+      }
+    ]
+  }
+}
