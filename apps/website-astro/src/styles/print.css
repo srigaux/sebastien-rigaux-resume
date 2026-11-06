@@ -74,7 +74,8 @@
 
   header,
   footer,
-  [data-cv-download] {
+  [data-cv-download],
+  [data-cv-screen-only] {
     display: none !important;
   }
 

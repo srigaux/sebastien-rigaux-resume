@@ -108,8 +108,8 @@ const topicTagClass = "inline-flex min-h-11 items-center border border-rule px-3
             </li>
           ))}
         </ul>
-        <h3 class="mb-4 mt-10 text-base font-semibold text-ink">{copy.watchTitle}</h3>
-        <ul class="flex flex-wrap gap-2">
+        <h3 data-cv-screen-only class="mb-4 mt-10 text-base font-semibold text-ink">{copy.watchTitle}</h3>
+        <ul data-cv-screen-only class="flex flex-wrap gap-2">
           {copy.watch.map((topic) => (
             <li>
               {topic.topicUid && availableTopicUids.has(topic.topicUid) ? (
