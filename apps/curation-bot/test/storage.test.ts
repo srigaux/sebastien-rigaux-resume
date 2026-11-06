@@ -322,3 +322,19 @@ it("cancels only an unstarted parked publication with the matching revision", as
   );
   expect(await store.claim("1")).toBeUndefined();
 });
+
+it("un conflit de publication peut être retenté sans perdre Retry-After", async () => {
+  const transport = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response("", { status: 409, headers: { "Retry-After": "60" } }),
+    )
+    .mockResolvedValueOnce(Response.json({ totalItems: 2 }, { status: 202 }));
+  const request = journaledFetch(new Store(env.DB), "u409", transport)!;
+  const url = "https://migration.prismic.io/migration-release/publish";
+  await expect(
+    request(url, { method: "POST", body: "{}" }),
+  ).rejects.toMatchObject({ retryable: true, retryAfter: 60_000 });
+  expect((await request(url, { method: "POST", body: "{}" })).status).toBe(202);
+  expect(transport).toHaveBeenCalledTimes(2);
+});

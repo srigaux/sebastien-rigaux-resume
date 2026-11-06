@@ -1,9 +1,8 @@
 import { Api, GrammyError, InlineKeyboard } from "grammy";
 import type { Env } from "@/domain";
 import { normalizeUrl } from "@/domain";
-import { readClient } from "@/prismic";
+import { readClient, verifyPublication } from "@/prismic";
 import { Store } from "@/store";
-import { schedulePublicationCheck } from "@/publication";
 import { errorFields, log } from "@/observability";
 
 type Operation = {
@@ -23,7 +22,7 @@ type Session = {
   messageId: number;
   readOk: boolean;
   candidates: { id: string; uid: string | null; lang: string }[];
-  mode: "inspect" | "existing" | "absent" | "retry" | "done";
+  mode: "inspect" | "existing" | "absent" | "retry" | "skip" | "done";
   documentId?: string;
 };
 const ttl = 60 * 60 * 1000;
@@ -51,7 +50,8 @@ function conflict(op: Operation) {
 async function persist(env: Env, s: Session) {
   const store = new Store(env.DB);
   await store.putCache(sessionKey(env, s.token), s, ttl);
-  await store.putCache(`recovery-current:${s.itemId}`, s.token, ttl);
+  if (s.mode !== "done")
+    await store.putCache(`recovery-current:${s.itemId}`, s.token, ttl);
   await store.putCache(
     `recovery-reply:${env.TELEGRAM_CHAT_ID}:${s.messageId}`,
     s.token,
@@ -64,6 +64,11 @@ async function prompt(
   text: string,
   kb = new InlineKeyboard(),
 ) {
+  if (
+    s.mode === "inspect" &&
+    !s.operation.target.endsWith("/migration-release/publish")
+  )
+    kb.row().text("⏭️ Continuer la file", callback(s, "skip"));
   try {
     await apiFor(env).editMessageText(env.TELEGRAM_CHAT_ID, s.messageId, text, {
       reply_markup: kb,
@@ -91,10 +96,10 @@ async function current(env: Env, s: Session) {
     .first<{ item_id: string }>();
   return (
     token === s.token &&
-    lock?.item_id === item.id &&
+    (!lock || lock.item_id === item.id) &&
     item.chat_id === env.TELEGRAM_CHAT_ID &&
     !item.active &&
-    item.status === "error" &&
+    ["error", "publication_pending"].includes(item.status) &&
     item.generation === s.generation &&
     item.state.revision === s.revision &&
     op?.status === s.operation.status &&
@@ -110,15 +115,39 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
     !item ||
     item.chat_id !== env.TELEGRAM_CHAT_ID ||
     item.active ||
-    item.status !== "error"
+    !["error", "publication_pending"].includes(item.status)
   )
     return false;
+  const busy = await env.DB.prepare(
+    "SELECT item_id FROM publication_checks WHERE item_id=? AND lease_until>?",
+  )
+    .bind(id, Date.now())
+    .first();
+  if (busy) return false;
+  const owner = await store.publicationBlocker(item.chat_id);
+  if (owner && owner.id !== id) return false;
   const rows = await env.DB.prepare(
-    "SELECT key,target,request,status,response,updated_at FROM operations WHERE item_id=? AND target LIKE '%prismic.io%' AND status IN ('pending','done') ORDER BY updated_at,key",
+    "SELECT key,target,request,status,response,updated_at FROM operations WHERE item_id=? AND target LIKE '%prismic.io%' AND status IN ('pending','done','retryable') ORDER BY updated_at,key",
   )
     .bind(id)
     .all<Operation>();
-  const op = rows.results.find((o) => o.status === "pending" || conflict(o));
+  const op =
+    rows.results.find((o) => o.status === "pending" || conflict(o)) ??
+    (item.status === "publication_pending"
+      ? rows.results.find((o) =>
+          o.target.endsWith("/migration-release/publish"),
+        )
+      : undefined) ??
+    [...rows.results].reverse().find((o) => {
+      try {
+        return (
+          o.status === "retryable" ||
+          JSON.parse(o.response ?? "null")?.status >= 400
+        );
+      } catch {
+        return false;
+      }
+    });
   if (!op) return false;
   if (creation(op)) {
     try {
@@ -132,20 +161,6 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
     } catch {
       return false;
     }
-  }
-  if (
-    op.target.endsWith("/migration-release/publish") &&
-    item.state.publishedIds?.length === 2
-  ) {
-    item.state.publicationUnknown = true;
-    delete item.state.error;
-    await schedulePublicationCheck(env, item, "unknown");
-    await store.finish(item, "publication_pending", env.PRISMIC_REPOSITORY);
-    await apiFor(env).sendMessage(
-      item.chat_id,
-      "🔎 Je vérifie les deux versions déjà envoyées à Prismic. Je ne renvoie pas la publication ; le cron te confirmera le résultat.",
-    );
-    return true;
   }
   const message = await apiFor(env).sendMessage(
     item.chat_id,
@@ -162,7 +177,19 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
     readOk: false,
     candidates: [],
   };
-  if (creation(op)) {
+  if (op.target.endsWith("/migration-release/publish")) {
+    await prompt(
+      env,
+      s,
+      `🛠 ${item.state.draft?.fr.title ?? id}\n🔗 ${item.state.url}\n\nLa publication reste à confirmer. Tu peux vérifier maintenant, autoriser un nouvel envoi de la publication (sans recréer FR/EN), ou continuer la file.`,
+      new InlineKeyboard()
+        .text("🔎 Vérifier maintenant", callback(s, "verify"))
+        .row()
+        .text("🔄 Retenter la publication", callback(s, "retry"))
+        .row()
+        .text("⏭️ Continuer la file", callback(s, "skip")),
+    );
+  } else if (creation(op)) {
     const request = JSON.parse(op.request);
     try {
       // Match the article URL too: a manually renamed UID is not evidence of absence.
@@ -258,12 +285,14 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
 async function resolve(env: Env, s: Session, retry: boolean) {
   if (!(await current(env, s))) return false;
   const store = new Store(env.DB);
+  if (!(await store.tryLock(env.PRISMIC_REPOSITORY, s.itemId))) return false;
   const reviewKey = `recovery-review:${s.token}`;
   const review = {
     operationKey: s.operation.key,
     revision: s.revision,
     generation: s.generation,
     decision: s.mode,
+    previousOperation: s.operation,
     documentId: s.documentId,
     reviewedBy: env.TELEGRAM_USER_ID,
   };
@@ -287,34 +316,53 @@ async function resolve(env: Env, s: Session, retry: boolean) {
       });
   // CAS both the journal snapshot and stopped item generation. Duplicate/old
   // buttons cannot grant a second retry or overwrite a later workflow result.
-  const result = await env.DB.prepare(
+  const appliedAt = new Date().toISOString();
+  const operationUpdate = env.DB.prepare(
     `UPDATE operations SET status=?,response=?,updated_at=? WHERE key=? AND status=? AND response IS ?
-     AND EXISTS(SELECT 1 FROM items WHERE id=? AND chat_id=? AND status='error' AND active=0 AND generation=? AND json_extract(state,'$.revision')=?)
+     AND EXISTS(SELECT 1 FROM items WHERE id=? AND chat_id=? AND status IN ('error','publication_pending') AND active=0 AND generation=? AND json_extract(state,'$.revision')=?)
      AND EXISTS(SELECT 1 FROM publication_lock WHERE repository=? AND item_id=?)
+     AND NOT EXISTS(SELECT 1 FROM publication_checks WHERE item_id=? AND lease_until>?)
      AND EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?)
      AND EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?)`,
-  )
-    .bind(
-      retry ? "retryable" : "done",
-      saved,
-      new Date().toISOString(),
-      s.operation.key,
-      s.operation.status,
-      s.operation.response,
-      s.itemId,
-      env.TELEGRAM_CHAT_ID,
-      s.generation,
-      s.revision,
-      env.PRISMIC_REPOSITORY,
-      s.itemId,
-      `recovery-current:${s.itemId}`,
-      JSON.stringify(s.token),
-      Date.now(),
-      sessionKey(env, s.token),
-      JSON.stringify(s),
-      Date.now(),
-    )
-    .run();
+  ).bind(
+    retry ? "retryable" : "done",
+    saved,
+    appliedAt,
+    s.operation.key,
+    s.operation.status,
+    s.operation.response,
+    s.itemId,
+    env.TELEGRAM_CHAT_ID,
+    s.generation,
+    s.revision,
+    env.PRISMIC_REPOSITORY,
+    s.itemId,
+    s.itemId,
+    Date.now(),
+    `recovery-current:${s.itemId}`,
+    JSON.stringify(s.token),
+    Date.now(),
+    sessionKey(env, s.token),
+    JSON.stringify(s),
+    Date.now(),
+  );
+  const applied =
+    "EXISTS(SELECT 1 FROM operations WHERE key=? AND updated_at=? AND status=? AND response IS ?)";
+  const args = [
+    s.operation.key,
+    appliedAt,
+    retry ? "retryable" : "done",
+    saved,
+  ] as const;
+  const [result] = await env.DB.batch([
+    operationUpdate,
+    env.DB.prepare(
+      `UPDATE items SET status='error',state=json_remove(state,'$.publicationRequested','$.publicationUnknown','$.recoverySkipped') WHERE id=? AND active=0 AND ${applied}`,
+    ).bind(s.itemId, ...args),
+    env.DB.prepare(
+      `DELETE FROM publication_checks WHERE item_id=? AND ${applied}`,
+    ).bind(s.itemId, ...args),
+  ]);
   await store.completed(reviewKey, { applied: result.meta.changes > 0 });
   if (!result.meta.changes) return false;
   log("publication.recovery.applied", {
@@ -332,8 +380,8 @@ async function resolve(env: Env, s: Session, retry: boolean) {
     env,
     s,
     resumed === "queued"
-      ? `✅ C’est débloqué ! ${s.itemId} reprend avec ses écritures déjà confirmées. Le cron relance le traitement ; tu peux suivre /statut.`
-      : `✅ Cette opération est réconciliée. Une autre écriture attend encore une vérification : /reprendre ${s.itemId}.`,
+      ? `✅ C’est débloqué ! ${s.itemId} reprend avec ses écritures déjà confirmées. Le cron relance le traitement ; tu peux suivre /status.`
+      : `✅ Cette opération est réconciliée. Une autre écriture attend encore une vérification : /retry ${s.itemId}.`,
   );
   return true;
 }
@@ -354,11 +402,141 @@ export async function recoveryCallback(
   ) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
-      "⌛ Cette question n’est plus active. Utilise /reprendre pour vérifier la situation actuelle.",
+      "⌛ Cette question n’est plus active. Utilise /retry pour vérifier la situation actuelle.",
     );
     return true;
   }
   const action = match[2];
+  if (
+    action === "verify" &&
+    s.operation.target.endsWith("/migration-release/publish")
+  ) {
+    const store = new Store(env.DB),
+      item = await store.get(s.itemId);
+    const check = await env.DB.prepare(
+      "SELECT item_id FROM publication_checks WHERE item_id=?",
+    )
+      .bind(item.id)
+      .first();
+    if (check) {
+      const lease = await env.DB.prepare(
+        "UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=?",
+      )
+        .bind(Date.now() + 120_000, item.id, Date.now())
+        .run();
+      if (!lease.meta.changes) {
+        await apiFor(env).sendMessage(
+          item.chat_id,
+          "🔎 Une vérification est déjà en cours. Réessaie dans un instant.",
+        );
+        return true;
+      }
+    }
+    try {
+      if (await verifyPublication(env, item)) {
+        await store.finish(item, "done", env.PRISMIC_REPOSITORY);
+        await env.DB.prepare(
+          "UPDATE publication_checks SET status='confirmed',notified=1,lease_until=0 WHERE item_id=?",
+        )
+          .bind(item.id)
+          .run();
+        s.mode = "done";
+        await prompt(
+          env,
+          s,
+          "🚀 Les versions FR et EN sont publiées ! La file peut continuer.",
+        );
+      } else
+        await apiFor(env).sendMessage(
+          item.chat_id,
+          "🔎 Les deux versions ne sont pas encore disponibles. Les boutons de déblocage restent utilisables.",
+        );
+    } catch {
+      await apiFor(env).sendMessage(
+        item.chat_id,
+        "⚠️ La lecture Prismic a échoué. Cela ne prouve pas que les documents sont absents ; les boutons restent disponibles.",
+      );
+    } finally {
+      if (check)
+        await env.DB.prepare(
+          "UPDATE publication_checks SET lease_until=0 WHERE item_id=?",
+        )
+          .bind(item.id)
+          .run();
+    }
+    return true;
+  }
+  if (action === "skip") {
+    s.mode = "skip";
+    await prompt(
+      env,
+      s,
+      "⏭️ Continuer les autres publications ? Des brouillons de cette fiche peuvent rester dans la release commune et être publiés avec les suivants. Cette fiche restera à résoudre ; aucun document ne sera supprimé.",
+      new InlineKeyboard().text(
+        "✅ Continuer malgré les brouillons possibles",
+        callback(s, "confirmskip"),
+      ),
+    );
+    return true;
+  }
+  if (action === "confirmskip" && s.mode === "skip") {
+    const busy = await env.DB.prepare(
+      "SELECT item_id FROM publication_checks WHERE item_id=? AND lease_until>?",
+    )
+      .bind(s.itemId, Date.now())
+      .first();
+    if (busy) {
+      await apiFor(env).sendMessage(
+        env.TELEGRAM_CHAT_ID,
+        "🔎 Une vérification est en cours. Réessaie ce bouton dans un instant.",
+      );
+      return true;
+    }
+    // Consume the session atomically before releasing the lock. A replay is inert.
+    const guard =
+      "EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?) AND EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_checks WHERE item_id=? AND lease_until>?)";
+    const args = [
+      `recovery-current:${s.itemId}`,
+      JSON.stringify(s.token),
+      Date.now(),
+      sessionKey(env, s.token),
+      JSON.stringify(s),
+      Date.now(),
+      s.itemId,
+      Date.now(),
+    ] as const;
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE items SET state=json_set(state,'$.recoverySkipped',1) WHERE id=? AND active=0 AND ${guard}`,
+      ).bind(s.itemId, ...args),
+      env.DB.prepare(
+        `UPDATE publication_checks SET status='attention',notified=1,lease_until=0 WHERE item_id=? AND ${guard}`,
+      ).bind(s.itemId, ...args),
+      env.DB.prepare(
+        `DELETE FROM publication_lock WHERE repository=? AND item_id=? AND ${guard}`,
+      ).bind(env.PRISMIC_REPOSITORY, s.itemId, ...args),
+      env.DB.prepare(
+        `INSERT OR IGNORE INTO operations(key,item_id,target,status,response,updated_at) SELECT ?,?,'recovery.skip','done',?,? WHERE ${guard}`,
+      ).bind(
+        `recovery-skip:${s.token}`,
+        s.itemId,
+        JSON.stringify({ authorizedBy: env.TELEGRAM_USER_ID }),
+        new Date().toISOString(),
+        ...args,
+      ),
+      env.DB.prepare(`DELETE FROM cache WHERE key=? AND ${guard}`).bind(
+        `recovery-current:${s.itemId}`,
+        ...args,
+      ),
+    ]);
+    s.mode = "done";
+    await prompt(
+      env,
+      s,
+      "⏭️ La file peut continuer. Cette fiche reste à résoudre et ses documents sont conservés.",
+    );
+    return true;
+  }
   if (action === "check") {
     await beginRecovery(env, s.itemId);
     return true;
@@ -404,7 +582,10 @@ export async function recoveryCallback(
   } else if (
     action === "retry" &&
     !creation(s.operation) &&
-    s.operation.status === "pending"
+    (s.operation.status === "pending" ||
+      s.operation.status === "retryable" ||
+      s.operation.status === "done" ||
+      s.operation.target.endsWith("/migration-release/publish"))
   ) {
     s.mode = "retry";
     await prompt(
@@ -427,14 +608,14 @@ export async function recoveryCallback(
     ) {
       await apiFor(env).sendMessage(
         env.TELEGRAM_CHAT_ID,
-        "⏳ L’écriture est trop récente. Attends deux minutes après son envoi, puis utilise /reprendre et vérifie à nouveau Prismic.",
+        "⏳ L’écriture est trop récente. Attends deux minutes après son envoi, puis utilise /retry et vérifie à nouveau Prismic.",
       );
       return true;
     }
     if (!(await resolve(env, s, s.mode !== "existing")))
       await apiFor(env).sendMessage(
         env.TELEGRAM_CHAT_ID,
-        "⌛ La situation a changé. Utilise /reprendre pour la vérifier.",
+        "⌛ La situation a changé. Utilise /retry pour la vérifier.",
       );
   }
   return true;
@@ -455,7 +636,7 @@ export async function recoveryReply(
   if (!s || s.mode === "done" || !(await current(env, s))) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
-      "⌛ Cette question n’est plus active. Utilise /reprendre pour reprendre le dialogue de résolution.",
+      "⌛ Cette question n’est plus active. Utilise /retry pour reprendre le dialogue de résolution.",
     );
     return true;
   }
@@ -475,7 +656,7 @@ export async function recoveryReply(
   if (!creation(s.operation) || !id) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
-      "📝 Utilise l’URL d’édition de la fiche dans ton dépôt Prismic, pas le lien du site. Pour reprendre autrement : /reprendre.",
+      "📝 Utilise l’URL d’édition de la fiche dans ton dépôt Prismic, pas le lien du site. Pour reprendre autrement : /retry.",
     );
     return true;
   }

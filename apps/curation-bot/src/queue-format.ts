@@ -14,13 +14,10 @@ export type QueueRow = {
 function label(row: QueueRow): [string, string] {
   if (row.status === "publication_pending")
     return row.publication_check_status === "attention"
-      ? [
-          "⚠️ À débloquer dans Prismic",
-          `Vérifications en pause · /reprendre ${row.id}`,
-        ]
+      ? ["⚠️ À résoudre", `Action disponible dans le bot · /retry ${row.id}`]
       : ["🚀 Mise en ligne", "Vérification des versions française et anglaise"];
   if (row.status === "error")
-    return ["⚠️ À reprendre", `Traitement en pause · /reprendre ${row.id}`];
+    return ["⚠️ À reprendre", `Traitement en pause · /retry ${row.id}`];
   if (row.status === "waiting_publish_slot")
     return [
       "✅ Validés, prêts à publier",
@@ -63,7 +60,7 @@ export function queueHtml(rows: QueueRow[], page: number) {
       text:
         page === 1
           ? "📭 Ta file est vide.\nEnvoie-moi un lien pour préparer une nouvelle sélection."
-          : "Cette page est vide. Reviens à /file pour voir les liens en attente.",
+          : "Cette page est vide. Reviens à /queue pour voir les liens en attente.",
       pages: 1,
     };
   const total = rows[0].total_count;
@@ -87,12 +84,12 @@ export function queueHtml(rows: QueueRow[], page: number) {
       .join("\n\n────────────\n\n"),
     ...(rows[0].blocked
       ? [
-          "💡 Une publication attend une intervention dans Prismic. Tu peux continuer à préparer et valider les autres liens ; leur publication attendra la résolution du blocage.",
+          "💡 Une publication attend une décision dans le bot. Tu peux continuer à préparer et valider les autres liens ; leur publication attendra la résolution du blocage.",
         ]
       : []),
-    "Pour valider ou corriger, utilise la dernière proposition.\nPour retirer un lien validé en attente : /annuler suivi de son identifiant.",
+    "Pour valider ou corriger, utilise la dernière proposition.\nPour retirer un lien validé en attente : /cancel suivi de son identifiant.",
     ...(pages > 1
-      ? [`Page ${page}/${pages} · /file ${page < pages ? page + 1 : 1}`]
+      ? [`Page ${page}/${pages} · /queue ${page < pages ? page + 1 : 1}`]
       : []),
   ].join("\n\n");
   return { text, pages };

@@ -114,12 +114,16 @@ export default {
     return new Response("OK");
   },
   async scheduled(_event: ScheduledController, env: Env) {
-    await observe(
-      "scheduled.publications",
-      {},
-      () => reconcilePublications(env),
-      { lifecycleLogs: false },
-    );
+    try {
+      await observe(
+        "scheduled.publications",
+        {},
+        () => reconcilePublications(env),
+        { lifecycleLogs: false },
+      );
+    } catch (error) {
+      log("scheduled.publications.failed", errorFields(error), "error");
+    }
     await observe("scheduled.dispatch", {}, () => dispatch(env), {
       lifecycleLogs: false,
     });

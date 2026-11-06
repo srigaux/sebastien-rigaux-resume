@@ -169,13 +169,13 @@ Après acceptation de la demande de publication par Prismic (HTTP 202), réponse
 
 Chaque message contenant un nouveau lien entre dans la file. Plusieurs URL dans le même message déclenchent un choix du lien principal. Les liens des messages suivants attendent la fin de la fiche active.
 
-- `/aide` (ou `/help`) : aide complète.
-- `/vider` : annuler les liens en attente uniquement, sans toucher à la fiche active.
-- `/reset` : vider l’attente et demander l’annulation de la fiche active avant publication. Une migration commencée reste protégée ; utiliser `/reprendre`. Aucun document Prismic n’est supprimé.
-- `/statut` : fiche active et éventuelle erreur.
-- `/file` : fiches en cours et en attente.
-- `/annuler` : annuler la fiche active avant le début de la migration.
-- `/reprendre` : reprendre une extraction, un média ou une publication interrompus.
+- 📖 `/help` (ou `/start`) : aide complète.
+- 🧹 `/clear` : annuler les liens en attente uniquement, sans toucher à la fiche active.
+- ♻️ `/reset` : vider l’attente et demander l’annulation de la fiche active avant publication. Une migration commencée reste protégée ; utiliser `/retry`. Aucun document Prismic n’est supprimé.
+- 📍 `/status` : fiche active et éventuelle erreur.
+- 📚 `/queue` : fiches en cours et en attente.
+- 🗑️ `/cancel` : annuler la fiche active avant le début de la migration.
+- 🔄 `/retry` : reprendre une extraction, un média ou une publication interrompus.
 
 Le menu Telegram propose ces commandes dès que vous tapez `/`. Il est configuré par `pnpm telegram:webhook register`, ou séparément avec `pnpm telegram:webhook commands` sans modifier le webhook.
 
@@ -193,7 +193,7 @@ Après le HTTP 202, cette checklist devient « 🚀 Publication FR/EN acceptée 
 
 Après une action acceptée (publication, annulation, correction, source, etc.), les boutons des messages précédents sont retirés ; les textes, images et références de réponse restent disponibles. Une action refusée laisse les boutons utilisables. Un échec Telegram lors du retrait est journalisé sans bloquer la publication ni la file.
 
-Le bot affiche une proposition compacte dans un seul message formaté : titres FR/EN, résumés en citations avec leur Markdown inline, format précédé d’un emoji, sujets, 🔎 source de découverte et ✍️ crédit lorsque identifié, sans ligne de séparation. Le clavier normal affiche la **source actuelle** avec son emoji (ou **🔎 Choisir la source**), le **type actuel** avec son emoji sur la même ligne, puis **🗑 Annuler** à gauche et **🚀 Publier** à droite sur la ligne suivante. Les boutons de source et de type ouvrent leur sélecteur et reflètent chaque nouveau choix. Les dates, identifiants techniques et textes alternatifs ne sont pas affichés dans cette proposition ; ils restent conservés pour la publication. Les identifiants restent accessibles via `/statut` et dans les erreurs.
+Le bot affiche une proposition compacte dans un seul message formaté : titres FR/EN, résumés en citations avec leur Markdown inline, format précédé d’un emoji, sujets, 🔎 source de découverte et ✍️ crédit lorsque identifié, sans ligne de séparation. Le clavier normal affiche la **source actuelle** avec son emoji (ou **🔎 Choisir la source**), le **type actuel** avec son emoji sur la même ligne, puis **🗑 Annuler** à gauche et **🚀 Publier** à droite sur la ligne suivante. Les boutons de source et de type ouvrent leur sélecteur et reflètent chaque nouveau choix. Les dates, identifiants techniques et textes alternatifs ne sont pas affichés dans cette proposition ; ils restent conservés pour la publication. Les identifiants restent accessibles via `/status` et dans les erreurs.
 
 Aucune image ni favicon n’est envoyée automatiquement dans Telegram : l’aperçu natif du lien suffit. Les médias sont toujours téléchargés et conservés dans R2 pour leur import Prismic après validation. Pendant l’extraction, la préparation des médias et la génération initiale ou corrigée, le statut Telegram « écrit… » est renouvelé toutes les quatre secondes. Il s’arrête pendant les attentes humaines et les délais de reprise. Après correction, seuls les textes sont renvoyés avec une introduction en italique indiquant la version et une note rédigée par le LLM.
 
@@ -217,7 +217,7 @@ La publication est sérialisée et son accord porte sur une version exacte. Chaq
 
 Chaque minute, le cron traite au plus une entrée due de `publication_checks`, avec un bail de deux minutes contre les passages concurrents. Un seul appel SDK `getByIDs` (langues `*`, réponse limitée) vérifie les deux IDs et leurs locales FR/EN ; aucun texte, crédit, tag, relation ou média n’est recomparé après publication. Une absence relance le contrôle au prochain passage sans mettre la fiche en erreur. Une erreur réseau, d’authentification ou de quota est enregistrée séparément de `documents_not_available`. Le cron n’écrit aucun contenu dans Prismic et n’approuve aucune proposition humaine.
 
-La fiche passe en `publication_pending` et libère la conversation dès l’acceptation. Le verrou de release reste détenu jusqu’à confirmation de disponibilité. La sélection suivante peut être extraite et corrigée ; si elle est déjà approuvée, elle reste en `waiting_publish_slot` sans commencer ses écritures. Le cron la réveille après libération du verrou. `/statut` et `/file` affichent également les confirmations en arrière-plan. Une erreur Telegram de confirmation n’empêche pas la libération du verrou et la notification est retentée séparément.
+La fiche passe en `publication_pending` et libère la conversation dès l’acceptation. Le verrou de release reste détenu jusqu’à confirmation de disponibilité. La sélection suivante peut être extraite et corrigée ; si elle est déjà approuvée, elle reste en `waiting_publish_slot` sans commencer ses écritures. Le cron la réveille après libération du verrou. `/status` et `/queue` affichent également les confirmations en arrière-plan. Une erreur Telegram de confirmation n’empêche pas la libération du verrou et la notification est retentée séparément.
 
 Une réponse de publication perdue passe en état `unknown` : le cron peut la confirmer par disponibilité des deux IDs, sans renvoyer la demande. Une incertitude sur une création de document ou un import média reste une erreur nécessitant la réconciliation opérateur décrite ci-dessous. Une publication refusée ou portant sur un nombre inattendu de documents reste également bloquée pour intervention ; sa release n’est pas libérée aveuglément.
 
@@ -227,14 +227,14 @@ L’acceptation et la confirmation concernent Prismic ; le site Astro attend sa 
 
 ### Réconcilier une écriture incertaine
 
-Le parcours habituel se fait maintenant dans Telegram : `/reprendre` (ou `/reprendre u…`) ouvre une résolution guidée pour une erreur de publication isolée. Les nouveaux messages d’erreur proposent aussi **🛠 Débloquer dans Prismic**.
+Le parcours habituel se fait maintenant dans Telegram : `/retry` (ou `/retry u…`) ouvre une résolution guidée pour une erreur de publication isolée. Les nouveaux messages d’erreur proposent aussi **🛠 Débloquer dans Prismic**.
 
 - Le bot recherche les documents publiés par UID **et par URL de l’article**, y compris après renommage du slug. Une correspondance doit être confirmée avant réutilisation de son ID ; aucune création n’est déduite d’une absence de résultat.
 - Pour un brouillon non accessible à la Content API, répondre **au message de résolution** avec son URL d’édition Prismic. Le bot demande de confirmer la sélection, la langue et, pour une traduction, sa fiche d’origine.
 - Si aucun document publié ne correspond, l’utilisateur peut confirmer son absence après vérification des brouillons et de la release. Il faut deux actions et au moins deux minutes depuis l’écriture incertaine. Un échec de lecture ou un conflit de traduction existante ne permet pas ce choix.
-- Une écriture de champs peut être réappliquée sur le même ID après accord ; un import média peut être retenté après avertissement explicite d’un possible doublon d’asset. Une publication à réponse perdue est confiée à la vérification cron et n’est pas renvoyée.
+- Une écriture de champs peut être réappliquée sur le même ID après accord ; un import média peut être retenté après avertissement explicite d’un possible doublon d’asset. Une publication à réponse perdue ouvre le même dialogue : vérifier maintenant, autoriser un nouvel envoi sans recréer les documents, ou continuer la file après confirmation du risque de brouillons résiduels.
 
-Les questions sont persistées dans D1 pendant une heure et liées à l’opération exacte, à la version et à la génération arrêtée. Une seule question est actuelle par fiche ; les anciennes confirmations sont refusées. Les décisions sont conservées dans le journal `operations` sous `recovery.review`. Le verrou reste détenu jusqu’à la reprise et à la confirmation habituelle de publication. Aucune migration D1 supplémentaire n’est requise. L’absence sur le site public n’est pas utilisée comme preuve d’absence, car le build peut être en retard.
+Les questions sont persistées dans D1 pendant une heure et liées à l’opération exacte, à la version et à la génération arrêtée. Une seule question est actuelle par fiche ; les anciennes confirmations sont refusées. Les décisions sont conservées dans le journal `operations` sous `recovery.review`. Le verrou protège les écritures et les décisions encore ambiguës. Il est libéré dès l’acceptation HTTP 202, ou après confirmation explicite de continuer la file. Les résultats précédents sont conservés dans l’audit de reprise. Aucune migration D1 supplémentaire n’est requise. L’absence sur le site public n’est pas utilisée comme preuve d’absence, car le build peut être en retard.
 
 Le script ci-dessous reste disponible pour les cas non couverts par le dialogue.
 
@@ -255,7 +255,7 @@ pnpm reconcile confirm-success 'CLE_OPERATION' /tmp/prismic-response.json --remo
 pnpm reconcile confirm-not-applied 'CLE_OPERATION' --remote --reviewed-in-prismic
 ```
 
-Puis `/reprendre` dans Telegram. Le script exige une fiche arrêtée en erreur et une opération incertaine ; il ne crée ni ne supprime de contenu Prismic.
+Puis `/retry` dans Telegram. Le script exige une fiche arrêtée en erreur et une opération incertaine ; il ne crée ni ne supprime de contenu Prismic.
 
 Si une tentative de création après une réponse perdue est refusée avec « There is already an existing translation in this language », retrouver la traduction via le sélecteur de langue de la fiche FR. Après vérification, `confirm-success` accepte aussi ce conflit précis avec la réponse `{ "id": "ID_REEL_DE_LA_TRADUCTION" }`. Il ne permet pas de marquer ce conflit retentable. Les réponses déjà connues des autres opérations restent réutilisées.
 
@@ -273,7 +273,7 @@ Après configuration et réservation de la migration :
 
 La suite automatisée simule les fournisseurs. Une recette réelle, une livraison webhook ou un déploiement ne sont pas considérés vérifiés sur la seule base de ces tests.
 
-Les reprises qui imposent au moins 30 secondes d’attente affichent leur délai estimé et l’heure de reprise en Europe/Brussels. Avant publication, ce message propose « 🗑 Annuler ». À la reprise, il est remplacé par une indication de reprise et son bouton est retiré. `/annuler` et `/reset` peuvent interrompre un workflow en attente de réessai : l’instance est arrêtée, puis une nouvelle génération traite l’annulation avant toute extraction. Le checkpoint de publication est relu après l’arrêt ; une migration commencée reste protégée et reprend via le journal existant. L’indisponibilité d’une notification d’attente est journalisée sans interrompre le traitement.
+Les reprises qui imposent au moins 30 secondes d’attente affichent leur délai estimé et l’heure de reprise en Europe/Brussels. Avant publication, ce message propose « 🗑 Annuler ». À la reprise, il est remplacé par une indication de reprise et son bouton est retiré. `/cancel` et `/reset` peuvent interrompre un workflow en attente de réessai : l’instance est arrêtée, puis une nouvelle génération traite l’annulation avant toute extraction. Le checkpoint de publication est relu après l’arrêt ; une migration commencée reste protégée et reprend via le journal existant. L’indisponibilité d’une notification d’attente est journalisée sans interrompre le traitement.
 
 ## Comparer les lectures de confirmation
 
@@ -287,19 +287,20 @@ Il chauffe les deux chemins, puis alterne cinq mesures de l’ancienne lecture c
 
 ### Publication bloquée et reprise
 
-Le webhook est le signal principal de confirmation. Sans confirmation, le premier contrôle de secours a lieu après 10 minutes, au prochain passage du cron. Le suivi effectue au maximum cinq vérifications de disponibilité, espacées ensuite progressivement de 1, 2, 5 et 10 minutes. Une lecture déclenchée par webhook compte également dans ce budget. Cela concerne les documents absents comme les erreurs réseau/API. Après épuisement, le suivi existant passe à `attention`, les lectures distantes s’arrêtent, le message Telegram explique le blocage et `/file` le rend visible. Le verrou est conservé : la release de migration est partagée et il serait dangereux d’y ajouter la sélection suivante sans résoudre la précédente.
+Le webhook anticipe les vérifications de disponibilité ; sans événement, le cron contrôle les IDs FR/EN environ 1, 3, 10, 30 et 60 minutes après l’envoi. Les vérifications sont bornées et ne bloquent pas les autres publications après HTTP 202. Un résultat absent et une erreur réseau restent distincts ; ni l’un ni l’autre ne prouve l’absence d’un brouillon.
 
-Après contrôle ou publication de la paire FR/EN dans Prismic, envoyer `/reprendre u…` pour réarmer une série limitée de vérifications. Cette commande cible aussi une publication inactive, même si la fiche suivante attend son créneau. `/reprendre` sans identifiant privilégie une publication en pause ; sinon il conserve son comportement sur la fiche active. Les deux documents doivent être visibles avant que le bot libère automatiquement le verrou et réveille la sélection approuvée suivante. Une réponse de publication inconnue n’est jamais transformée automatiquement en autorisation de renvoyer l’écriture. La migration `0003_publication_webhook.sql` ajoute la référence du dernier webhook reçu à `publication_checks`.
+Après épuisement des contrôles, le suivi passe à `attention` et le bot ouvre automatiquement la réconciliation au prochain cron. Une réponse de publication perdue ouvre également ce dialogue. `/retry [id]` permet de l’ouvrir immédiatement, sans réarmer indéfiniment les mêmes lectures. Les choix nécessitant une écriture ou la libération d’un verrou incertain demandent une confirmation explicite. « Continuer la file » conserve la fiche et ses opérations, et avertit que des brouillons restants peuvent être publiés avec la prochaine sélection.
 
-### Préparation indépendante et affichage de la file
+Les anciennes publications acceptées sont libérées de leur verrou par le cron au déploiement. Les publications inconnues restent soumises au dialogue : aucune relance automatique d’écriture. Aucun nouveau schéma D1 n’est nécessaire ; les sessions et audits utilisent les tables existantes.
 
-Un lien validé qui attend la release commune est mis en attente avec `active=0`. Son workflow rend la place au lien suivant : réception, extraction, correction et validation continuent même quand une publication est bloquée. Les erreurs après début de publication sont aussi isolées de la conversation. La publication reste sérialisée : la release de migration Prismic est commune et une écriture incertaine conserve son verrou. Publier réellement en parallèle nécessiterait une intégration avec des publications isolées par sélection ; libérer ce verrou par délai ne suffit pas et risquerait de mélanger les contenus.
 
-Même sans fiche active, `/statut` indique la fiche qui détient le verrou en erreur et le nombre de liens validés qui attendent. `/reprendre` sans identifiant retrouve cette fiche ; une écriture sans réponse reste protégée jusqu’à réconciliation. `/annuler` explique alors le blocage et permet toujours de retirer un autre lien en attente avec son identifiant. `/file` distingue cette intervention nécessaire d’une simple attente de disponibilité de Prismic.
+Un lien validé qui attend la release commune est mis en attente avec `active=0`. Son workflow rend la place au lien suivant : réception, extraction, correction et validation continuent même quand une publication est bloquée. Les erreurs après début de publication sont aussi isolées de la conversation. Les écritures restent sérialisées ; les vérifications publiques sont indépendantes. Une écriture incertaine conserve son verrou jusqu’à une décision dans Telegram. Une acceptation HTTP 202 permet immédiatement la sélection suivante ; Prismic peut temporairement la refuser pendant son traitement, auquel cas les retries bornés restent applicables.
 
-Quand la release est libérée, les liens déjà validés sont prioritaires sur les liens pas encore préparés. Ils repartent dans une nouvelle génération du workflow, en conservant leur validation et le journal existant. Le bot n’interrompt pas une proposition que l’utilisateur est en train de relire. Un lien validé en attente peut être annulé avec son bouton ou `/annuler u…` tant qu’aucune écriture de publication n’a commencé. `/reprendre u…` permet aussi de reprendre une erreur de publication isolée, mais refuse de rejouer une écriture Prismic encore `pending`.
+Même sans fiche active, `/status` indique la fiche qui détient le verrou en erreur et le nombre de liens validés qui attendent. `/retry` sans identifiant retrouve cette fiche ; une écriture sans réponse reste protégée jusqu’à réconciliation. `/cancel` explique alors le blocage et permet toujours de retirer un autre lien en attente avec son identifiant. `/queue` distingue cette intervention nécessaire d’une simple attente de disponibilité de Prismic.
 
-`/file` affiche les titres ou, avant extraction, le domaine et le chemin du lien (sans ses paramètres). Les états sont regroupés en actions à effectuer, préparation, liens validés et mise en ligne. Huit liens sont affichés par page, avec navigation et actualisation du même message. `/file 2` ouvre directement la deuxième page. Les liens publiés ou annulés sont exclus, les identifiants restent disponibles pour les commandes ciblées. Aucun changement de schéma n’est nécessaire.
+Quand la release est libérée, les liens déjà validés sont prioritaires sur les liens pas encore préparés. Ils repartent dans une nouvelle génération du workflow, en conservant leur validation et le journal existant. Le bot n’interrompt pas une proposition que l’utilisateur est en train de relire. Un lien validé en attente peut être annulé avec son bouton ou `/cancel u…` tant qu’aucune écriture de publication n’a commencé. `/retry u…` permet aussi de reprendre une erreur de publication isolée, et demande un accord explicite avant de retenter une écriture incertaine.
+
+`/queue` affiche les titres ou, avant extraction, le domaine et le chemin du lien (sans ses paramètres). Les états sont regroupés en actions à effectuer, préparation, liens validés et mise en ligne. Huit liens sont affichés par page, avec navigation et actualisation du même message. `/queue 2` ouvre directement la deuxième page. Les liens publiés ou annulés sont exclus, les identifiants restent disponibles pour les commandes ciblées. Aucun changement de schéma n’est nécessaire.
 
 Le bouton affichant le type actuel utilise le même remplacement de message que les sources. Le LLM renvoie `formatRanking` avec les sept types et leur probabilité dans le même appel que les textes. Les moins probables sont en haut, les plus probables en bas, puis **🧩 Autre** en dernier (le type reste obligatoire). Un clic actualise le type sans régénérer les textes, conserve le bouton pour changer d’avis et invalide l’accord précédent. Le choix manuel est conservé lors des corrections éditoriales suivantes. La classification distingue la nature de la page de son sujet : une analyse de version est un Article ; l’annonce officielle ou les release notes sont une Release. Aucun motif textuel supplémentaire n’est demandé au LLM.
 
@@ -383,10 +384,8 @@ Références : [Prismic webhooks](https://prismic.io/docs/webhooks) et
 
 Le webhook authentifié réveille le suivi d’une fiche à partir des IDs des documents
 (top-level `documents` ou documents des releases supprimées). Si une suppression
-de release ne fournit aucun ID, il réveille uniquement la publication qui détient
-le verrou du dépôt. L’événement ne suffit jamais à annoncer un succès : le bot
-relit les deux versions FR/EN dans le contenu publié avant de confirmer, libérer
-le verrou et préparer la sélection approuvée suivante.
+de release ne fournit aucun ID, il réveille les publications en attente de confirmation. L’événement ne suffit jamais à annoncer un succès : le bot
+relit les deux versions FR/EN dans le contenu publié avant d’annoncer leur mise en ligne. Le verrou a déjà été libéré à l’acceptation de la demande.
 
 La référence Prismic est enregistrée durablement dans `publication_checks.webhook_ref`
 avant la réponse HTTP. Une livraison répétée avec la même référence ne réveille
@@ -396,12 +395,7 @@ fiche est inactive. La notification réutilise le message de progression existan
 et son reçu de confirmation. Un échec Telegram est retenté séparément, sans
 refaire la publication ni conserver le verrou.
 
-Sans webhook, aucune lecture de disponibilité n’a lieu avant 10 minutes. Si une
-première lecture déclenchée par webhook ne trouve qu’une langue, le suivi attend
-le délai de secours ou un nouvel événement avant de réessayer. Les demandes
-inconnues et les erreurs réseau restent soumises au même budget limité ; les
-écritures Prismic ne sont jamais rejouées par la confirmation. `/reprendre` reste
-une vérification explicite immédiate, y compris après un blocage.
+Sans webhook, les contrôles suivent le calendrier borné décrit ci-dessus. Les écritures ne sont jamais rejouées par une vérification. `/retry` ouvre les actions de réconciliation lorsqu’une publication est inconnue ou en attention.
 
 La confirmation Telegram signifie « publié dans Prismic », pas « déployé sur le
 site ». La confirmation du bot est indépendante du succès du déclenchement
@@ -410,3 +404,17 @@ GitHub : l’événement est déjà enregistré même si GitHub renvoie une erre
 Déploiement de cette évolution : `pnpm exec wrangler d1 migrations apply DB --remote`,
 puis `pnpm deploy`. La migration est additive et compatible avec l’ancien Worker ;
 les suivis existants conservent leur échéance et leur budget de vérifications.
+
+## Commandes Telegram (anglais)
+
+- 📖 `/help` : aide et exemples ; `/start` affiche le même accueil.
+- 📍 `/status` : traitement actuel, publications et intervention nécessaire.
+- 📚 `/queue [page]` : file paginée, par exemple `/queue 2`.
+- 🧹 `/clear` : retirer les liens en attente avant toute écriture.
+- 🗑️ `/cancel [id]` : annuler une fiche avant publication.
+- 🔄 `/retry [id]` : reprendre ou ouvrir le dialogue de déblocage ; sans ID, privilégie le blocage de publication.
+- ♻️ `/reset` : vider l’attente et arrêter la préparation active. Ne supprime pas les documents Prismic et ne retire pas une publication déjà envoyée.
+
+Les anciennes commandes françaises indiquent leur équivalent anglais sans exécuter d’action. Les emojis figurent dans les descriptions du menu, pas dans les noms de commande. Mettre à jour l’autocomplétion après déploiement avec `pnpm telegram:webhook commands`.
+
+Pour l’incident `u428355038`, utiliser `/retry u428355038` après déploiement. Le bot proposera la vérification ou un nouvel envoi de la publication avec les deux IDs conservés. Aucune publication de cet incident n’est retentée par le déploiement seul.

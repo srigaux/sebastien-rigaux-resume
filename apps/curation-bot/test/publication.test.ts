@@ -124,7 +124,7 @@ it.each(["missing", "partial"] as const)(
     expect((await store.get(item.id)).status).toBe("publication_pending");
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(
       await env.DB.prepare(
         "SELECT status,attempts,last_error FROM publication_checks",
@@ -138,7 +138,7 @@ it.each(["missing", "partial"] as const)(
     expect(api.searches()).toBe(1);
   },
 );
-it("distingue une API inaccessible d’un document absent et garde le verrou", async () => {
+it("distingue une API inaccessible d’un document absent sans bloquer la file", async () => {
   const { store, item } = await pending();
   remote("unauthorized");
   await expect(verifyPublication(env, item)).rejects.toThrow();
@@ -150,7 +150,7 @@ it("distingue une API inaccessible d’un document absent et garde le verrou", a
   expect((await store.get(item.id)).status).toBe("publication_pending");
   expect(
     (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
-  ).toHaveLength(1);
+  ).toHaveLength(0);
 });
 it("déduplique deux passages cron concurrents", async () => {
   await pending();
@@ -168,7 +168,7 @@ it("réveille seulement une fiche déjà approuvée, après libération du verro
   await store.save(next, "waiting_publish_slot");
   remote("missing");
   await reconcilePublications(env);
-  expect(await store.nextAction(next.id)).toBeUndefined();
+  expect((await store.nextAction(next.id))?.action.kind).toBe("resume");
   await env.DB.prepare("UPDATE publication_checks SET next_check_at=0").run();
   remote("ready");
   await reconcilePublications(env);
@@ -361,7 +361,7 @@ it("reports the duplicate decision without logging the matching titles or URLs",
 });
 
 it.each(["missing", "unauthorized"] as const)(
-  "bounds %s checks, then pauses without releasing the lock or rewriting documents",
+  "bounds %s checks, then pauses without blocking the queue or rewriting documents",
   async (mode) => {
     const { item } = await pending();
     const api = remote(mode);
@@ -389,7 +389,7 @@ it.each(["missing", "unauthorized"] as const)(
     expect(api.writes()).toBe(0);
     expect(
       await env.DB.prepare("SELECT item_id FROM publication_lock").first(),
-    ).toEqual({ item_id: item.id });
+    ).toBeNull();
   },
 );
 it("recovers through an explicit bounded recheck after manual publication, without replaying writes", async () => {

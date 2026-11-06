@@ -91,7 +91,7 @@ it("attend une action persistée dans un véritable Workflow Cloudflare et rejet
   }
 });
 
-it("libère la file dès l’acceptation et garde le verrou jusqu’au contrôle cron des deux versions", async () => {
+it("libère la file dès l’acceptation sans attendre le contrôle cron des deux versions", async () => {
   const { repository, extraction } = await import("@test/fixtures");
   const store = new Store(env.DB),
     item = fixture("u901");
@@ -245,7 +245,7 @@ it("libère la file dès l’acceptation et garde le verrou jusqu’au contrôle
     expect((await store.active("1"))?.id).toBe("u951");
     expect(
       (await env.DB.prepare("SELECT * FROM publication_lock").all()).results,
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     await reconcilePublications(env);
     expect((await store.get(item.id)).status).toBe("publication_pending");
     await recordPublicationWebhook(

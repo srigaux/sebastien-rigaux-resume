@@ -120,7 +120,10 @@ export class Store {
         )
         .bind(JSON.stringify(item.state), status, item.id, status),
     ];
-    if (repository && status !== "publication_pending")
+    if (
+      repository &&
+      (status !== "publication_pending" || item.state.publicationRequested)
+    )
       statements.push(
         this.db
           .prepare(

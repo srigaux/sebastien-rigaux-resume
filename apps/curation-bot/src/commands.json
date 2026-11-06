@@ -1,30 +1,30 @@
 [
   {
-    "command": "aide",
-    "description": "Afficher toutes les commandes"
+    "command": "help",
+    "description": "📖 Aide et exemples"
   },
   {
-    "command": "statut",
-    "description": "Voir la fiche active et son état"
+    "command": "status",
+    "description": "📍 Traitement et publications en cours"
   },
   {
-    "command": "file",
-    "description": "Voir les fiches en cours et en attente"
+    "command": "queue",
+    "description": "📚 Consulter la file"
   },
   {
-    "command": "vider",
-    "description": "Vider les liens en attente uniquement"
+    "command": "clear",
+    "description": "🧹 Retirer les liens en attente"
+  },
+  {
+    "command": "cancel",
+    "description": "🗑️ Annuler avant publication · /cancel [id]"
+  },
+  {
+    "command": "retry",
+    "description": "🔄 Reprendre ou débloquer · /retry [id]"
   },
   {
     "command": "reset",
-    "description": "Vider la file et annuler la fiche si possible"
-  },
-  {
-    "command": "annuler",
-    "description": "Annuler la fiche active avant publication"
-  },
-  {
-    "command": "reprendre",
-    "description": "Reprendre une fiche ou vérifier sa publication"
+    "description": "♻️ Vider l’attente et arrêter la préparation"
   }
 ]

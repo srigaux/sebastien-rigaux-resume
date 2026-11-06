@@ -1,4 +1,4 @@
-import { observe } from "@/observability";
+import { observe, log } from "@/observability";
 import * as prismic from "@prismicio/client";
 import {
   AmbiguousWrite,
@@ -257,7 +257,7 @@ export function journaledFetch(
                 )
               )
                 throw new BotError(
-                  "🔗 Prismic indique qu’une traduction existe déjà pour cette fiche. Il faut retrouver son ID dans le sélecteur de langue de la fiche Prismic et réconcilier sa création ; /reprendre seul ne peut pas résoudre ce conflit. Aucun nouveau document ne sera créé en boucle.",
+                  "🔗 Prismic indique qu’une traduction existe déjà pour cette fiche. Il faut retrouver son ID dans le sélecteur de langue de la fiche Prismic et réconcilier sa création ; /retry seul ne peut pas résoudre ce conflit. Aucun nouveau document ne sera créé en boucle.",
                   "translation_exists",
                   response.status,
                 );
@@ -314,15 +314,20 @@ export function journaledFetch(
         } catch {
           throw new AmbiguousWrite(key);
         }
-        if (res.status === 429) {
-          await store.completed(key, { status: 429 }, "retryable");
+        if (
+          res.status === 429 ||
+          (res.status === 409 && url.endsWith("/migration-release/publish"))
+        ) {
+          await store.completed(key, { status: res.status }, "retryable");
           throw new RemoteError(
-            "Prismic limite les écritures.",
+            res.status === 429
+              ? "Prismic limite les écritures."
+              : "Prismic refuse temporairement cette publication (conflit).",
             true,
             false,
             retryAfter(res.headers),
             undefined,
-            "rate_limited",
+            res.status === 429 ? "rate_limited" : "remote_rejected",
             res.status,
           );
         }
@@ -515,9 +520,10 @@ export async function publish(env: Env, item: Item) {
   });
   const result = await client.publishMigrationRelease();
   if (result.totalItems !== 2)
-    throw new BotError(
-      `Prismic a mis ${result.totalItems} documents en publication au lieu de 2. Vérification opérateur nécessaire.`,
-      "publication_count",
+    log(
+      "publication.count.unexpected",
+      { itemId: item.id, totalItems: result.totalItems },
+      "warn",
     );
 }
 // Availability only: payloads were validated locally and SDK writes acknowledged.

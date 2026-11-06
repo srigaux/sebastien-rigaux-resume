@@ -379,7 +379,7 @@ export async function applyAction(
     return;
   }
   if (s.publicationStarted)
-    return "🔒 La migration a déjà commencé : je conserve les documents et ta file pour éviter une publication incomplète. Une réconciliation dans Prismic est nécessaire avant toute annulation ; /reprendre ne pourra continuer qu’une fois les écritures incertaines résolues.";
+    return "🔒 La migration a déjà commencé : je conserve les documents et ta file pour éviter une publication incomplète. Une réconciliation dans Prismic est nécessaire avant toute annulation ; /retry ne pourra continuer qu’une fois les écritures incertaines résolues.";
   if (action.kind === "cancel") {
     item.status = "cancelled";
     return;

@@ -31,8 +31,7 @@ async function queueView(env: Env, page: number) {
     `SELECT i.id,i.status,i.active,json_extract(i.state,'$.draft.fr.title') AS title,
       json_extract(i.state,'$.url') AS url,p.status AS publication_check_status,
       COUNT(*) OVER() AS total_count,
-      MAX(CASE WHEN (i.status='publication_pending' AND p.status='attention') OR
-        (i.status='error' AND EXISTS(SELECT 1 FROM publication_lock l WHERE l.item_id=i.id)) THEN 1 ELSE 0 END) OVER() AS blocked
+      MAX(CASE WHEN (i.status='error' OR p.status IN ('unknown','attention')) AND EXISTS(SELECT 1 FROM publication_lock l WHERE l.item_id=i.id) THEN 1 ELSE 0 END) OVER() AS blocked
       FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id
       WHERE i.chat_id=? AND i.status NOT IN ('done','cancelled')
       ORDER BY CASE WHEN p.status='attention' OR i.status='error' THEN 0 WHEN i.active=1 THEN 1
@@ -270,8 +269,7 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
     return media.key;
   }
   const object = await env.BUCKET.get(media.key);
-  if (!object)
-    throw new BotError("Fichier aperçu manquant. Utilisez /reprendre.");
+  if (!object) throw new BotError("Fichier aperçu manquant. Utilisez /retry.");
   const bytes = new Uint8Array(await object.arrayBuffer());
   const caption = `<a href="${escapeHtml(s.url)}">${escapeHtml(new URL(s.url).hostname)}</a>`;
   const replace =
@@ -483,11 +481,11 @@ export async function publicationNotice(
     const text = complete
       ? "🚀 C’est publié ! Les versions FR et EN sont prêtes dans Prismic.\nElles apparaîtront sur le site après sa prochaine reconstruction."
       : stage === "accepted"
-        ? "🚀 Publication FR/EN acceptée par Prismic !\nJ’attends sa confirmation ; une vérification de secours est prévue après 10 minutes. Tu peux continuer ta veille."
+        ? "✅ Publication FR/EN acceptée par Prismic !\nLa file continue ; je vérifie la mise en ligne en arrière-plan."
         : stage === "attention"
-          ? `⚠️ Publication bloquée pour ${item.id}.\nLes vérifications automatiques sont arrêtées après plusieurs échecs.\nOuvre la release « migration-api-release » dans Prismic pour vérifier son état avant de publier ou de reprendre. Les brouillons et la file sont conservés ; je ne renvoie pas la demande automatiquement.\nAprès vérification ou publication dans Prismic, envoie /reprendre ${item.id} : je vérifierai les deux versions et libérerai la file si elles sont en ligne, sans recréer les brouillons.`
+          ? `⚠️ La mise en ligne de ${item.state.draft?.fr.title ?? item.id} reste à confirmer.\n🔗 ${item.state.url}\nUtilise /retry ${item.id} pour vérifier ou choisir comment poursuivre.`
           : stage === "unconfirmed"
-            ? "⏳ La réponse de publication n’a pas été confirmée.\nJ’attends la confirmation Prismic, avec une vérification de secours après 10 minutes, sans renvoyer la demande."
+            ? `⚠️ La réponse de publication manque pour ${item.id}. Je vais te proposer les actions de déblocage, sans recréer les documents.`
             : checklist.text;
     const metadata = {
       text,
@@ -755,7 +753,7 @@ export async function present(
     await ensureReceipt(store, key, item.id, () =>
       api.sendMessage(
         item.chat_id,
-        `⚠️ Je n’ai pas pu terminer cette version.\n🔗 ${escapeHtml(s.url)}\n\n${escapeHtml(s.error ?? "Utilise /reprendre pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
+        `⚠️ Je n’ai pas pu terminer cette version.\n🔗 ${escapeHtml(s.url)}\n\n${escapeHtml(s.error ?? "Utilise /retry pour réessayer.")}\n\n<i>Fiche ${escapeHtml(item.id)} — version ${s.revision}</i>`,
         {
           parse_mode: "HTML",
           link_preview_options: { is_disabled: true },
@@ -808,7 +806,7 @@ export function createBot(env: Env) {
       await ctx.answerCallbackQuery({ text: "🔎 Je vérifie…" });
       if (!(await beginRecovery(env, recoveryId)))
         await ctx.reply(
-          "🔄 Utilise /reprendre pour vérifier l’état actuel de cette fiche.",
+          "🔄 Utilise /retry pour vérifier l’état actuel de cette fiche.",
         );
       return;
     }
@@ -835,7 +833,7 @@ export function createBot(env: Env) {
     const [id, rev, kind, value] = ctx.callbackQuery.data.split(":");
     if (!Number.isSafeInteger(Number(rev)) || Number(rev) < 0) {
       await ctx.answerCallbackQuery({
-        text: "Ce bouton n’est plus utilisable. Ouvre /file pour voir les liens en attente.",
+        text: "Ce bouton n’est plus utilisable. Ouvre /queue pour voir les liens en attente.",
       });
       return;
     }
@@ -928,6 +926,24 @@ export function createBot(env: Env) {
       item = await store.active(env.TELEGRAM_CHAT_ID);
     const message = ctx.message!;
     const text = message.text ?? message.caption ?? "";
+    const legacy =
+      /^\/(aide|statut|file|vider|annuler|reprendre)(?:@\w+)?(?:\s|$)/i.exec(
+        text,
+      );
+    if (legacy) {
+      const names: Record<string, string> = {
+        aide: "help",
+        statut: "status",
+        file: "queue",
+        vider: "clear",
+        annuler: "cancel",
+        reprendre: "retry",
+      };
+      await ctx.reply(
+        `💡 Cette commande s’appelle maintenant /${names[legacy[1].toLowerCase()]}. Aucun changement effectué. Tape /help pour les exemples.`,
+      );
+      return;
+    }
     if (await recoveryReply(env, message.reply_to_message?.message_id, text))
       return;
     const revise = async () => {
@@ -945,17 +961,17 @@ export function createBot(env: Env) {
         receiptKey: key,
       });
     };
-    if (/^\/(start|aide|help)(?:@\w+)?(?:\s|$)/i.test(text)) {
+    if (/^\/(start|help)(?:@\w+)?(?:\s|$)/i.test(text)) {
       await ctx.reply(
         "👋 Envoie un lien avec un commentaire éventuel et « source: nom ». Corrige la proposition par message, puis confirme sa publication FR + EN.\n\n" +
           commands
             .map((entry) => `/${entry.command} — ${entry.description}`)
             .join("\n") +
-          "\n\n/reset conserve une publication déjà commencée : utilise /reprendre pour la vérifier. Aucun document Prismic publié n’est supprimé. /help et /start sont des alias de /aide.",
+          "\n\n/reset conserve une publication déjà commencée : utilise /retry pour la vérifier. Aucun document Prismic publié n’est supprimé. /start affiche aussi cet accueil. Exemples : /queue 2 · /retry u123 · /cancel u123. Une réponse de publication perdue ouvre un dialogue de déblocage.",
       );
       return;
     }
-    if (/^\/(vider|reset)(?:@\w+)?(?:\s|$)/i.test(text)) {
+    if (/^\/(clear|reset)(?:@\w+)?(?:\s|$)/i.test(text)) {
       const count = await store.clearQueue(
         env.TELEGRAM_CHAT_ID,
         ctx.update.update_id,
@@ -965,7 +981,7 @@ export function createBot(env: Env) {
       if (reset && item && item.update_id <= ctx.update.update_id) {
         if (item.state.publicationStarted) {
           note =
-            "La publication de la fiche active a déjà commencé. Utilise /reprendre pour la vérifier ; elle reste protégée.";
+            "La publication de la fiche active a déjà commencé. Utilise /retry pour la vérifier ; elle reste protégée.";
         } else {
           await store.addAction(ctx.update.update_id, item, {
             kind: "cancel",
@@ -979,11 +995,11 @@ export function createBot(env: Env) {
       );
       return;
     }
-    if (/^\/file\b/.test(text)) {
-      const match = /^\/file(?:@\w+)?(?:\s+([1-9]\d{0,5}))?\s*$/.exec(text);
+    if (/^\/queue\b/.test(text)) {
+      const match = /^\/queue(?:@\w+)?(?:\s+([1-9]\d{0,5}))?\s*$/.exec(text);
       if (!match) {
         await ctx.reply(
-          "Pour voir ta file : /file ou /file 2 pour la page suivante.",
+          "Pour voir ta file : /queue ou /queue 2 pour la page suivante.",
         );
         return;
       }
@@ -991,7 +1007,7 @@ export function createBot(env: Env) {
       await ctx.reply(view.text, view.options);
       return;
     }
-    if (/^\/statut\b/.test(text)) {
+    if (/^\/status\b/.test(text)) {
       const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID);
       const waiting = await store.db
         .prepare(
@@ -1017,8 +1033,8 @@ export function createBot(env: Env) {
               ? "☕ Aucune fiche en cours de préparation."
               : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !") +
           background +
-          (blocker && blocker.status === "error"
-            ? `\n\n🔒 Les publications attendent la résolution de ${blocker.id}.\n🔗 ${blocker.state.url}\n${blocker.state.error ?? "Une écriture Prismic est en pause."}\n/reprendre ${blocker.id}`
+          (blocker && ["error", "publication_pending"].includes(blocker.status)
+            ? `\n\n🔒 Les publications attendent la résolution de ${blocker.id}.\n🔗 ${blocker.state.url}\n${blocker.state.error ?? "Une écriture Prismic est en pause."}\n/retry ${blocker.id}`
             : "") +
           (waiting?.count
             ? `\n\n⏳ ${waiting.count} lien(s) validé(s) en attente de publication.`
@@ -1026,9 +1042,9 @@ export function createBot(env: Env) {
       );
       return;
     }
-    const command = /^\/(annuler|reprendre)\b/.exec(text)?.[1];
+    const command = /^\/(cancel|retry)\b/.exec(text)?.[1];
     if (command) {
-      const cancelId = /^\/annuler(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1];
+      const cancelId = /^\/cancel(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1];
       if (cancelId) {
         if (await store.cancelParked(env.TELEGRAM_CHAT_ID, cancelId))
           await ctx.reply(
@@ -1045,12 +1061,20 @@ export function createBot(env: Env) {
           );
         return;
       }
-      if (command === "reprendre") {
-        const requestedId =
-          /^\/reprendre(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1] ??
-          (!item || item.status === "waiting_publish_slot"
-            ? (await store.publicationBlocker(env.TELEGRAM_CHAT_ID))?.id
-            : undefined);
+      if (command === "retry") {
+        let requestedId =
+          /^\/retry(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1] ??
+          (await store.publicationBlocker(env.TELEGRAM_CHAT_ID))?.id;
+        requestedId ??= (
+          await env.DB.prepare(
+            `SELECT i.id FROM items i LEFT JOIN publication_checks p ON p.item_id=i.id
+          WHERE i.chat_id=? AND i.active=0 AND (i.status='error' OR (i.status='publication_pending' AND p.status IN ('unknown','attention')))
+          ORDER BY i.created_at LIMIT 1`,
+          )
+            .bind(env.TELEGRAM_CHAT_ID)
+            .first<{ id: string }>()
+        )?.id;
+        if (requestedId && (await beginRecovery(env, requestedId))) return;
         const check = await store.resumePublicationCheck(
           env.TELEGRAM_CHAT_ID,
           requestedId,
@@ -1089,10 +1113,10 @@ export function createBot(env: Env) {
       }
       if (item) {
         await store.addAction(ctx.update.update_id, item, {
-          kind: command === "annuler" ? "cancel" : "resume",
+          kind: command === "cancel" ? "cancel" : "resume",
           revision: item.state.revision,
         });
-        if (command === "reprendre")
+        if (command === "retry")
           await ctx.reply(
             `🔄 Je reprends là où on en était !\n🔗 ${item.state.url}`,
           );
@@ -1100,7 +1124,7 @@ export function createBot(env: Env) {
         const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID);
         await ctx.reply(
           blocker
-            ? `🔒 La publication de ${blocker.id} est bloquée après le début de sa migration Prismic. Je ne peux pas l’annuler sans vérifier ses écritures.\n${blocker.state.error ?? "Vérifie son état dans Prismic."}\n\nLes autres liens sont conservés. Pour retirer un lien validé en attente, utilise /annuler suivi de son identifiant (/file).`
+            ? `🔒 La publication de ${blocker.id} est bloquée après le début de sa migration Prismic. Je ne peux pas l’annuler sans vérifier ses écritures.\n${blocker.state.error ?? "Vérifie son état dans Prismic."}\n\nLes autres liens sont conservés. Pour retirer un lien validé en attente, utilise /cancel suivi de son identifiant (/queue).`
             : "☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !",
         );
       }
@@ -1108,7 +1132,7 @@ export function createBot(env: Env) {
     }
     if (/^\//.test(text)) {
       await ctx.reply(
-        "🤔 Je ne connais pas cette commande. Tape /aide pour voir les commandes disponibles.",
+        "🤔 Je ne connais pas cette commande. Tape /help pour voir les commandes disponibles.",
       );
       return;
     }

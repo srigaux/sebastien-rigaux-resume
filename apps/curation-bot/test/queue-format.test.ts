@@ -39,7 +39,7 @@ it("shows titles, human statuses and an actionable explanation instead of intern
   );
   expect(result.text).toContain("3 liens");
   expect(result.text).toContain("&lt;Script&gt; &amp; un titre");
-  expect(result.text).toContain("/reprendre u42");
+  expect(result.text).toContain("/retry u42");
   expect(result.text).toContain("Validés, prêts à publier");
   expect(result.text).toContain("À valider");
   expect(result.text).toContain("Tu peux continuer à préparer et valider");

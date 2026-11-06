@@ -100,9 +100,9 @@ it("retrouve le verrou d’une publication inactive avec les commandes sans iden
   waiting.state.approvedRevision = waiting.state.revision;
   await store.enqueue(waiting.id, 974, "1", waiting.state, waiting.created_at);
   await store.save(waiting, "waiting_publish_slot");
-  await handleUpdate(env, update(975, "/statut"));
-  await handleUpdate(env, update(976, "/reprendre"));
-  await handleUpdate(env, update(977, "/annuler"));
+  await handleUpdate(env, update(975, "/status"));
+  await handleUpdate(env, update(976, "/retry"));
+  await handleUpdate(env, update(977, "/cancel"));
   const replies = vi
     .mocked(fetch)
     .mock.calls.filter(([url]) => String(url).endsWith("sendMessage"))
@@ -115,7 +115,7 @@ it("retrouve le verrou d’une publication inactive avec les commandes sans iden
   expect((await store.get(failed.id)).status).toBe("error");
   expect((await store.get(waiting.id)).status).toBe("waiting_publish_slot");
   await store.completed("missing-write", { id: "fr-existing" });
-  await handleUpdate(env, update(978, "/reprendre"));
+  await handleUpdate(env, update(978, "/retry"));
   expect((await store.get(failed.id)).status).toBe("queued");
   expect((await store.get(failed.id)).generation).toBe(1);
   expect((await store.get(failed.id)).state.error).toBeUndefined();
@@ -597,13 +597,13 @@ it("vide l’attente du chat sans toucher à la fiche active ni aux nouveaux lie
   await store.claim("1");
   await store.enqueue("u701", 701, "1", item.state, item.created_at);
   await store.enqueue("u702", 702, "2", item.state, item.created_at);
-  await handleUpdate(env, update(703, "/vider"));
+  await handleUpdate(env, update(703, "/clear"));
   expect((await store.get("u701")).status).toBe("cancelled");
   expect((await store.get("u702")).status).toBe("queued");
   expect((await store.get(item.id)).active).toBe(1);
   expect(await store.nextAction(item.id)).toBeUndefined();
   await store.enqueue("u704", 704, "1", item.state, item.created_at);
-  await handleUpdate(env, update(703, "/vider"));
+  await handleUpdate(env, update(703, "/clear"));
   expect((await store.get("u704")).status).toBe("queued");
 });
 it.each([false, true])(
@@ -644,7 +644,7 @@ it("help et les commandes inconnues ne deviennent pas des corrections", async ()
     .mock.calls.map(([, init]) => String(init?.body));
   expect(
     bodies.some(
-      (body) => body.includes("/reset") && body.includes("/reprendre"),
+      (body) => body.includes("/reset") && body.includes("/retry"),
     ),
   ).toBe(true);
 });
@@ -896,7 +896,7 @@ it("can resume an inactive publication while another item is waiting for its slo
   await store.enqueue(next.id, 881, "1", next.state, next.created_at);
   await store.claim("1");
   await store.save(next, "waiting_publish_slot");
-  await handleUpdate(env, update(882, "/reprendre u880"));
+  await handleUpdate(env, update(882, "/retry u880"));
   expect(
     await env.DB.prepare(
       "SELECT status,attempts FROM publication_checks WHERE item_id=?",
@@ -906,7 +906,7 @@ it("can resume an inactive publication while another item is waiting for its slo
   ).toEqual({ status: "unknown", attempts: 0 });
   expect(await store.nextAction(next.id)).toBeUndefined();
   expect((await store.get(next.id)).status).toBe("waiting_publish_slot");
-  await handleUpdate(env, update(883, "/reprendre u999999"));
+  await handleUpdate(env, update(883, "/retry u999999"));
   expect(await store.nextAction(next.id)).toBeUndefined();
 });
 
@@ -928,7 +928,7 @@ it("renders a paginated queue with titles and keeps the active review intact whe
     const next = fixture(`u${830 + i}`);
     await store.enqueue(next.id, 830 + i, "1", next.state, next.created_at);
   }
-  await handleUpdate(env, update(850, "/file"));
+  await handleUpdate(env, update(850, "/queue"));
   const response = vi
     .mocked(fetch)
     .mock.calls.filter(([url]) => String(url).endsWith("sendMessage"))
@@ -940,7 +940,7 @@ it("renders a paginated queue with titles and keeps the active review intact whe
   expect(body.text).toContain("Page 1/2");
   expect(JSON.stringify(body.reply_markup)).toContain("queue:2");
   expect(body.text).not.toContain("waiting_publish_slot");
-  await handleUpdate(env, update(851, `/annuler ${parked.id}`));
+  await handleUpdate(env, update(851, `/cancel ${parked.id}`));
   expect((await store.get(parked.id)).status).toBe("cancelled");
   expect((await store.active("1"))?.id).toBe(active.id);
 });

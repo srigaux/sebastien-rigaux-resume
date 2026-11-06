@@ -114,7 +114,7 @@ if (command === "inspect" && key) {
     throw new Error(
       "Operation changed during reconciliation. Inspect it again.",
     );
-  console.log("Operation reconciled. Use /reprendre in Telegram.");
+  console.log("Operation reconciled. Use /retry in Telegram.");
 } else
   throw new Error(
     "Usage: reconcile.mjs inspect ITEM | confirm-success KEY response.json | confirm-not-applied KEY [--remote] [--reviewed-in-prismic]",

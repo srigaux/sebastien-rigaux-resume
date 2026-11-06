@@ -188,7 +188,7 @@ it.each([
   ).toBe(true);
 });
 
-it("une publication à réponse perdue passe au cron sans être renvoyée", async () => {
+it("une publication à réponse perdue propose une reprise explicite", async () => {
   const { store, item } = await setup(
     "POST https://migration.prismic.io/migration-release/publish",
   );
@@ -196,7 +196,7 @@ it("une publication à réponse perdue passe au cron sans être renvoyée", asyn
   latest.state.publishedIds = ["published-fr", "published-en"];
   await store.save(latest);
   await beginRecovery(env, item.id);
-  expect((await store.get(item.id)).status).toBe("publication_pending");
+  expect((await store.get(item.id)).status).toBe("error");
   expect((await store.operation("lost"))!.status).toBe("pending");
   expect(
     await env.DB.prepare("SELECT item_id FROM publication_lock").first(),
@@ -278,7 +278,7 @@ it("résout le dialogue complet via les mises à jour Telegram autorisées", asy
         : {}),
     },
   });
-  await handleUpdate(env, message(960, "/reprendre"));
+  await handleUpdate(env, message(960, "/retry"));
   const s = await session();
   await handleUpdate(
     env,
@@ -305,4 +305,112 @@ it("résout le dialogue complet via les mises à jour Telegram autorisées", asy
   });
   expect((await store.operation("lost"))!.status).toBe("done");
   expect((await store.get(item.id)).status).toBe("queued");
+});
+
+it("/retry ouvre la réconciliation d’une publication en attention, sans réarmer une boucle", async () => {
+  const { store, item } = await setup(
+    "POST https://migration.prismic.io/migration-release/publish",
+  );
+  const latest = await store.get(item.id);
+  latest.state.publishedIds = ["fr-id", "en-id"];
+  await store.finish(latest, "publication_pending", env.PRISMIC_REPOSITORY);
+  await env.DB.prepare(
+    "INSERT INTO publication_checks(item_id,status,created_at,next_check_at,attempts) VALUES(?,'attention',0,0,5)",
+  )
+    .bind(item.id)
+    .run();
+  await handleUpdate(env, {
+    update_id: 6000,
+    message: {
+      message_id: 6000,
+      date: 1,
+      from: { id: 1, is_bot: false, first_name: "Test" },
+      chat: { id: 1, type: "private" },
+      text: `/retry ${item.id}`,
+    },
+  } as Update);
+  expect((await session()).operation.key).toBe("lost");
+  expect(
+    await env.DB.prepare("SELECT attempts FROM publication_checks").first(),
+  ).toEqual({ attempts: 5 });
+  await click("retry");
+  expect((await store.operation("lost"))?.status).toBe("pending");
+  await click("confirm");
+  expect((await store.operation("lost"))?.status).toBe("retryable");
+  expect((await store.get(item.id)).status).toBe("queued");
+  expect((await store.get(item.id)).state.publishedIds).toEqual([
+    "fr-id",
+    "en-id",
+  ]);
+  expect(
+    await env.DB.prepare("SELECT * FROM publication_checks").first(),
+  ).toBeNull();
+  const generation = (await store.get(item.id)).generation;
+  await click("confirm");
+  expect((await store.get(item.id)).generation).toBe(generation);
+});
+
+it("continue la file uniquement après confirmation et conserve la fiche à résoudre", async () => {
+  const { store, item } = await setup();
+  await beginRecovery(env, item.id);
+  await click("skip");
+  expect(await store.publicationBlocker("1")).toBeDefined();
+  await click("confirmskip");
+  expect(await store.publicationBlocker("1")).toBeUndefined();
+  expect((await store.get(item.id)).status).toBe("error");
+  expect((await store.operation("lost"))?.status).toBe("pending");
+  expect(
+    await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM operations WHERE target='recovery.skip'",
+    ).first(),
+  ).toEqual({ n: 1 });
+  await click("confirmskip");
+  expect(
+    await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM operations WHERE target='recovery.skip'",
+    ).first(),
+  ).toEqual({ n: 1 });
+});
+
+it("les anciennes commandes orientent vers l’anglais sans modifier la file", async () => {
+  const { store, item } = await setup();
+  await handleUpdate(env, {
+    update_id: 7000,
+    message: {
+      message_id: 7000,
+      date: 1,
+      from: { id: 1, is_bot: false, first_name: "Test" },
+      chat: { id: 1, type: "private" },
+      text: "/reprendre",
+    },
+  } as Update);
+  expect((await store.operation("lost"))?.status).toBe("pending");
+  expect((await store.get(item.id)).status).toBe("error");
+  expect(JSON.stringify(vi.mocked(fetch).mock.calls)).toContain("/retry");
+  expect(
+    await env.DB.prepare(
+      "SELECT * FROM cache WHERE key LIKE 'recovery:1:%'",
+    ).first(),
+  ).toBeNull();
+});
+
+it("le cron propose automatiquement le dialogue après épuisement des vérifications", async () => {
+  const { reconcilePublications } = await import("@/publication");
+  const { store, item } = await setup(
+    "POST https://migration.prismic.io/migration-release/publish",
+  );
+  const latest = await store.get(item.id);
+  latest.state.publishedIds = ["fr-id", "en-id"];
+  await store.finish(latest, "publication_pending", env.PRISMIC_REPOSITORY);
+  await env.DB.prepare(
+    "INSERT INTO publication_checks(item_id,status,created_at,next_check_at,attempts) VALUES(?,'attention',0,0,5)",
+  )
+    .bind(item.id)
+    .run();
+  await reconcilePublications(env);
+  expect((await session()).itemId).toBe(item.id);
+  expect((await store.operation("lost"))?.status).toBe("pending");
+  const count = vi.mocked(fetch).mock.calls.length;
+  await reconcilePublications(env);
+  expect(vi.mocked(fetch).mock.calls.length).toBe(count);
 });

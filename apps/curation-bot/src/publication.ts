@@ -1,3 +1,4 @@
+import { beginRecovery } from "@/recovery";
 import type { Env, Item } from "@/domain";
 import { errorFields, log, observe, withContext } from "@/observability";
 import { verifyPublication } from "@/prismic";
@@ -7,15 +8,14 @@ import { Store } from "@/store";
 // Keep ordinary propagation asynchronous, but stop presenting hours of missing
 // documents as a normal publication delay. No write is retried by this checker.
 export const MAX_PUBLICATION_CHECKS = 5;
-export const PUBLICATION_FALLBACK_DELAY_MS = 10 * 60_000;
-const RECHECK_DELAYS_MS = [60_000, 120_000, 300_000, 600_000];
+export const PUBLICATION_FALLBACK_DELAY_MS = 60_000;
+const RECHECK_DELAYS_MS = [180_000, 600_000, 1800_000, 3600_000];
 function nextCheck(attempts: number, createdAt = 0) {
-  return Math.max(
-    createdAt + PUBLICATION_FALLBACK_DELAY_MS,
-    Date.now() +
-      RECHECK_DELAYS_MS[
-        Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
-      ],
+  return (
+    (createdAt || Date.now()) +
+    RECHECK_DELAYS_MS[
+      Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
+    ]
   );
 }
 
@@ -57,9 +57,7 @@ export async function recordPublicationWebhook(
        WHERE EXISTS (
          SELECT 1 FROM json_each(i.state,'$.publishedIds') ids
          WHERE ids.value IN (SELECT value FROM json_each(?))
-       ) OR (?=1 AND EXISTS (
-         SELECT 1 FROM publication_lock l WHERE l.repository=? AND l.item_id=i.id
-       ))
+       ) OR (?=1 AND i.status='publication_pending' AND ? IS NOT NULL)
      )`,
   )
     .bind(
@@ -79,6 +77,31 @@ export async function recordPublicationWebhook(
 export async function reconcilePublications(env: Env) {
   const now = Date.now(),
     store = new Store(env.DB);
+  // Compatibility: accepted publications from older deployments must not retain
+  // the repository lock while waiting for Content API propagation.
+  await env.DB.prepare(
+    `DELETE FROM publication_lock WHERE item_id IN (
+    SELECT i.id FROM items i JOIN publication_checks p ON p.item_id=i.id
+    WHERE i.active=0 AND i.status='publication_pending'
+      AND (p.status='accepted' OR json_extract(i.state,'$.publicationRequested')=1))`,
+  ).run();
+  const intervention = await env.DB.prepare(
+    `SELECT i.id FROM items i
+    LEFT JOIN publication_checks p ON p.item_id=i.id
+    WHERE i.active=0 AND i.chat_id=? AND COALESCE(json_extract(i.state,'$.recoverySkipped'),0)=0
+      AND ((i.status='publication_pending' AND p.status IN ('unknown','attention') AND p.notified=0 AND p.lease_until<=?)
+        OR (i.status='error' AND EXISTS(SELECT 1 FROM publication_lock l WHERE l.item_id=i.id)))
+      AND NOT EXISTS(SELECT 1 FROM cache c WHERE c.key='recovery-current:' || i.id AND c.expires_at>?)
+    ORDER BY i.created_at LIMIT 1`,
+  )
+    .bind(env.TELEGRAM_CHAT_ID, now, now)
+    .first<{ id: string }>();
+  if (intervention && (await beginRecovery(env, intervention.id)))
+    await env.DB.prepare(
+      "UPDATE publication_checks SET notified=1 WHERE item_id=?",
+    )
+      .bind(intervention.id)
+      .run();
   const row = await env.DB.prepare(
     `SELECT p.item_id,p.status,p.attempts,p.created_at FROM publication_checks p
     JOIN items i ON i.id=p.item_id WHERE p.lease_until<=? AND p.next_check_at<=?
@@ -95,7 +118,7 @@ export async function reconcilePublications(env: Env) {
     }>();
   if (row) {
     const claim = await env.DB.prepare(
-      "UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=? AND notified=0",
+      "UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=?",
     )
       .bind(now + 120_000, row.item_id, now, now, row.status)
       .run();
@@ -108,7 +131,7 @@ export async function reconcilePublications(env: Env) {
           // hundreds more reads just because the state survived a deployment.
           if (checks >= MAX_PUBLICATION_CHECKS) {
             await env.DB.prepare(
-              "UPDATE publication_checks SET status='attention',lease_until=0 WHERE item_id=?",
+              "UPDATE publication_checks SET status='attention',notified=0,lease_until=0 WHERE item_id=?",
             )
               .bind(item.id)
               .run();
@@ -129,7 +152,7 @@ export async function reconcilePublications(env: Env) {
             const needsAttention = checks >= MAX_PUBLICATION_CHECKS;
             const nextCheckAt = nextCheck(checks, row.created_at);
             await env.DB.prepare(
-              "UPDATE publication_checks SET status=?,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
+              "UPDATE publication_checks SET status=?,notified=0,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
             )
               .bind(
                 needsAttention ? "attention" : row.status,
@@ -198,7 +221,7 @@ export async function reconcilePublications(env: Env) {
         const needsAttention =
           row.status !== "confirmed" && checks >= MAX_PUBLICATION_CHECKS;
         await env.DB.prepare(
-          "UPDATE publication_checks SET status=?,attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
+          "UPDATE publication_checks SET status=?,notified=0,attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
         )
           .bind(
             needsAttention ? "attention" : row.status,

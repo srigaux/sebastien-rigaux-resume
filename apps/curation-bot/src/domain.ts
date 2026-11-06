@@ -165,6 +165,8 @@ export type Stage =
   | "done"
   | "cancelled";
 export type State = {
+  /** User explicitly released the publication lock despite residual drafts. */
+  recoverySkipped?: boolean;
   url: string;
   note: string;
   selectedOn: string;
@@ -328,7 +330,7 @@ export function linksIn(text: string): string[] {
 export function errorText(error: unknown): string {
   // Do not expose credentials, SDK request bodies, or raw provider responses in the chat.
   if (error instanceof Error && error.name === "BotError") return error.message;
-  return "Le service a rencontré une erreur. Utilisez /reprendre ; consultez les journaux avec l’identifiant de la fiche.";
+  return "Le service a rencontré une erreur. Utilisez /retry ; consultez les journaux avec l’identifiant de la fiche.";
 }
 export class BotError extends Error {
   constructor(
@@ -461,7 +463,7 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
       "error",
     );
     throw new BotError(
-      "Le modèle a proposé un sujet inconnu ou répété. Utilisez /reprendre pour réessayer.",
+      "Le modèle a proposé un sujet inconnu ou répété. Utilisez /retry pour réessayer.",
     );
   }
   if (
