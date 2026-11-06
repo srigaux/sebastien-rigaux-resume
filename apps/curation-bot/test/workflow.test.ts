@@ -1,5 +1,6 @@
 import { cats, extraction, fixture } from '@test/fixtures'
-import { env, introspectWorkflowInstance } from 'cloudflare:test'
+import { introspectWorkflowInstance } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import type { Env } from '@/domain'
@@ -90,7 +91,7 @@ it('attend une action persistée dans un véritable Workflow Cloudflare et rejet
 })
 
 it('libère la file dès l’acceptation sans attendre le contrôle cron des deux versions', async () => {
-  const { repository, extraction } = await import('@test/fixtures')
+  const { repository } = await import('@test/fixtures')
   const store = new Store(env.DB)
   const item = fixture('u901')
   item.state.extractionKey = 'extractions/u901.json'
@@ -189,8 +190,8 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
         expect(
           vi
             .mocked(fetch)
-            .mock.calls.some(([url]) =>
-              String(url).endsWith('/editMessageReplyMarkup')
+            .mock.calls.some(([requestUrl]) =>
+              String(requestUrl).endsWith('/editMessageReplyMarkup')
             )
         ).toBe(true)
         // eslint-disable-next-line vitest/no-conditional-expect
@@ -242,7 +243,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
     const finished = await store.get(item.id)
     expect(finished.status).toBe('publication_pending')
     expect(finished.active).toBe(0)
-    expect(finished.state.publishedIds).toEqual(['live-fr', 'live-en'])
+    expect(finished.state.publishedIds).toStrictEqual(['live-fr', 'live-en'])
     expect(publishCalls).toBe(1)
     expect(createCalls).toBe(2)
     expect(publicationAccepted).toBe(true)
@@ -324,7 +325,7 @@ it('recrée une instance après panne en reprenant la fiche persistée et ses ac
     await dispatch(recovering)
     await inspector.waitForStepResult({ name: 'g1-c0-present' })
     const persisted = await new Store(env.DB).get(item.id)
-    expect(persisted.state.duplicateMatches).toEqual(['Déjà publié'])
+    expect(persisted.state.duplicateMatches).toStrictEqual(['Déjà publié'])
     await store.addAction(904, persisted, { kind: 'cancel', revision: 1 })
     await (
       await env.CURATION.get('u902-g1')
@@ -337,7 +338,7 @@ it('recrée une instance après panne en reprenant la fiche persistée et ses ac
 })
 
 it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appeler le LLM', async () => {
-  const { extraction, repository } = await import('@test/fixtures')
+  const { repository } = await import('@test/fixtures')
   const store = new Store(env.DB)
   const item = fixture('u903')
   item.state.extractionKey = 'extractions/u903.json'
@@ -485,7 +486,7 @@ it('parks an approved publication behind an uncertain release and starts the nex
     expect((await store.active('1'))?.id).toBe('u861')
     expect(
       await env.DB.prepare('SELECT item_id FROM publication_lock').first()
-    ).toEqual({ item_id: 'uncertain-older-publication' })
+    ).toStrictEqual({ item_id: 'uncertain-older-publication' })
     expect(
       vi
         .mocked(fetch)

@@ -1,5 +1,5 @@
 import { cats, draft, extraction, fixture, repository } from '@test/fixtures'
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import { generateDraft } from '@/editor'
@@ -254,7 +254,7 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   const result = await migrate(env, item, cats, async (stage) => {
     progress.push(stage)
   })
-  expect(progress).toEqual([
+  expect(progress).toStrictEqual([
     'image',
     'icon',
     'create-fr',
@@ -262,7 +262,7 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
     'write-fr',
     'write-en',
   ])
-  expect(result.ids).toEqual(['fr-id', 'en-id'])
+  expect(result.ids).toStrictEqual(['fr-id', 'en-id'])
   expect(assetCount).toBe(2)
   expect(creates[1].alternate_language_id).toBe('fr-id')
   expect(puts[0].uid).toBe('react-structurer-les-variantes-des-composants')
@@ -271,12 +271,12 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
   )
   expect(puts[0].data.image.id).toBe(puts[1].data.image.id)
   expect(puts[0].data.site_icon.id).toBe(puts[1].data.site_icon.id)
-  expect(puts[0].data.image.dimensions).toEqual({ width: 64, height: 64 })
+  expect(puts[0].data.image.dimensions).toStrictEqual({ width: 64, height: 64 })
   expect(puts[0].data.image.alt).toBe(draft.fr.imageAlt)
   expect(puts[1].data.image.alt).toBe(draft.en.imageAlt)
   expect(puts[0].data.credit).toBe('Jane Doe')
   expect(puts[0].data.image.copyright).toBeNull()
-  expect(puts[0].data.summary[0].spans).toEqual([])
+  expect(puts[0].data.summary[0].spans).toStrictEqual([])
   expect(puts[0].data.summary[0].text).toBe(item.state.draft!.fr.summary)
   expect(puts[1].data.summary[0].text).toBe(item.state.draft!.en.summary)
   await migrate(env, item, cats)
@@ -408,7 +408,7 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
   expect(order.filter((method) => method === 'sendPhoto')).toHaveLength(0)
   expect(
     (await env.DB.prepare('SELECT message_id FROM messages').all()).results
-  ).toEqual([{ message_id: 11 }])
+  ).toStrictEqual([{ message_id: 11 }])
 })
 
 it('déduplique FR/EN et utilise le permalien FR actuel même si le slug a changé', async () => {
@@ -453,7 +453,7 @@ it('déduplique FR/EN et utilise le permalien FR actuel même si le slug a chang
       })
     })
   )
-  expect(await publishedDuplicates(env, extraction.url)).toEqual([
+  expect(await publishedDuplicates(env, extraction.url)).toStrictEqual([
     {
       title: 'Titre français',
       url: 'https://sebastien.rigaux.be/veille/liens/slug-fr-renomme',

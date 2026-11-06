@@ -159,7 +159,7 @@ export async function generateDraft(
         'Proposition de veille technique bilingue FR/EN, avec métadonnées et classements issus des catalogues fournis.',
       schema: editorialSchema(cats),
     }),
-    system: EDITORIAL,
+    instructions: EDITORIAL,
     messages: [
       {
         role: 'user',
@@ -195,7 +195,7 @@ export async function generateDraft(
     ],
     providerOptions: { openai: { store: false, reasoningEffort: 'none' } },
   })
-  const usage = result.totalUsage
+  const usage = result.usage
   log('editorial.usage', {
     provider: 'openai',
     itemId: item.id,

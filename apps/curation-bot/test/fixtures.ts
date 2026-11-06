@@ -1,5 +1,10 @@
-import { formats } from '@/domain'
-import type { Catalog, Draft, Extraction, Item } from '@/domain'
+import {
+  type Catalog,
+  type Draft,
+  type Extraction,
+  type Item,
+  formats,
+} from '@/domain'
 
 export const cats: Catalog = {
   topics: [

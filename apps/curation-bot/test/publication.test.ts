@@ -1,9 +1,6 @@
 import { cats, extraction, fixture, repository } from '@test/fixtures'
-import {
-  createExecutionContext,
-  env,
-  waitOnExecutionContext,
-} from 'cloudflare:test'
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import type { Env } from '@/domain'
@@ -145,7 +142,7 @@ it.each(['missing', 'partial'] as const)(
       await env.DB.prepare(
         'SELECT status,attempts,last_error FROM publication_checks'
       ).first()
-    ).toEqual({
+    ).toStrictEqual({
       status: 'accepted',
       attempts: 1,
       last_error: 'documents_not_available',
@@ -188,7 +185,7 @@ it('réveille seulement une fiche déjà approuvée, après libération du verro
   await env.DB.prepare('UPDATE publication_checks SET next_check_at=0').run()
   remote('ready')
   await reconcilePublications(env)
-  expect((await store.nextAction(next.id))?.action).toEqual({
+  expect((await store.nextAction(next.id))?.action).toStrictEqual({
     kind: 'resume',
     revision: 1,
   })
@@ -256,7 +253,7 @@ it('une réponse de publication perdue reste inconnue sans renvoi aveugle', asyn
   await advance(env, steps, 'lost', item, cats)
   expect(item.status).toBe('publication_pending')
   expect(item.state.publicationUnknown).toBe(true)
-  expect(warning.mock.calls.map(([entry]) => entry)).toContainEqual(
+  expect(warning.mock.calls.map(([record]) => record)).toContainEqual(
     expect.objectContaining({
       event: 'publication.request.unknown',
       itemId: item.id,
@@ -265,7 +262,7 @@ it('une réponse de publication perdue reste inconnue sans renvoi aveugle', asyn
   expect(posts).toBe(1)
   expect(
     await env.DB.prepare('SELECT status FROM publication_checks').first()
-  ).toEqual({ status: 'unknown' })
+  ).toStrictEqual({ status: 'unknown' })
   await store.finish(item, 'publication_pending', env.PRISMIC_REPOSITORY)
   remote('ready')
   await env.DB.prepare('UPDATE publication_checks SET next_check_at=0').run()
@@ -286,7 +283,7 @@ it('valide localement avant toute écriture et attend une release précédente',
   await store.lock(env.PRISMIC_REPOSITORY, 'previous')
   await advance(env, steps, 'held', item, cats)
   expect(item.status).toBe('waiting_publish_slot')
-  expect(output.mock.calls.map(([entry]) => entry)).toContainEqual(
+  expect(output.mock.calls.map(([record]) => record)).toContainEqual(
     expect.objectContaining({
       event: 'publication.slot.waiting',
       itemId: item.id,
@@ -321,17 +318,17 @@ it('une erreur de notification finale ne garde pas le verrou et sera retentée s
     await env.DB.prepare(
       'SELECT status,notified FROM publication_checks'
     ).first()
-  ).toEqual({ status: 'confirmed', notified: 0 })
+  ).toStrictEqual({ status: 'confirmed', notified: 0 })
   await env.DB.prepare('UPDATE publication_checks SET next_check_at=0').run()
   remote('ready')
   await reconcilePublications(env)
   expect(
     await env.DB.prepare('SELECT notified FROM publication_checks').first()
-  ).toEqual({ notified: 1 })
+  ).toStrictEqual({ notified: 1 })
   expect(api.searches()).toBe(1)
   expect(
     await env.DB.prepare('SELECT attempts FROM publication_checks').first()
-  ).toEqual({ attempts: 1 })
+  ).toStrictEqual({ attempts: 1 })
 })
 
 it('logs publication age, actual checks and the next scheduled check', async () => {
@@ -344,8 +341,8 @@ it('logs publication age, actual checks and the next scheduled check', async () 
   remote('missing')
   await reconcilePublications(env)
   const entry = output.mock.calls
-    .map(([entry]) => entry)
-    .find((entry) => entry.event === 'publication.availability.pending')
+    .map(([record]) => record)
+    .find((record) => record.event === 'publication.availability.pending')
   expect(entry).toMatchObject({ itemId: item.id, checks: 3 })
   expect(entry.pendingMs).toBeGreaterThanOrEqual(120_000)
   expect(Date.parse(entry.nextCheckAt)).toBeGreaterThan(Date.now())
@@ -368,8 +365,8 @@ it('reports the duplicate decision without logging the matching titles or URLs',
   await advance(env, steps, 'g0-c0', item, cats)
   expect(item.status).toBe('duplicate')
   const entry = output.mock.calls
-    .map(([entry]) => entry)
-    .find((entry) => entry.event === 'item.duplicate')
+    .map(([record]) => record)
+    .find((record) => record.event === 'item.duplicate')
   expect(entry).toMatchObject({ itemId: item.id, matchCount: 1 })
   expect(entry.message).toContain('1 correspondance(s)')
   expect(JSON.stringify(entry)).not.toContain(item.state.url)
@@ -407,10 +404,10 @@ it.each(['missing', 'unauthorized'] as const)(
 
     expect(
       await env.DB.prepare('SELECT status FROM publication_checks').first()
-    ).toEqual({ status: 'attention' })
+    ).toStrictEqual({ status: 'attention' })
     const calls = vi.mocked(fetch).mock.calls.length
     await reconcilePublications(env)
-    expect(vi.mocked(fetch).mock.calls.length).toBe(calls)
+    expect(vi.mocked(fetch).mock.calls).toHaveLength(calls)
     expect(api.writes()).toBe(0)
     expect(
       await env.DB.prepare('SELECT item_id FROM publication_lock').first()
@@ -427,7 +424,7 @@ it('recovers through an explicit bounded recheck after manual publication, witho
   expect(
     await store.resumePublicationCheck('wrong-chat', item.id)
   ).toBeUndefined()
-  expect(await store.resumePublicationCheck('1', item.id)).toEqual({
+  expect(await store.resumePublicationCheck('1', item.id)).toStrictEqual({
     id: item.id,
     scheduled: true,
   })
@@ -435,7 +432,7 @@ it('recovers through an explicit bounded recheck after manual publication, witho
     await env.DB.prepare(
       'SELECT status,attempts FROM publication_checks'
     ).first()
-  ).toEqual({ status: 'unknown', attempts: 0 })
+  ).toStrictEqual({ status: 'unknown', attempts: 0 })
   const api = remote('ready')
   await reconcilePublications(env)
   expect((await store.get(item.id)).status).toBe('done')
@@ -454,7 +451,7 @@ it('pauses legacy jobs over budget without another remote availability request',
     await env.DB.prepare(
       'SELECT status,attempts FROM publication_checks'
     ).first()
-  ).toEqual({ status: 'attention', attempts: 512 })
+  ).toStrictEqual({ status: 'attention', attempts: 512 })
 })
 it('does not reset the paused budget through routine scheduling or an active lease', async () => {
   const { item, store } = await pending()
@@ -468,8 +465,8 @@ it('does not reset the paused budget through routine scheduling or an active lea
     await env.DB.prepare(
       'SELECT status,attempts FROM publication_checks'
     ).first()
-  ).toEqual({ status: 'attention', attempts: 5 })
-  expect(await store.resumePublicationCheck('1', item.id)).toEqual({
+  ).toStrictEqual({ status: 'attention', attempts: 5 })
+  expect(await store.resumePublicationCheck('1', item.id)).toStrictEqual({
     id: item.id,
     scheduled: false,
   })
@@ -546,7 +543,7 @@ it.each(['accepted', 'unknown'] as const)(
       await env.DB.prepare(
         'SELECT status,notified,webhook_ref FROM publication_checks'
       ).first()
-    ).toEqual({
+    ).toStrictEqual({
       status: 'confirmed',
       notified: 1,
       webhook_ref: 'published-ref',
@@ -558,7 +555,7 @@ it.each(['accepted', 'unknown'] as const)(
     expect(api.successes()).toBe(1)
     expect(
       await env.DB.prepare('SELECT notified FROM publication_checks').first()
-    ).toEqual({ notified: 1 })
+    ).toStrictEqual({ notified: 1 })
   }
 )
 
@@ -602,7 +599,7 @@ it('does not wake for unrelated IDs, wrong secrets or unpublished release update
   expect(api.searches()).toBe(0)
   expect(
     await env.DB.prepare('SELECT webhook_ref FROM publication_checks').first()
-  ).toEqual({ webhook_ref: null })
+  ).toStrictEqual({ webhook_ref: null })
 })
 it('persists an early webhook until the active workflow parks', async () => {
   const { store, item } = await pending('accepted', false)
@@ -636,7 +633,7 @@ it('persists a wake-up across concurrent webhook receipts', async () => {
     recordPublicationWebhook(env, 'same-ref', ['fr-id'], false),
     recordPublicationWebhook(env, 'same-ref', ['en-id'], false),
   ])
-  expect(results.sort()).toEqual([false, true])
+  expect(results.sort()).toStrictEqual([false, true])
 })
 
 it('confirms the bot even when the GitHub token is unconfigured', async () => {

@@ -201,7 +201,7 @@ export async function downloadMedia(
     if (!response?.ok) {
       throw new RemoteError(
         `Média inaccessible (HTTP ${response?.status}).`,
-        !!response &&
+        response !== undefined &&
           (response.status === 408 ||
             response.status === 429 ||
             response.status >= 500),

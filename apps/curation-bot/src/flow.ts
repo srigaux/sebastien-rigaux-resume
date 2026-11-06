@@ -275,7 +275,7 @@ export async function advance(
       topics: Object.fromEntries(cats.topics.map((t) => [t.uid, t.id])),
       sourceId: cats.sources.find((source) => source.uid === s.sourceUid)?.id,
     }
-    const progress = (stage: PublicationStage, detail?: string) =>
+    const publicationProgress = (stage: PublicationStage, detail?: string) =>
       publicationNotice(env, item, stage, detail)
     s.publicationStarted = true
     item.status = 'publishing'
@@ -288,7 +288,7 @@ export async function advance(
     if (!s.publishedIds) {
       try {
         const result = await retry(step, `${prefix}-migrate`, () =>
-          migrate(env, item, cats, progress)
+          migrate(env, item, cats, publicationProgress)
         )
         s.publishedIds = result.ids
         s.mediaIds = result.mediaIds
@@ -351,7 +351,7 @@ export async function advance(
 
       try {
         await retry(step, `${prefix}-publish`, async () => {
-          await progress('publish')
+          await publicationProgress('publish')
           return publish(env, item)
         })
         s.publicationRequested = true
@@ -419,7 +419,7 @@ export async function applyAction(
     action.kind === 'resume' &&
     (item.status === 'error' ||
       item.status === 'waiting_publish_slot' ||
-      (!s.publicationStarted && !!s.media?.failures.length))
+      (!s.publicationStarted && Boolean(s.media?.failures.length)))
   ) {
     if (s.publicationStarted) {
       const pending = await new Store(env.DB).db
@@ -529,7 +529,7 @@ export async function applyAction(
     s.revisionReceiptKey = action.receiptKey
     s.revisionNote = selected ? 'Image modifiée.' : 'Image retirée.'
     s.imageChoice = selected
-    s.imagePending = !!selected
+    s.imagePending = Boolean(selected)
 
     if (!selected) {
       if (s.media.image) {
@@ -540,7 +540,7 @@ export async function applyAction(
     }
 
     s.media.failures = s.media.failures.filter((f) => f.kind !== 'image')
-    s.needsRevision = !!selected
+    s.needsRevision = Boolean(selected)
     s.revision++
     s.approvedRevision = undefined
     item.status = 'queued'
@@ -559,7 +559,7 @@ export async function applyAction(
   }
 
   if (action.kind === 'format' && s.draft) {
-    const format = formats.find((format) => format === action.value)
+    const format = formats.find((candidate) => candidate === action.value)
 
     if (!format) {
       return 'Type inconnu. Rouvrez la liste des types.'
@@ -588,7 +588,9 @@ export async function applyAction(
   }
 
   if (action.kind === 'source' && s.draft) {
-    const source = cats.sources.find((source) => source.id === action.value)
+    const source = cats.sources.find(
+      (candidate) => candidate.id === action.value
+    )
 
     if (action.value !== 'none' && !source) {
       return 'Source inconnue. Rouvrez la liste des sources.'

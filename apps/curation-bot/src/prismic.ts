@@ -243,7 +243,7 @@ export function journaledFetch(
           init = { ...init, body: JSON.stringify(body) }
         }
 
-        const write = !!init?.body
+        const write = Boolean(init?.body)
 
         if (!write) {
           const res = await fetchImpl(url, {

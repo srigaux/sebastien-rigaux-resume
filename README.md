@@ -90,6 +90,26 @@ simplifie les `else` et retours inutiles. Il interdit notamment `eval`, les
 constructeurs de fonctions dynamiques, les wrappers primitifs et la modification
 des prototypes natifs.
 
+Les règles de clarté interdisent les noms masquant une variable englobante et
+les conversions abrégées (`!!value`, `+value`). L'analyse typée signale les API
+dépréciées et les membres privés de classe qui peuvent être `readonly`.
+
+`tools/eslint/imports.mjs` vérifie les dépendances déclarées dans chaque projet,
+les imports dupliqués et les cycles. Les apps ne peuvent pas accéder aux fichiers
+internes des autres apps, y compris via un alias. Le CMS expose uniquement
+`cms-prismic/config` et `cms-prismic/types`. Les configurations ESLint utilisent
+volontairement les dépendances d'outillage de la racine ; les tests, scripts et
+configurations d'une app peuvent utiliser ses propres `devDependencies`.
+
+Les presets d'accessibilité JSX A11y sont activés pour React et Astro. Les rôles
+explicites `list` des listes sont autorisés pour conserver leur sémantique avec
+Safari/VoiceOver lorsque CSS masque les marqueurs. Le lint ne remplace pas une
+vérification au clavier ou avec un lecteur d'écran.
+
+Vitest privilégie les assertions explicites (`toBe`, `toHaveLength`, `toContain`,
+`toStrictEqual`), les cas paramétrés avec `it.each` et le nom `it`. Les exceptions
+de typage pour les mocks restent limitées aux fichiers de tests du bot.
+
 Better Tailwind vérifie les classes dans les composants Astro et React avec le
 thème de `apps/website-astro/src/styles/global.css` et impose le tri `strict`.
 Les marqueurs de l'observateur d'intersection et les hooks JavaScript connus

@@ -79,7 +79,7 @@ export async function dispatchQueue(env: Env) {
       itemId: next.id,
       workflowId: id,
       nextWorkflowId: nextId,
-      publicationStarted: !!next.state.publicationStarted,
+      publicationStarted: Boolean(next.state.publicationStarted),
     })
 
     try {

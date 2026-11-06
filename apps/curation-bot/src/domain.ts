@@ -321,7 +321,7 @@ export function dateInBrussels(now = new Date()): string {
       day: '2-digit',
     })
       .formatToParts(now)
-      .map((p) => [p.type, p.value])
+      .map((part) => [part.type, part.value])
   )
   return `${p.year}-${p.month}-${p.day}`
 }

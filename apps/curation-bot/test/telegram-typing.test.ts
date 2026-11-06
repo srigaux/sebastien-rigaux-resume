@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import { withTyping } from '@/telegram-typing'
@@ -21,7 +21,9 @@ it('refreshes typing while generating and stops after the response', async () =>
   try {
     const running = withTyping(env, '1', () => operation)
     await vi.advanceTimersByTimeAsync(8000)
-    expect(calls).toEqual(Array(3).fill({ chat_id: '1', action: 'typing' }))
+    expect(calls).toStrictEqual(
+      Array(3).fill({ chat_id: '1', action: 'typing' })
+    )
     finish('done')
     expect(await running).toBe('done')
     await vi.advanceTimersByTimeAsync(12_000)

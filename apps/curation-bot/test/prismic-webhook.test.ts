@@ -1,4 +1,5 @@
-import { createExecutionContext, env } from 'cloudflare:test'
+import { createExecutionContext } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { describe, expect, it, vi } from 'vitest'
 
 import worker from '@/index'
@@ -70,9 +71,9 @@ describe('Prismic rebuild webhook', () => {
     expect(vi.mocked(fetch).mock.calls[0][0]).toContain(
       'check-website-updates.yml/dispatches'
     )
-    expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toEqual(
-      { ref: 'master' }
-    )
+    expect(
+      JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))
+    ).toStrictEqual({ ref: 'master' })
   })
   it.each([
     { documents: [], releases: { update: [{ documents: ['draft'] }] } },

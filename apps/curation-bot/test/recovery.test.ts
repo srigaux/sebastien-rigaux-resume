@@ -1,5 +1,5 @@
 import { fixture, repository } from '@test/fixtures'
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import type { Update } from 'grammy/types'
 import { expect, it, vi } from 'vitest'
 
@@ -108,7 +108,7 @@ it('retrouve un article publié malgré un UID renommé et réutilise son ID apr
   const s = await session()
   await click('confirm', s)
   const op = (await store.operation('lost'))!
-  expect(JSON.parse(JSON.parse(op.response!).body)).toEqual({
+  expect(JSON.parse(JSON.parse(op.response!).body)).toStrictEqual({
     id: 'published-fr-id',
   })
   expect((await store.get(item.id)).status).toBe('queued')
@@ -344,13 +344,13 @@ it('/retry ouvre la réconciliation d’une publication en attention, sans réar
   expect((await session()).operation.key).toBe('lost')
   expect(
     await env.DB.prepare('SELECT attempts FROM publication_checks').first()
-  ).toEqual({ attempts: 5 })
+  ).toStrictEqual({ attempts: 5 })
   await click('retry')
   expect((await store.operation('lost'))?.status).toBe('pending')
   await click('confirm')
   expect((await store.operation('lost'))?.status).toBe('retryable')
   expect((await store.get(item.id)).status).toBe('queued')
-  expect((await store.get(item.id)).state.publishedIds).toEqual([
+  expect((await store.get(item.id)).state.publishedIds).toStrictEqual([
     'fr-id',
     'en-id',
   ])
@@ -375,13 +375,13 @@ it('continue la file uniquement après confirmation et conserve la fiche à rés
     await env.DB.prepare(
       "SELECT COUNT(*) AS n FROM operations WHERE target='recovery.skip'"
     ).first()
-  ).toEqual({ n: 1 })
+  ).toStrictEqual({ n: 1 })
   await click('confirmskip')
   expect(
     await env.DB.prepare(
       "SELECT COUNT(*) AS n FROM operations WHERE target='recovery.skip'"
     ).first()
-  ).toEqual({ n: 1 })
+  ).toStrictEqual({ n: 1 })
 })
 
 it('les anciennes commandes orientent vers l’anglais sans modifier la file', async () => {
@@ -424,5 +424,5 @@ it('le cron propose automatiquement le dialogue après épuisement des vérifica
   expect((await store.operation('lost'))?.status).toBe('pending')
   const count = vi.mocked(fetch).mock.calls.length
   await reconcilePublications(env)
-  expect(vi.mocked(fetch).mock.calls.length).toBe(count)
+  expect(vi.mocked(fetch).mock.calls).toHaveLength(count)
 })

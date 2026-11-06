@@ -73,7 +73,7 @@ test('Markdown indexes link to the available page and export when translation is
   assert.ok(!watchLinkMarkdown(onlyFrench, site).includes(en))
 })
 
-function html(
+function pageHtml(
   extra = '',
   translations = `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}"><link href="${site.origin}${en}" hreflang="en" rel="alternate">`
 ) {
@@ -81,7 +81,7 @@ function html(
 }
 
 test('sitemap reuses actual HTML language links and modification date, excluding Markdown alternates', () => {
-  assert.deepEqual(sitemapMetadata(html(), `${site.origin}${fr}`), {
+  assert.deepEqual(sitemapMetadata(pageHtml(), `${site.origin}${fr}`), {
     url: `${site.origin}${fr}`,
     links: [
       { lang: 'fr', url: `${site.origin}${fr}` },
@@ -90,7 +90,10 @@ test('sitemap reuses actual HTML language links and modification date, excluding
     lastmod: link.updatedAt,
   })
   const metadata = sitemapMetadata(
-    html('', `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}">`),
+    pageHtml(
+      '',
+      `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}">`
+    ),
     `${site.origin}${fr}`
   )
   assert.equal(metadata.links.length, 1)
@@ -99,19 +102,19 @@ test('sitemap reuses actual HTML language links and modification date, excluding
 test('sitemap excludes redirects, noindex pages and noncanonical URLs', () => {
   assert.equal(
     sitemapMetadata(
-      html('<meta name="robots" content="noindex, follow">'),
+      pageHtml('<meta name="robots" content="noindex, follow">'),
       `${site.origin}${fr}`
     ),
     undefined
   )
   assert.equal(
     sitemapMetadata(
-      html('<meta http-equiv="refresh" content="0; url=/">'),
+      pageHtml('<meta http-equiv="refresh" content="0; url=/">'),
       `${site.origin}${fr}`
     ),
     undefined
   )
-  assert.equal(sitemapMetadata(html(), `${site.origin}/other/`), undefined)
+  assert.equal(sitemapMetadata(pageHtml(), `${site.origin}/other/`), undefined)
 })
 
 test('every watch URL has a direct .md counterpart, including archives and pagination', () => {

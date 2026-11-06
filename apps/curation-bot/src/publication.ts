@@ -154,7 +154,7 @@ export async function reconcilePublications(env: Env) {
               'publication.verify',
               { checks, provider: 'prismic' },
               () => verifyPublication(env, item),
-              { resultFields: (available) => ({ available }) }
+              { resultFields: (isAvailable) => ({ available: isAvailable }) }
             )
           )
 

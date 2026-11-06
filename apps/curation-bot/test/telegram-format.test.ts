@@ -49,7 +49,12 @@ it('renders Telegram inline HTML, quotes and escaped catalog labels', () => {
     keyboard(item, cats)
       .inline_keyboard.flat()
       .map((button) => button.text)
-  ).toEqual(['🟨 JavaScript Weekly', '🗒️ Article', '🗑 Annuler', '🚀 Publier'])
+  ).toStrictEqual([
+    '🟨 JavaScript Weekly',
+    '🗒️ Article',
+    '🗑 Annuler',
+    '🚀 Publier',
+  ])
 })
 it('does not interpret untrusted HTML or unsafe links and separates code entities', () => {
   expect(
@@ -99,7 +104,7 @@ it('keeps a source chooser and ranks all sources without attributing one', () =>
     keyboard(item, catalog).inline_keyboard.map((row) =>
       row.map((button) => button.text)
     )
-  ).toEqual([
+  ).toStrictEqual([
     ['🔎 Choisir la source', '🗒️ Article'],
     ['🗑 Annuler', '🚀 Publier'],
   ])
@@ -107,7 +112,7 @@ it('keeps a source chooser and ranks all sources without attributing one', () =>
     sourceKeyboard(item, catalog)
       .inline_keyboard.flat()
       .map((b) => b.text)
-  ).toEqual([
+  ).toStrictEqual([
     '⚛️ React Status',
     '🟨 JavaScript Weekly',
     '🎨 CSS Weekly',
@@ -127,7 +132,7 @@ it('keeps a source chooser and ranks all sources without attributing one', () =>
     sourceKeyboard(item, catalog)
       .inline_keyboard.flat()
       .map((b) => b.text)
-  ).toEqual([
+  ).toStrictEqual([
     '🟨 JavaScript Weekly',
     '🎨 ✓ CSS Weekly',
     '⚛️ React Status',
@@ -160,7 +165,7 @@ it('présente les doublons avec un lien FR échappé et des boutons explicites',
   )
   expect(html).toContain('Rien ne sera publié sans ta confirmation')
   const buttons = keyboard(item, cats).inline_keyboard.flat()
-  expect(buttons.map((button) => button.text)).toEqual([
+  expect(buttons.map((button) => button.text)).toStrictEqual([
     '✨ Créer une nouvelle proposition',
     '🗑 Annuler',
   ])
@@ -228,7 +233,7 @@ it('orders all formats with the likeliest at the bottom and Other last', () => {
   ]
   const buttons = formatKeyboard(item).inline_keyboard.flat()
   expect(buttons).toHaveLength(7)
-  expect(buttons.slice(-3).map((b) => b.text)).toEqual([
+  expect(buttons.slice(-3).map((b) => b.text)).toStrictEqual([
     '🗒️ Article',
     '✓ 🚀 Release',
     '🧩 Autre',

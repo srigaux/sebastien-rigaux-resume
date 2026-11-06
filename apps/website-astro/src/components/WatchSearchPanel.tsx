@@ -414,6 +414,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
         )}
       <div
         id="watch-search-controls"
+        role="presentation"
         hidden={!expanded}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {

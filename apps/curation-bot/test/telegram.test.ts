@@ -1,5 +1,5 @@
 import { fixture } from '@test/fixtures'
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import type { Update } from 'grammy/types'
 import { expect, it, vi } from 'vitest'
 
@@ -77,7 +77,7 @@ it('une erreur de progression Telegram n’interrompt pas l’analyse et une ann
   await analysisNotice(env, item, 'paused')
   expect(calls.at(-1)!.body.text).toContain('⚠️ Lecture de l’article')
   await analysisNotice(env, item, 'cancelled')
-  expect(calls.at(-1)!.body.reply_markup.inline_keyboard).toEqual([])
+  expect(calls.at(-1)!.body.reply_markup.inline_keyboard).toStrictEqual([])
 })
 
 it('retrouve le verrou d’une publication inactive avec les commandes sans identifiant', async () => {
@@ -218,7 +218,7 @@ it('accepte une réponse à la bonne version et refuse une approbation sans réf
   await handleUpdate(env, update(302, 'oui'))
   expect(await store.nextAction(item.id)).toBeUndefined()
   await handleUpdate(env, update(303, 'valider', 10))
-  expect((await store.nextAction(item.id))?.action).toEqual({
+  expect((await store.nextAction(item.id))?.action).toStrictEqual({
     kind: 'approve',
     revision: 1,
   })
@@ -321,13 +321,18 @@ it('présente les textes sans envoyer les médias, y compris lors des correction
     messages[1]
       .body!.reply_markup.inline_keyboard.flat()
       .map((b: { text: string }) => b.text)
-  ).toEqual(['🔎 Choisir la source', '🗒️ Article', '🗑 Annuler', '🚀 Publier'])
+  ).toStrictEqual([
+    '🔎 Choisir la source',
+    '🗒️ Article',
+    '🗑 Annuler',
+    '🚀 Publier',
+  ])
   const rows = await env.DB.prepare(
     'SELECT revision FROM messages WHERE item_id=? ORDER BY message_id'
   )
     .bind(item.id)
     .all<{ revision: number }>()
-  expect(rows.results.map((row) => row.revision)).toEqual([1, 2])
+  expect(rows.results.map((row) => row.revision)).toStrictEqual([1, 2])
 })
 
 it('opens source and image menus from messages without adding review buttons', async () => {
@@ -341,10 +346,9 @@ it('opens source and image menus from messages without adding review buttons', a
   const rows = await env.DB.prepare(
     'SELECT payload FROM actions ORDER BY update_id'
   ).all<{ payload: string }>()
-  expect(rows.results.map((row) => JSON.parse(row.payload).kind)).toEqual([
-    'images',
-    'sources',
-  ])
+  expect(rows.results.map((row) => JSON.parse(row.payload).kind)).toStrictEqual(
+    ['images', 'sources']
+  )
 })
 
 function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
@@ -448,13 +452,18 @@ it('replaces the durable receipt with the proposal, tolerates replay and keeps r
     edited.body.reply_markup.inline_keyboard
       .flat()
       .map((button: { text: string }) => button.text)
-  ).toEqual(['🔎 Choisir la source', '🗒️ Article', '🗑 Annuler', '🚀 Publier'])
+  ).toStrictEqual([
+    '🔎 Choisir la source',
+    '🗒️ Article',
+    '🗑 Annuler',
+    '🚀 Publier',
+  ])
   await present(env, item, cats) // Telegram already has this exact proposal.
   expect(calls.filter((call) => call.method === 'sendMessage')).toHaveLength(1)
   expect(
     (await env.DB.prepare('SELECT message_id,revision FROM messages').all())
       .results
-  ).toEqual([{ message_id: 1001, revision: 1 }])
+  ).toStrictEqual([{ message_id: 1001, revision: 1 }])
   item.state.revision = 2
   item.state.revisionNote = 'Titres raccourcis.'
   await present(env, item, cats)
@@ -480,7 +489,7 @@ it('sends a replacement if the original receipt was deleted', async () => {
     replaceable: true,
   })
   await present(env, item, cats)
-  expect(calls.map((call) => call.method)).toEqual([
+  expect(calls.map((call) => call.method)).toStrictEqual([
     'editMessageText',
     'sendMessage',
   ])
@@ -488,7 +497,7 @@ it('sends a replacement if the original receipt was deleted', async () => {
     JSON.parse(
       (await store.operation(`telegram:receipt:${item.id}`))!.response!
     )
-  ).toEqual({ messageId: 1001, revision: 1 })
+  ).toStrictEqual({ messageId: 1001, revision: 1 })
 })
 
 it('does not send a duplicate proposal after an edit with an unknown network result', async () => {
@@ -505,7 +514,7 @@ it('does not send a duplicate proposal after an edit with an unknown network res
     replaceable: true,
   })
   await expect(present(env, item, cats)).rejects.toThrow()
-  expect(calls.map((call) => call.method)).toEqual(['editMessageText'])
+  expect(calls.map((call) => call.method)).toStrictEqual(['editMessageText'])
 })
 
 it('turns the initial receipt into the image and sends the complete texts separately', async () => {
@@ -552,7 +561,7 @@ it('turns the initial receipt into the image and sends the complete texts separa
   expect(
     (await env.DB.prepare('SELECT message_id,revision FROM messages').all())
       .results
-  ).toEqual([{ message_id: 1002, revision: 1 }])
+  ).toStrictEqual([{ message_id: 1002, revision: 1 }])
   await handleUpdate(env, update(602, 'valider', 1001))
   expect(await store.nextAction(item.id)).toBeUndefined()
 })
@@ -600,7 +609,7 @@ it('acknowledges each correction once and replaces that receipt with the new rev
   expect(
     (await env.DB.prepare('SELECT message_id,revision FROM messages').all())
       .results
-  ).toEqual([{ message_id: 1001, revision: 2 }])
+  ).toStrictEqual([{ message_id: 1001, revision: 2 }])
 })
 
 it('vide l’attente du chat sans toucher à la fiche active ni aux nouveaux liens', async () => {
@@ -782,7 +791,7 @@ it.each([false, true])(
     ).toBe(false)
     expect(
       JSON.parse((await store.operation('telegram:receipt:u901'))!.response!)
-    ).toEqual(original)
+    ).toStrictEqual(original)
   }
 )
 
@@ -796,7 +805,7 @@ it('préserve aussi les accusés anciens dont l’origine immédiate ou différ�
   await store.begin(`telegram:receipt:${item.id}`, item.id)
   await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 })
   await present(env, item, cats)
-  expect(calls.map((call) => call.method)).toEqual(['sendMessage'])
+  expect(calls.map((call) => call.method)).toStrictEqual(['sendMessage'])
 })
 
 it('édite le même message à chaque étape sans répéter une étape inchangée', async () => {
@@ -868,7 +877,7 @@ it('edits the same proposal through source selection, reselection and none', asy
     await present(env, item, cats) // Replaying presentation must reuse this message.
     expect(
       await new Store(env.DB).cache(`last-source:${item.chat_id}`)
-    ).toEqual({ uid: value === 'none' ? null : 'javascript-weekly' })
+    ).toStrictEqual({ uid: value === 'none' ? null : 'javascript-weekly' })
   }
 
   const cacheKey = `last-source:${item.chat_id}`
@@ -915,7 +924,7 @@ it('can resume an inactive publication while another item is waiting for its slo
     )
       .bind(first.id)
       .first()
-  ).toEqual({ status: 'unknown', attempts: 0 })
+  ).toStrictEqual({ status: 'unknown', attempts: 0 })
   expect(await store.nextAction(next.id)).toBeUndefined()
   expect((await store.get(next.id)).status).toBe('waiting_publish_slot')
   await handleUpdate(env, update(883, '/retry u999999'))
@@ -1003,8 +1012,8 @@ it('changes format in the same message, preserves text and rejects stale choices
     expect(item.state.proposalMessageId).toBe(messageId)
     expect(item.state.draft!.format).toBe(value)
     expect(item.state.confirmedFormat).toBe(value)
-    expect(item.state.draft!.fr).toEqual(original.fr)
-    expect(item.state.draft!.en).toEqual(original.en)
+    expect(item.state.draft!.fr).toStrictEqual(original.fr)
+    expect(item.state.draft!.en).toStrictEqual(original.en)
   }
 
   expect(calls.filter((call) => call.method === 'sendMessage')).toHaveLength(1)

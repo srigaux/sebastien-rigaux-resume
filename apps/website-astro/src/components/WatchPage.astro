@@ -12,13 +12,17 @@ import {
   Ellipsis,
   Rss,
 } from '@lucide/astro'
-import type { WatchFormat } from '@/lib/watch-model'
+import {
+  type WatchFormat,
+  WATCH_PAGE_SIZE,
+  watchPath,
+  watchLinkTarget,
+} from '@/lib/watch-model'
 import { pageMarkdownPath, watchRssPath } from '@/lib/urls'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ExternalLink from '@/components/ExternalLink.astro'
 import Header from '@/components/Header.astro'
 import WatchSearch from '@/components/WatchSearch.astro'
-import { WATCH_PAGE_SIZE, watchPath, watchLinkTarget } from '@/lib/watch-model'
 import { renderSummaryMarkdown } from '@/lib/watch-markdown'
 import type { WatchPageProps } from '@/lib/watch-pages'
 

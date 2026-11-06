@@ -35,6 +35,8 @@ export const base = defineConfig([
       'no-lonely-if': 'error',
       'no-useless-return': 'error',
       'no-unneeded-ternary': 'error',
+      'no-implicit-coercion': 'error',
+      'no-shadow': 'error',
       'no-var': 'error',
       'one-var': ['error', 'never'],
       'default-case-last': 'error',
@@ -98,6 +100,8 @@ export const base = defineConfig([
     extends: [ts.configs.recommended],
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-shadow': 'off',
+      '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
       '@typescript-eslint/array-type': arrayTypeRule,
@@ -120,6 +124,9 @@ export function typeChecked(files, directory) {
         },
       },
       rules: {
+        '@typescript-eslint/no-shadow': 'error',
+        '@typescript-eslint/prefer-readonly': 'error',
+        '@typescript-eslint/no-deprecated': 'error',
         '@typescript-eslint/array-type': arrayTypeRule,
         '@typescript-eslint/consistent-type-exports': 'error',
         '@typescript-eslint/switch-exhaustiveness-check': 'error',

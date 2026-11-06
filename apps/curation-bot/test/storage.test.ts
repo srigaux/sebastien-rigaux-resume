@@ -1,9 +1,6 @@
 import { fixture } from '@test/fixtures'
-import {
-  createExecutionContext,
-  env,
-  waitOnExecutionContext,
-} from 'cloudflare:test'
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { describe, expect, it, vi } from 'vitest'
 
 import { AmbiguousWrite, MediaRejected } from '@/domain'
@@ -123,13 +120,13 @@ describe('journal des écritures Prismic', () => {
     const init = { method: 'POST', body: JSON.stringify({ uid: 'test' }) }
     expect(
       await (await first('https://migration.prismic.io/documents', init)).json()
-    ).toEqual({ id: 'fr-id' })
+    ).toStrictEqual({ id: 'fr-id' })
     const resumed = journaledFetch(new Store(env.DB), 'u1', remote)!
     expect(
       await (
         await resumed('https://migration.prismic.io/documents', init)
       ).json()
-    ).toEqual({ id: 'fr-id' })
+    ).toStrictEqual({ id: 'fr-id' })
     expect(remote).toHaveBeenCalledTimes(1)
   })
   it('bloque une réponse perdue et ne réessaie jamais aveuglément une création', async () => {

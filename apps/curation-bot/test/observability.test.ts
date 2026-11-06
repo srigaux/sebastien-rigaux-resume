@@ -7,8 +7,7 @@ import {
   observedSteps,
   withContext,
 } from '@/observability'
-import type { Steps } from '@/retry'
-import { retry } from '@/retry'
+import { type Steps, retry } from '@/retry'
 
 describe('Workers observability', () => {
   it('retains Telegram error codes without logging the provider description or payload', () => {
@@ -140,7 +139,7 @@ describe('Workers observability', () => {
         entries
           .filter((entry) => entry.event === 'operation.start')
           .map((entry) => entry.activity)
-      ).toEqual([
+      ).toStrictEqual([
         'Lecture des sujets et sources disponibles',
         'Rédaction de la proposition en français et en anglais',
         'Téléchargement de l’image de l’article',

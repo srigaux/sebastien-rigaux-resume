@@ -1,7 +1,6 @@
 import { Api, GrammyError, InlineKeyboard } from 'grammy'
 
-import type { Env } from '@/domain'
-import { normalizeUrl } from '@/domain'
+import { type Env, normalizeUrl } from '@/domain'
 import { errorFields, log } from '@/observability'
 import { readClient, verifyPublication } from '@/prismic'
 import { Store } from '@/store'

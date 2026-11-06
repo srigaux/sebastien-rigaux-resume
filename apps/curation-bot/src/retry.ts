@@ -27,7 +27,8 @@ export class RemoteError extends BotError {
     )
   }
 }
-export function retryAfter(headers?: {
+
+function parseRetryAfter(headers?: {
   get(name: string): string | null
 }): number {
   const value = headers?.get('retry-after')
@@ -79,7 +80,7 @@ export function classify(error: unknown): RemoteError {
       : 'Connexion au service distant interrompue.',
     timeout || !status || status === 429 || status >= 500,
     timeout,
-    retryAfter(e?.headers),
+    parseRetryAfter(e?.headers),
     e?.requestID ?? e?.request_id,
     timeout
       ? 'timeout'
@@ -189,3 +190,5 @@ export async function retry<T>(
 
   throw new Error('Unreachable')
 }
+
+export { parseRetryAfter as retryAfter }

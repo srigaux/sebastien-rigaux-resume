@@ -18,13 +18,14 @@ import { QUEUE_PAGE_SIZE, type QueueRow, queueHtml } from '@/queue-format'
 import { beginRecovery, recoveryCallback, recoveryReply } from '@/recovery'
 import { Store } from '@/store'
 import {
+  type AnalysisStage,
+  analysisHtml,
   duplicateHtml,
   escapeHtml,
   formatLabels,
   proposalHtml,
   publicationChecklist,
 } from '@/telegram-format'
-import { type AnalysisStage, analysisHtml } from '@/telegram-format'
 import { withTyping } from '@/telegram-typing'
 
 async function queueView(env: Env, page: number) {

@@ -1,5 +1,6 @@
 import type { D1Migration } from '@cloudflare/vitest-plugin'
-import { applyD1Migrations, env } from 'cloudflare:test'
+import { applyD1Migrations } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { afterEach, beforeEach, vi } from 'vitest'
 
 import type { Env as AppEnv } from '@/domain'

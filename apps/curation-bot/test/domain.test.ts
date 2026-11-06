@@ -1,5 +1,5 @@
 import { cats, draft, extraction, fixture } from '@test/fixtures'
-import { env } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -63,10 +63,9 @@ describe('URL, éditorial et attributions', () => {
   })
   it('demande uniquement uid et probabilité pour classer les sources', () => {
     const schema = editorialSchema(cats)
-    expect(Object.keys(schema.shape.sourceRanking.element.shape)).toEqual([
-      'uid',
-      'probability',
-    ])
+    expect(Object.keys(schema.shape.sourceRanking.element.shape)).toStrictEqual(
+      ['uid', 'probability']
+    )
   })
   it('valide une date sans heure et un crédit nommé dans la sortie éditoriale', () => {
     const schema = editorialSchema(cats)
@@ -118,7 +117,7 @@ describe('URL, éditorial et attributions', () => {
     ).toHaveLength(2)
   })
   it('valide les catalogues et les limites de paragraphe', () => {
-    expect(assertDraft(draft, cats)).toEqual(draft)
+    expect(assertDraft(draft, cats)).toStrictEqual(draft)
     expect(editorialSchema(cats).safeParse(draft).success).toBe(true)
     expect(
       editorialSchema(cats).safeParse({ ...draft, topics: ['invented'] })
@@ -153,7 +152,7 @@ describe('URL, éditorial et attributions', () => {
       isPartial: true,
     })
     expect(result.author?.name).toBe('Jane Doe')
-    expect(result.imageUrls).toEqual(['https://example.com/a.png'])
+    expect(result.imageUrls).toStrictEqual(['https://example.com/a.png'])
     expect(result.iconUrl).toContain('i.ico')
     expect(result.requestId).toBe('req1')
     expect(result.partial).toBe(true)
@@ -192,7 +191,7 @@ describe('politique durable de réessai', () => {
         () => 0.5
       )
     ).rejects.toThrow()
-    expect(calls).toEqual([0, 1, 2])
+    expect(calls).toStrictEqual([0, 1, 2])
     expect(step.sleep).toHaveBeenNthCalledWith(1, 'read-backoff-0', 40_000)
     expect(step.sleep).toHaveBeenCalledTimes(2)
     expect(step.do).toHaveBeenCalledWith(
@@ -223,7 +222,7 @@ describe('politique durable de réessai', () => {
         return 'ok'
       })
     ).toBe('ok')
-    expect(seen).toEqual([false, true])
+    expect(seen).toStrictEqual([false, true])
     expect(retryAfter(new Headers({ 'Retry-After': '15' }))).toBe(15000)
   })
 })
@@ -257,8 +256,10 @@ describe('actions attachées à une proposition', () => {
     expect(item.state.revision).toBe(2)
     expect(item.state.approvedRevision).toBeUndefined()
     expect(item.state.needsRevision).toBe(true)
-    expect(item.state.instructions).toEqual(['Insiste sur les variantes.'])
-    expect(item.state.draft).toEqual(draft)
+    expect(item.state.instructions).toStrictEqual([
+      'Insiste sur les variantes.',
+    ])
+    expect(item.state.draft).toStrictEqual(draft)
   })
   it('confirme explicitement aucune source et ne peut annuler une migration commencée', async () => {
     const item = fixture()
