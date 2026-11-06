@@ -1,0 +1,23 @@
+# Build outputs and caches
+**/dist/
+**/.astro/
+**/.wrangler/
+**/.cache/
+**/coverage/
+**/node_modules/
+.local/
+
+# Tooling managed outside the application
+.agents/
+.claude/
+.impeccable/
+skills-lock.json
+pnpm-lock.yaml
+
+# Generated files
+apps/cms-prismic/prismicio-types.d.ts
+apps/n8n-curation/*.n8n.json
+
+# Environment and private state
+.env*
+**/.dev.vars*

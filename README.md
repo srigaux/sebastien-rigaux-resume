@@ -25,6 +25,22 @@ Le build statique est généré dans `apps/website-astro/dist/`. Les fontes IBM 
 
 Le build génère également `llms.txt`, `fr.md`, `en.md` et `llms-full.txt` à partir du HTML public. Le contrôle de build échoue si un export Markdown est vide. Les choix SEO et GEO sont documentés dans [`SEO_AUDIT.md`](SEO_AUDIT.md).
 
+## Formatage
+
+La configuration Prettier est partagée à la racine du workspace :
+
+```sh
+pnpm format:check
+pnpm format
+```
+
+Les plugins prennent en charge Astro, le tri des imports JavaScript/TypeScript et
+le tri des classes Tailwind CSS 4 à partir de `global.css`. Les imports à effets
+de bord restent en place. Le tri des imports ne s'applique pas au frontmatter
+Astro. Les clés JSON conservent leur ordre, notamment pour les exports conditionnels.
+Les sorties générées, caches et états privés sont exclus dans `.prettierignore`.
+VS Code recommande Prettier et active le formatage à l'enregistrement.
+
 ## Publication
 
 Le workflow **🔎 Check website updates** (`.github/workflows/check-website-updates.yml`) compare la référence publiée de Prismic à l’empreinte disponible dans `/deployment-state.json` sur le site, deux fois par heure (minutes 17 et 47, selon le planning UTC de GitHub). Sans changement de contenu, de sources du site ou de période annuelle de rafraîchissement des PDF (1er février), il termine avec le résumé « ⏭️ No changes — publication skipped », sans créer de run de publication. Le contrôle reste marqué comme réussi dans GitHub, puisqu’il a bien été exécuté. Il peut également être lancé manuellement pour effectuer la même comparaison.

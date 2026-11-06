@@ -15,6 +15,8 @@
     "#site-urls": "./apps/website-astro/src/lib/urls.ts"
   },
   "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "dev": "pnpm --filter website-astro dev",
     "build": "pnpm --filter website-astro build",
     "preview": "pnpm --filter website-astro preview",
@@ -26,5 +28,11 @@
   },
   "dependencies": {
     "@prismicio/client": "^7.22.3"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "6.0.2",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.2",
+    "prettier-plugin-tailwindcss": "0.8.1"
   }
 }

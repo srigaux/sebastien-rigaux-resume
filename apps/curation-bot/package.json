@@ -16,8 +16,8 @@
     "db:remote": "wrangler d1 migrations apply DB --remote",
     "telegram:webhook": "node --env-file=.dev.vars scripts/webhook.mjs",
     "reconcile": "node scripts/reconcile.mjs",
-    "format": "prettier --write src test scripts *.ts *.json *.jsonc",
-    "format:check": "prettier --check src test scripts *.ts *.json *.jsonc"
+    "format": "pnpm -w exec prettier --write apps/curation-bot",
+    "format:check": "pnpm -w exec prettier --check apps/curation-bot"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.96",
@@ -34,7 +34,6 @@
     "@cloudflare/workers-types": "^5.20261018.1",
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^24.0.0",
-    "prettier": "^3.6.2",
     "typescript": "^6.0.3",
     "vitest": "^4.1.0",
     "wrangler": "^4.155.0"
