@@ -146,14 +146,22 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
   const [format, setFormat] = useState('')
   const [page, setPage] = useState(0)
   const [results, setResults] = useState<Results | null>(null)
-  const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>(
-    'idle'
-  )
+  const [searchStatus, setSearchStatus] = useState<{
+    key: string
+    state: 'ready' | 'error'
+  } | null>(null)
   const [revision, setRevision] = useState(0)
   const [initialized, setInitialized] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const active = Boolean(query.trim() || format)
+  const searchKey = JSON.stringify([query, format, page, locale, revision])
+  // Loading is derived from the current request, without an extra effect update.
+  const state = !expanded
+    ? 'idle'
+    : searchStatus?.key === searchKey
+      ? searchStatus.state
+      : 'loading'
 
   useEffect(() => {
     const restore = () => {
@@ -161,9 +169,13 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
       setQuery((params.get('q') ?? '').slice(0, 200))
       const selected = params.get('format') ?? ''
       setFormat(formats.includes(selected) ? selected : '')
-      setExpanded(
+      const nextExpanded =
         Boolean(params.get('q')?.trim()) || formats.includes(selected)
-      )
+      setExpanded(nextExpanded)
+      if (!nextExpanded) {
+        setResults(null)
+        setSearchStatus(null)
+      }
       setPage(0)
     }
     // Mount this portal into Astro's server-rendered trigger slot.
@@ -200,15 +212,8 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
     if (format) url.searchParams.set('format', format)
     else url.searchParams.delete('format')
     history.replaceState(history.state, '', url)
-    if (!expanded) {
-      // Reset results when the URL-synchronized panel closes.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setState('idle')
-      setResults(null)
-      return
-    }
+    if (!expanded) return
     let cancelled = false
-    setState('loading')
     const timer = window.setTimeout(() => {
       void search()
     }, 250)
@@ -287,17 +292,17 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
             nbHits: result.nbHits ?? 0,
             nbPages: result.nbPages ?? 0,
           })
-          setState('ready')
+          setSearchStatus({ key: searchKey, state: 'ready' })
         }
       } catch {
-        if (!cancelled) setState('error')
+        if (!cancelled) setSearchStatus({ key: searchKey, state: 'error' })
       }
     }
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [query, format, page, locale, expanded, revision, initialized])
+  }, [query, format, page, locale, expanded, revision, initialized, searchKey])
 
   function clear() {
     setQuery('')
@@ -310,6 +315,8 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
     setFormat('')
     setPage(0)
     setExpanded(false)
+    setResults(null)
+    setSearchStatus(null)
     trigger.current?.focus()
   }
   function changePage(next: number) {
