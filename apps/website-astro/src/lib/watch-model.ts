@@ -27,18 +27,22 @@ export function normalizeWatchImage(field: unknown): WatchImage | undefined {
     !('url' in field) ||
     typeof field.url !== 'string' ||
     !field.url
-  )
+  ) {
     return
+  }
+
   const image: WatchImage = {
     url: field.url,
     alt: 'alt' in field && typeof field.alt === 'string' ? field.alt : '',
   }
+
   if (
     'dimensions' in field &&
     field.dimensions &&
     typeof field.dimensions === 'object'
   ) {
     const dims = field.dimensions
+
     if (
       'width' in dims &&
       'height' in dims &&
@@ -53,8 +57,10 @@ export function normalizeWatchImage(field: unknown): WatchImage | undefined {
       image.height = dims.height
     }
   }
+
   return image
 }
+
 export type WatchTopic = {
   id: string
   uid: string
@@ -98,7 +104,7 @@ export type WatchLinkDraft = Omit<WatchLink, 'topics' | 'discoveredVia'> & {
 export type WatchData = { links: WatchLink[]; topics: WatchTopic[] }
 
 export function findPublishedTranslation<T extends { id: string }>(
-  master: { alternate_languages: { id: string; lang: string }[] },
+  master: { alternate_languages: Array<{ id: string; lang: string }> },
   locale: string,
   translations: Map<string, T>
 ): T | undefined {
@@ -125,14 +131,17 @@ function requireDate(value: string, field: string): void {
 
 function normalizedWebUrl(value: string, field: string): string {
   let url: URL
+
   try {
     url = new URL(value)
   } catch {
     throw new Error(`Invalid ${field}: ${value}`)
   }
+
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new Error(`Invalid ${field} protocol: ${value}`)
   }
+
   return url.href
 }
 
@@ -150,20 +159,26 @@ export function buildWatchData(
     if (!isCleanSlug(topic.uid) || !topic.name.trim()) {
       throw new Error(`Invalid topic: ${topic.id}`)
     }
+
     if (topicById.has(topic.id) || topicUids.has(topic.uid)) {
       throw new Error(`Duplicate topic: ${topic.uid}`)
     }
+
     topicById.set(topic.id, topic)
     topicUids.add(topic.uid)
   }
+
   for (const source of sources) {
     if (!isCleanSlug(source.uid) || !source.name.trim()) {
       throw new Error(`Invalid discovery source: ${source.id}`)
     }
+
     normalizedWebUrl(source.url, `source URL for ${source.uid}`)
+
     if (sourceById.has(source.id) || sourceUids.has(source.uid)) {
       throw new Error(`Duplicate discovery source: ${source.uid}`)
     }
+
     sourceById.set(source.id, source)
     sourceUids.add(source.uid)
   }
@@ -171,43 +186,65 @@ export function buildWatchData(
   const seenPaths = new Set<string>()
   const links = drafts.map(({ topicIds, sourceId, ...draft }) => {
     // Preserve existing Prismic UIDs, including historical consecutive hyphens.
-    if (typeof draft.uid !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(draft.uid))
+    if (typeof draft.uid !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(draft.uid)) {
       throw new Error(`Invalid curated link UID: ${draft.id}`)
+    }
+
     const path = watchLinkPath(draft.locale, draft.uid)
-    if (seenPaths.has(path))
+
+    if (seenPaths.has(path)) {
       throw new Error(`Duplicate curated link path: ${path}`)
+    }
+
     seenPaths.add(path)
-    if (Number.isNaN(Date.parse(draft.updatedAt)))
+
+    if (Number.isNaN(Date.parse(draft.updatedAt))) {
       throw new Error(`Invalid modification date: ${draft.id}`)
+    }
+
     const title = draft.title.trim()
     const summary = draft.summary.trim()
+
     if (!title || !summary || !draft.id) {
       throw new Error(`Incomplete curated link: ${draft.id}`)
     }
+
     if (!WATCH_FORMATS.includes(draft.format)) {
       throw new Error(`Invalid format for curated link: ${draft.id}`)
     }
+
     if (draft.sourceLanguage && !['EN', 'FR'].includes(draft.sourceLanguage)) {
       throw new Error(`Invalid source language for curated link: ${draft.id}`)
     }
+
     if (draft.textLanguage !== 'en' && draft.textLanguage !== 'fr') {
       throw new Error(`Invalid text language for curated link: ${draft.id}`)
     }
+
     requireDate(draft.selectedOn, `selected_on for ${draft.id}`)
-    if (draft.publishedOn)
+
+    if (draft.publishedOn) {
       requireDate(draft.publishedOn, `published_on for ${draft.id}`)
+    }
+
     const url = normalizedWebUrl(draft.url, `URL for ${draft.id}`)
 
     const resolvedTopics = [...new Set(topicIds)].map((id) => {
       const topic = topicById.get(id)
-      if (!topic)
+
+      if (!topic) {
         throw new Error(`Unknown topic ${id} on curated link ${draft.id}`)
+      }
+
       return topic
     })
+
     if (resolvedTopics.length === 0) {
       throw new Error(`Curated link ${draft.id} has no topics`)
     }
+
     const discoveredVia = sourceId ? sourceById.get(sourceId) : undefined
+
     if (sourceId && !discoveredVia) {
       throw new Error(
         `Unknown discovery source ${sourceId} on curated link ${draft.id}`
@@ -251,9 +288,11 @@ export function paginateLinks(
   totalPages: number
 } {
   const totalPages = Math.max(1, Math.ceil(links.length / WATCH_PAGE_SIZE))
+
   if (!Number.isInteger(page) || page < 1 || page > totalPages) {
     throw new Error(`Invalid watch page: ${page}`)
   }
+
   return {
     items: links.slice((page - 1) * WATCH_PAGE_SIZE, page * WATCH_PAGE_SIZE),
     page,
@@ -288,46 +327,74 @@ export function buildLocalizedWatchData(
   documents: WatchTranslationDraft[]
 ): Record<Locale, WatchData> {
   const byId = new Map(documents.map((doc) => [doc.id, doc]))
-  if (byId.size !== documents.length)
+
+  if (byId.size !== documents.length) {
     throw new Error('Duplicate Prismic document ID')
+  }
+
   const neighbors = new Map(documents.map((doc) => [doc.id, new Set<string>()]))
+
   for (const doc of documents) {
     for (const [locale, id] of Object.entries(doc.translationIds)) {
       const target = id ? byId.get(id) : undefined
-      if (!target) continue // Unpublished translations are not public routes.
-      if (target.locale !== locale)
+
+      if (!target) {
+        continue
+      } // Unpublished translations are not public routes.
+
+      if (target.locale !== locale) {
         throw new Error(`Translation language mismatch: ${doc.id}`)
+      }
+
       neighbors.get(doc.id)!.add(target.id)
       neighbors.get(target.id)!.add(doc.id)
     }
   }
+
   const visited = new Set<string>()
   const localized: Record<Locale, WatchLinkDraft[]> = { fr: [], en: [] }
+
   for (const document of documents) {
-    if (visited.has(document.id)) continue
+    if (visited.has(document.id)) {
+      continue
+    }
+
     const group = new Map<Locale, WatchTranslationDraft>()
     const pending = [document.id]
+
     while (pending.length) {
       const id = pending.pop()!
-      if (visited.has(id)) continue
+
+      if (visited.has(id)) {
+        continue
+      }
+
       visited.add(id)
       const doc = byId.get(id)!
-      if (group.has(doc.locale))
+
+      if (group.has(doc.locale)) {
         throw new Error(
           `Multiple translations for ${document.id}: ${doc.locale}`
         )
+      }
+
       group.set(doc.locale, doc)
       pending.push(...neighbors.get(id)!)
     }
+
     const alternatePaths: Partial<Record<Locale, string>> = {}
-    for (const [locale, doc] of group)
+
+    for (const [locale, doc] of group) {
       alternatePaths[locale] = watchLinkPath(locale, doc.uid)
+    }
+
     for (const locale of ['fr', 'en'] as const) {
       const chosen = group.get(locale) ?? group.values().next().value!
       const { translationIds: _translations, ...draft } = chosen
       localized[locale].push({ ...draft, alternatePaths })
     }
   }
+
   return {
     fr: buildWatchData(topics, sources, localized.fr),
     en: buildWatchData(topics, sources, localized.en),

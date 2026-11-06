@@ -28,6 +28,7 @@ const api = (ref = 'published-v1') =>
       { ref, isMasterRef: true },
     ],
   })
+
 async function publishedFingerprint(overrides = {}) {
   return (
     await checkPublishedContent({
@@ -58,6 +59,7 @@ test('published ref, relevant source and annual refresh period each trigger a bu
   const fingerprint = await publishedFingerprint({
     now: new Date('2026-01-31T23:00:00Z'),
   })
+
   for (const overrides of [
     { ref: 'published-v2', now: new Date('2026-01-31T23:00:00Z') },
     {
@@ -123,6 +125,7 @@ test('API errors and missing master ref fail the check', async () => {
       /Prismic/
     )
   }
+
   let calls = 0
   await assert.rejects(
     checkPublishedContent({
@@ -145,6 +148,7 @@ test('API errors and missing master ref fail the check', async () => {
 
 test('a failed deployment leaves the old fingerprint and triggers another build', async () => {
   const fingerprint = await publishedFingerprint()
+
   for (let attempt = 0; attempt < 2; attempt++) {
     let calls = 0
     const result = await checkPublishedContent({
@@ -169,6 +173,7 @@ test('CLI distinguishes a manual check from a forced publication and records the
     '.github/workflows/deploy.yml',
     '.github/workflows/check-website-updates.yml',
   ]
+
   for (const path of [
     script,
     'apps/cms-prismic/prismic.config.json',
@@ -182,6 +187,7 @@ test('CLI distinguishes a manual check from a forced publication and records the
         : 'fixture'
     )
   }
+
   await copyFile(
     new URL(`../scripts/check-published-content.mjs`, import.meta.url),
     join(root, script)

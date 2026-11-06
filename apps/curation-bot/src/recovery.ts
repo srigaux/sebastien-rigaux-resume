@@ -22,7 +22,7 @@ type Session = {
   operation: Operation
   messageId: number
   readOk: boolean
-  candidates: { id: string; uid: string | null; lang: string }[]
+  candidates: Array<{ id: string; uid: string | null; lang: string }>
   mode: 'inspect' | 'existing' | 'absent' | 'retry' | 'skip' | 'done'
   documentId?: string
 }
@@ -41,6 +41,7 @@ const apiFor = (env: Env) =>
 const callback = (s: Session, action: string) => `recover:${s.token}:${action}`
 const creation = (op: Operation) =>
   op.target === 'POST https://migration.prismic.io/documents'
+
 function conflict(op: Operation) {
   try {
     const saved = JSON.parse(op.response ?? 'null') as SavedResponse | null
@@ -55,17 +56,22 @@ function conflict(op: Operation) {
     return false
   }
 }
+
 async function persist(env: Env, s: Session) {
   const store = new Store(env.DB)
   await store.putCache(sessionKey(env, s.token), s, ttl)
-  if (s.mode !== 'done')
+
+  if (s.mode !== 'done') {
     await store.putCache(`recovery-current:${s.itemId}`, s.token, ttl)
+  }
+
   await store.putCache(
     `recovery-reply:${env.TELEGRAM_CHAT_ID}:${s.messageId}`,
     s.token,
     ttl
   )
 }
+
 async function prompt(
   env: Env,
   s: Session,
@@ -75,8 +81,10 @@ async function prompt(
   if (
     s.mode === 'inspect' &&
     !s.operation.target.endsWith('/migration-release/publish')
-  )
+  ) {
     kb.row().text('⏭️ Continuer la file', callback(s, 'skip'))
+  }
+
   try {
     await apiFor(env).editMessageText(env.TELEGRAM_CHAT_ID, s.messageId, text, {
       reply_markup: kb,
@@ -87,14 +95,17 @@ async function prompt(
       error instanceof GrammyError &&
       error.error_code === 400 &&
       /message is not modified/i.test(error.description)
-    ))
+    )) {
       throw error
+    }
   }
+
   await persist(env, s)
 }
+
 async function current(env: Env, s: Session) {
-  const store = new Store(env.DB),
-    item = await store.get(s.itemId)
+  const store = new Store(env.DB)
+  const item = await store.get(s.itemId)
   const op = await store.operation(s.operation.key)
   const token = await store.cache<string>(`recovery-current:${s.itemId}`)
   const lock = await env.DB.prepare(
@@ -117,22 +128,33 @@ async function current(env: Env, s: Session) {
 
 /** Only operates on parked errors. Never races a workflow still writing. */
 export async function beginRecovery(env: Env, id: string): Promise<boolean> {
-  const store = new Store(env.DB),
-    item = await store.get(id).catch(() => undefined)
+  const store = new Store(env.DB)
+  const item = await store.get(id).catch(() => undefined)
+
   if (
     item?.chat_id !== env.TELEGRAM_CHAT_ID ||
     item.active ||
     !['error', 'publication_pending'].includes(item.status)
-  )
+  ) {
     return false
+  }
+
   const busy = await env.DB.prepare(
     'SELECT item_id FROM publication_checks WHERE item_id=? AND lease_until>?'
   )
     .bind(id, Date.now())
     .first()
-  if (busy) return false
+
+  if (busy) {
+    return false
+  }
+
   const owner = await store.publicationBlocker(item.chat_id)
-  if (owner && owner.id !== id) return false
+
+  if (owner && owner.id !== id) {
+    return false
+  }
+
   const rows = await env.DB.prepare(
     "SELECT key,target,request,status,response,updated_at FROM operations WHERE item_id=? AND target LIKE '%prismic.io%' AND status IN ('pending','done','retryable') ORDER BY updated_at,key"
   )
@@ -156,20 +178,27 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
         return false
       }
     })
-  if (!op) return false
+
+  if (!op) {
+    return false
+  }
+
   if (creation(op)) {
     try {
       const request = JSON.parse(op.request) as DocumentRequest
+
       if (
         !request ||
         !['fr-be', 'en-us'].includes(request.lang) ||
         typeof request.uid !== 'string'
-      )
+      ) {
         return false
+      }
     } catch {
       return false
     }
   }
+
   const message = await apiFor(env).sendMessage(
     item.chat_id,
     `🔎 Je cherche ce que Prismic a enregistré pour ${id}…`
@@ -185,6 +214,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
     readOk: false,
     candidates: [],
   }
+
   if (op.target.endsWith('/migration-release/publish')) {
     await prompt(
       env,
@@ -199,6 +229,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
     )
   } else if (creation(op)) {
     const request = JSON.parse(op.request) as DocumentRequest
+
     try {
       // Match the article URL too: a manually renamed UID is not evidence of absence.
       const docs = await readClient(env).getAllByType('curated_link', {
@@ -207,15 +238,23 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
       })
       s.candidates = docs
         .filter((doc) => {
-          if (doc.lang !== request.lang) return false
+          if (doc.lang !== request.lang) {
+            return false
+          }
+
           if (
             request.alternate_language_id &&
             !doc.alternate_languages?.some(
               (translation) => translation.id === request.alternate_language_id
             )
-          )
+          ) {
             return false
-          if (doc.uid === request.uid) return true
+          }
+
+          if (doc.uid === request.uid) {
+            return true
+          }
+
           try {
             return [item.state.url, ...(item.state.checked ?? [])].some(
               (url) =>
@@ -237,6 +276,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
         'warn'
       )
     }
+
     const kb = new InlineKeyboard()
     s.candidates
       .slice(0, 5)
@@ -249,19 +289,22 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
           .row()
       )
     kb.text('📝 J’ai le lien du brouillon', callback(s, 'present')).row()
-    if (s.readOk && !s.candidates.length && !conflict(op))
+
+    if (s.readOk && !s.candidates.length && !conflict(op)) {
       kb.text('📭 Il n’existe pas dans Prismic', callback(s, 'absent')).row()
+    }
+
     kb.text('🔄 Vérifier à nouveau', callback(s, 'check'))
     await prompt(
       env,
       s,
-      `🛠 Débloquons ${id}\n🔗 ${item.state.url}\n\nLa réponse de création ${request.lang} manque.\n` +
-        (s.candidates.length
+      `🛠 Débloquons ${id}\n🔗 ${item.state.url}\n\nLa réponse de création ${request.lang} manque.\n${
+        s.candidates.length
           ? `J’ai trouvé ${s.candidates.length} correspondance(s) publiée(s), même en recherchant le lien d’origine. Choisis celle qui correspond à cette sélection.`
           : s.readOk
             ? 'Je ne retrouve pas de version publiée. Cela ne prouve pas l’absence d’un brouillon.'
-            : 'La lecture Prismic a échoué. Je ne peux pas conclure que le document est absent.') +
-        '\n\nOuvre Prismic et vérifie aussi les brouillons et la release de migration. Tu peux répondre à ce message avec l’URL d’édition du document concerné.',
+            : 'La lecture Prismic a échoué. Je ne peux pas conclure que le document est absent.'
+      }\n\nOuvre Prismic et vérifie aussi les brouillons et la release de migration. Tu peux répondre à ce message avec l’URL d’édition du document concerné.`,
       kb
     )
   } else if (
@@ -290,13 +333,21 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
       `⏸ ${id} : cette opération nécessite encore une vérification dans Prismic. Aucun renvoi automatique n’a été effectué.`
     )
   }
+
   return true
 }
 
 async function resolve(env: Env, s: Session, retry: boolean) {
-  if (!(await current(env, s))) return false
+  if (!(await current(env, s))) {
+    return false
+  }
+
   const store = new Store(env.DB)
-  if (!(await store.tryLock(env.PRISMIC_REPOSITORY, s.itemId))) return false
+
+  if (!(await store.tryLock(env.PRISMIC_REPOSITORY, s.itemId))) {
+    return false
+  }
+
   const reviewKey = `recovery-review:${s.token}`
   const review = {
     operationKey: s.operation.key,
@@ -375,7 +426,11 @@ async function resolve(env: Env, s: Session, retry: boolean) {
     ).bind(s.itemId, ...args),
   ])
   await store.completed(reviewKey, { applied: result.meta.changes > 0 })
-  if (!result.meta.changes) return false
+
+  if (!result.meta.changes) {
+    return false
+  }
+
   log('publication.recovery.applied', {
     itemId: s.itemId,
     revision: s.revision,
@@ -403,8 +458,13 @@ export async function recoveryCallback(
   messageId: number
 ): Promise<boolean> {
   const match = /^recover:([a-f0-9]{8}):(\w+)$/.exec(data)
-  if (!match) return false
+
+  if (!match) {
+    return false
+  }
+
   const s = await new Store(env.DB).cache<Session>(sessionKey(env, match[1]))
+
   if (
     s?.messageId !== messageId ||
     s.mode === 'done' ||
@@ -416,24 +476,28 @@ export async function recoveryCallback(
     )
     return true
   }
+
   const action = match[2]
+
   if (
     action === 'verify' &&
     s.operation.target.endsWith('/migration-release/publish')
   ) {
-    const store = new Store(env.DB),
-      item = await store.get(s.itemId)
+    const store = new Store(env.DB)
+    const item = await store.get(s.itemId)
     const check = await env.DB.prepare(
       'SELECT item_id FROM publication_checks WHERE item_id=?'
     )
       .bind(item.id)
       .first()
+
     if (check) {
       const lease = await env.DB.prepare(
         'UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=?'
       )
         .bind(Date.now() + 120_000, item.id, Date.now())
         .run()
+
       if (!lease.meta.changes) {
         await apiFor(env).sendMessage(
           item.chat_id,
@@ -442,6 +506,7 @@ export async function recoveryCallback(
         return true
       }
     }
+
     try {
       if (await verifyPublication(env, item)) {
         await store.finish(item, 'done', env.PRISMIC_REPOSITORY)
@@ -456,26 +521,30 @@ export async function recoveryCallback(
           s,
           '🚀 Les versions FR et EN sont publiées ! La file peut continuer.'
         )
-      } else
+      } else {
         await apiFor(env).sendMessage(
           item.chat_id,
           '🔎 Les deux versions ne sont pas encore disponibles. Les boutons de déblocage restent utilisables.'
         )
+      }
     } catch {
       await apiFor(env).sendMessage(
         item.chat_id,
         '⚠️ La lecture Prismic a échoué. Cela ne prouve pas que les documents sont absents ; les boutons restent disponibles.'
       )
     } finally {
-      if (check)
+      if (check) {
         await env.DB.prepare(
           'UPDATE publication_checks SET lease_until=0 WHERE item_id=?'
         )
           .bind(item.id)
           .run()
+      }
     }
+
     return true
   }
+
   if (action === 'skip') {
     s.mode = 'skip'
     await prompt(
@@ -489,12 +558,14 @@ export async function recoveryCallback(
     )
     return true
   }
+
   if (action === 'confirmskip' && s.mode === 'skip') {
     const busy = await env.DB.prepare(
       'SELECT item_id FROM publication_checks WHERE item_id=? AND lease_until>?'
     )
       .bind(s.itemId, Date.now())
       .first()
+
     if (busy) {
       await apiFor(env).sendMessage(
         env.TELEGRAM_CHAT_ID,
@@ -502,6 +573,7 @@ export async function recoveryCallback(
       )
       return true
     }
+
     // Consume the session atomically before releasing the lock. A replay is inert.
     const guard =
       'EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?) AND EXISTS(SELECT 1 FROM cache WHERE key=? AND value=? AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_checks WHERE item_id=? AND lease_until>?)'
@@ -547,10 +619,12 @@ export async function recoveryCallback(
     )
     return true
   }
+
   if (action === 'check') {
     await beginRecovery(env, s.itemId)
     return true
   }
+
   if (action === 'present') {
     s.mode = 'inspect'
     await prompt(
@@ -560,7 +634,11 @@ export async function recoveryCallback(
     )
   } else if (/^found\d+$/.test(action) && s.mode === 'inspect') {
     const doc = s.candidates[Number(action.slice(5))]
-    if (!doc) return true
+
+    if (!doc) {
+      return true
+    }
+
     s.documentId = doc.id
     s.mode = 'existing'
     await prompt(
@@ -612,6 +690,7 @@ export async function recoveryCallback(
     ['existing', 'absent', 'retry'].includes(s.mode)
   ) {
     const sentAt = Date.parse(s.operation.updated_at)
+
     if (
       s.mode === 'absent' &&
       (!Number.isFinite(sentAt) || Date.now() - sentAt < 120_000)
@@ -622,12 +701,15 @@ export async function recoveryCallback(
       )
       return true
     }
-    if (!(await resolve(env, s, s.mode !== 'existing')))
+
+    if (!(await resolve(env, s, s.mode !== 'existing'))) {
       await apiFor(env).sendMessage(
         env.TELEGRAM_CHAT_ID,
         '⌛ La situation a changé. Utilise /retry pour la vérifier.'
       )
+    }
   }
+
   return true
 }
 
@@ -636,13 +718,21 @@ export async function recoveryReply(
   replyId: number | undefined,
   text: string
 ): Promise<boolean> {
-  if (!replyId) return false
-  const store = new Store(env.DB),
-    token = await store.cache<string>(
-      `recovery-reply:${env.TELEGRAM_CHAT_ID}:${replyId}`
-    )
-  if (!token) return false
+  if (!replyId) {
+    return false
+  }
+
+  const store = new Store(env.DB)
+  const token = await store.cache<string>(
+    `recovery-reply:${env.TELEGRAM_CHAT_ID}:${replyId}`
+  )
+
+  if (!token) {
+    return false
+  }
+
   const s = await store.cache<Session>(sessionKey(env, token))
+
   if (!s || s.mode === 'done' || !(await current(env, s))) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
@@ -650,19 +740,24 @@ export async function recoveryReply(
     )
     return true
   }
+
   let id: string | undefined
+
   try {
     const url = new URL(text.trim())
+
     if (
       url.protocol === 'https:' &&
       url.hostname === `${env.PRISMIC_REPOSITORY}.prismic.io`
-    )
+    ) {
       id = /^\/builder\/pages\/([a-zA-Z0-9_-]{10,64})\/?$/.exec(
         url.pathname
       )?.[1]
+    }
   } catch {
     /* Untrusted chat input must never be fetched. */
   }
+
   if (!creation(s.operation) || !id) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
@@ -670,7 +765,9 @@ export async function recoveryReply(
     )
     return true
   }
+
   const request = JSON.parse(s.operation.request) as DocumentRequest
+
   if (id === request.alternate_language_id) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,
@@ -678,6 +775,7 @@ export async function recoveryReply(
     )
     return true
   }
+
   s.documentId = id
   s.mode = 'existing'
   await prompt(

@@ -17,6 +17,7 @@ it('refreshes typing while generating and stops after the response', async () =>
   const operation = new Promise<string>((resolve) => {
     finish = resolve
   })
+
   try {
     const running = withTyping(env, '1', () => operation)
     await vi.advanceTimersByTimeAsync(8000)
@@ -38,6 +39,7 @@ it('stops refreshing on a generation error without changing that error', async (
     fail = reject
   })
   const error = new Error('Generation failed')
+
   try {
     const running = withTyping(env, '1', () => operation)
     const rejection = running.catch((caught: unknown) => caught)
@@ -67,6 +69,7 @@ it('does not retry a rate-limited typing action or fail the generation', async (
   const operation = new Promise<string>((resolve) => {
     finish = resolve
   })
+
   try {
     const running = withTyping(env, '1', () => operation)
     await vi.advanceTimersByTimeAsync(12_000)

@@ -72,6 +72,7 @@ export function fixture(id = 'u100'): Item {
     },
   }
 }
+
 export const repository = {
   refs: [
     { id: 'master', ref: 'published-ref', isMasterRef: true, label: 'Master' },

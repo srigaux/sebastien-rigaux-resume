@@ -54,6 +54,7 @@ export function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
+
 // Render the parsed inline tokens to Telegram's HTML subset. Code entities may
 // not overlap other entities, so suspend inline styles around each code span.
 export function telegramMarkdown(value: string): string {
@@ -63,19 +64,20 @@ export function telegramMarkdown(value: string): string {
     .map(telegramInline)
     .join('\n\n')
 }
+
 function telegramInline(value: string): string {
-  const stack: { name: string; open: string }[] = []
+  const stack: Array<{ name: string; open: string }> = []
   return (markdown.parseInline(value, {})[0]?.children ?? [])
     .map((token) => {
-      if (token.type === 'code_inline')
-        return (
-          [...stack]
-            .reverse()
-            .map((tag) => `</${tag.name}>`)
-            .join('') +
-          `<code>${escapeHtml(token.content)}</code>` +
-          stack.map((tag) => tag.open).join('')
-        )
+      if (token.type === 'code_inline') {
+        return `${[...stack]
+          .reverse()
+          .map((tag) => `</${tag.name}>`)
+          .join('')}<code>${escapeHtml(token.content)}</code>${stack
+          .map((tag) => tag.open)
+          .join('')}`
+      }
+
       const tags: Record<string, string> = {
         strong: 'b',
         em: 'i',
@@ -83,6 +85,7 @@ function telegramInline(value: string): string {
         link: 'a',
       }
       const type = token.type.replace(/_(open|close)$/, '')
+
       if (token.nesting === 1 && tags[type]) {
         const name = tags[type]
         const open =
@@ -92,13 +95,18 @@ function telegramInline(value: string): string {
         stack.push({ name, open })
         return open
       }
-      if (token.nesting === -1 && tags[type]) return `</${stack.pop()!.name}>`
+
+      if (token.nesting === -1 && tags[type]) {
+        return `</${stack.pop()!.name}>`
+      }
+
       return token.type === 'softbreak' || token.type === 'hardbreak'
         ? ' '
         : escapeHtml(token.content)
     })
     .join('')
 }
+
 export const formatLabels: Record<Draft['format'], string> = {
   Article: '🗒️ Article',
   Video: '🎬 Vidéo',
@@ -109,10 +117,10 @@ export const formatLabels: Record<Draft['format'], string> = {
   Other: '🧩 Autre',
 }
 export function proposalHtml(item: Item, cats: Catalog): string {
-  const s = item.state,
-    draft = s.draft!
+  const s = item.state
+  const draft = s.draft!
   const source =
-    s.sourceUid == null
+    s.sourceUid === null || s.sourceUid === undefined
       ? 'Aucune'
       : (cats.sources.find((entry) => entry.uid === s.sourceUid)?.name ??
         s.sourceUid)
@@ -154,7 +162,10 @@ export function proposalHtml(item: Item, cats: Catalog): string {
 
 export function duplicateHtml(item: Item): string {
   const matches = (item.state.duplicateMatches ?? []).map((match) => {
-    if (typeof match === 'string') return `• ${escapeHtml(match)}`
+    if (typeof match === 'string') {
+      return `• ${escapeHtml(match)}`
+    }
+
     const title = escapeHtml(match.title)
     return match.url && /^https:\/\//i.test(match.url)
       ? `• <a href="${escapeHtml(match.url)}">${title}</a>`
@@ -199,12 +210,20 @@ export function publicationChecklist(
           : activeStage
   const currentIndex = publicationRows.findIndex(([key]) => key === current)
   const done = new Set(previousDone)
+
   for (let i = 0; i < currentIndex; i++) {
     const key = publicationRows[i][0]
+
     // Verification can reconcile an uncertain publish without an acknowledgement.
-    if (key !== 'publish' || item.state.publicationRequested) done.add(key)
+    if (key !== 'publish' || item.state.publicationRequested) {
+      done.add(key)
+    }
   }
-  if (item.state.publicationRequested) done.add('publish')
+
+  if (item.state.publicationRequested) {
+    done.add('publish')
+  }
+
   const lines = publicationRows
     .filter(
       ([key]) =>

@@ -26,9 +26,10 @@ test('sitemap metadata survives HTML minification, reordered attributes and diff
 
 test('compressed redirects, noindex and missing canonicals are still rejected', () => {
   const canonical = `<link href=${url} rel=canonical>`
+
   for (const head of [
-    canonical + "<meta content='noindex, follow' name=robots>",
-    canonical + "<meta content='0;url=/' http-equiv=refresh>",
+    `${canonical}<meta content='noindex, follow' name=robots>`,
+    `${canonical}<meta content='0;url=/' http-equiv=refresh>`,
     `<link rel=canonical href=${url}/other>`,
     `<script type=application/ld+json>${JSON.stringify({ text: canonical })}</script>`,
   ]) {

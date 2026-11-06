@@ -22,47 +22,69 @@ export async function handlePrismicWebhook(
     log('prismic.webhook.unconfigured', {}, 'error')
     return new Response('Webhook unavailable', { status: 503 })
   }
-  if (Number(request.headers.get('content-length')) > maxBytes)
+
+  if (Number(request.headers.get('content-length')) > maxBytes) {
     return new Response('Too large', { status: 413 })
+  }
+
   // Bound streamed bodies too, including requests without Content-Length.
   const reader = request.body?.getReader()
   const chunks: Uint8Array[] = []
   let size = 0
+
   if (reader) {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+
+      if (done) {
+        break
+      }
+
       size += value.byteLength
+
       if (size > maxBytes) {
         await reader.cancel()
         return new Response('Too large', { status: 413 })
       }
+
       chunks.push(value)
     }
   }
+
   let payload: unknown
+
   try {
     const bytes = new Uint8Array(size)
     let offset = 0
+
     for (const chunk of chunks) {
       bytes.set(chunk, offset)
       offset += chunk.byteLength
     }
+
     payload = JSON.parse(
       new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes)
     )
   } catch {
     return new Response('Invalid JSON', { status: 400 })
   }
-  if (!object(payload)) return new Response('Invalid payload', { status: 400 })
+
+  if (!object(payload)) {
+    return new Response('Invalid payload', { status: 400 })
+  }
+
   const secret = new TextEncoder().encode(
     typeof payload.secret === 'string' ? payload.secret : ''
   )
   const expected = new TextEncoder().encode(env.PRISMIC_WEBHOOK_SECRET)
-  if (secret.length !== expected.length || !timingSafeEqual(secret, expected))
+
+  if (secret.length !== expected.length || !timingSafeEqual(secret, expected)) {
     return new Response('Unauthorized', { status: 401 })
-  if (payload.domain !== env.PRISMIC_REPOSITORY)
+  }
+
+  if (payload.domain !== env.PRISMIC_REPOSITORY) {
     return new Response('Invalid repository', { status: 403 })
+  }
 
   const documentsChanged =
     Array.isArray(payload.documents) &&
@@ -74,6 +96,7 @@ export async function handlePrismicWebhook(
     ? payload.releases.deletion
     : undefined
   const releaseDeleted = Array.isArray(deletions) && deletions.some(object)
+
   if (
     payload.type !== 'api-update' ||
     typeof payload.masterRef !== 'string' ||
@@ -83,18 +106,30 @@ export async function handlePrismicWebhook(
     log('prismic.webhook.ignored')
     return new Response('Ignored')
   }
+
   // A release's nested IDs are hints, never proof of publication. Reconciliation
   // always reads both locales from the live API before completing the item.
   const documentIds = new Set<string>()
   const collect = (ids: unknown) => {
-    if (Array.isArray(ids))
-      for (const id of ids)
-        if (typeof id === 'string' && id) documentIds.add(id)
+    if (Array.isArray(ids)) {
+      for (const id of ids) {
+        if (typeof id === 'string' && id) {
+          documentIds.add(id)
+        }
+      }
+    }
   }
+
   collect(payload.documents)
-  if (Array.isArray(deletions))
-    for (const release of deletions)
-      if (object(release)) collect(release.documents)
+
+  if (Array.isArray(deletions)) {
+    for (const release of deletions) {
+      if (object(release)) {
+        collect(release.documents)
+      }
+    }
+  }
+
   try {
     const awakened = await recordPublicationWebhook(
       env,
@@ -102,7 +137,8 @@ export async function handlePrismicWebhook(
       [...documentIds],
       releaseDeleted
     )
-    if (awakened)
+
+    if (awakened) {
       ctx.waitUntil(
         (async () => {
           await reconcilePublications(env)
@@ -115,16 +151,19 @@ export async function handlePrismicWebhook(
           )
         )
       )
+    }
   } catch (error) {
     log('prismic.webhook.receipt.failed', errorFields(error), 'error')
     return new Response('Publication confirmation unavailable', {
       status: 503,
     })
   }
+
   if (!env.GITHUB_ACTIONS_TOKEN) {
     log('prismic.webhook.unconfigured', {}, 'error')
     return new Response('GitHub unavailable', { status: 503 })
   }
+
   try {
     const response = await fetch(
       documentsChanged
@@ -144,8 +183,7 @@ export async function handlePrismicWebhook(
           ...(documentsChanged
             ? {
                 inputs: {
-                  run_title:
-                    '🚀 Prismic publication · ' + new Date().toISOString(),
+                  run_title: `🚀 Prismic publication · ${new Date().toISOString()}`,
                 },
               }
             : {}),
@@ -154,6 +192,7 @@ export async function handlePrismicWebhook(
         redirect: 'manual',
       }
     )
+
     if (!response.ok) {
       log(
         'prismic.webhook.dispatch.failed',
@@ -162,6 +201,7 @@ export async function handlePrismicWebhook(
       )
       return new Response('GitHub unavailable', { status: 503 })
     }
+
     log('prismic.webhook.dispatched', { httpStatus: response.status })
     return new Response('OK')
   } catch (error) {

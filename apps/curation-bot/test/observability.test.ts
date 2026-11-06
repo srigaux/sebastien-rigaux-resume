@@ -24,6 +24,7 @@ describe('Workers observability', () => {
   it('collects native result metadata even when lifecycle logs are disabled', async () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
     const resultFields = vi.fn((available: boolean) => ({ available }))
+
     try {
       expect(
         await observe('publication.verify', {}, async () => false, {
@@ -40,6 +41,7 @@ describe('Workers observability', () => {
 
   it('provides a readable message and consistent operation on every event', () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+
     try {
       withContext({ itemId: 'u42' }, () => {
         log('retry.scheduled', {
@@ -71,6 +73,7 @@ describe('Workers observability', () => {
   it('keeps quiet cron operations silent but still reports their failures', async () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+
     try {
       expect(
         await observe('scheduled.dispatch', {}, async () => 42, {
@@ -112,8 +115,10 @@ describe('Workers observability', () => {
       ) => callback(),
       sleep: vi.fn(),
     } as Steps
+
     try {
       const observed = observedSteps(step)
+
       for (const name of [
         'g0-c0-catalog-0',
         'g2-c4-action-42-generate-1',
@@ -128,6 +133,7 @@ describe('Workers observability', () => {
           async () => true
         )
       }
+
       const entries = output.mock.calls.map(([entry]) => entry)
       expect(entries).toHaveLength(10)
       expect(
@@ -166,12 +172,15 @@ describe('Workers observability', () => {
       ) => callback(),
       sleep: vi.fn(async () => {}),
     } as Steps
+
     try {
       await retry(observedSteps(step), 'g0-c0-generate', async (attempt) => {
-        if (!attempt)
+        if (!attempt) {
           throw Object.assign(new Error('private provider response'), {
             statusCode: 429,
           })
+        }
+
         return 'draft'
       })
       const completed = output.mock.calls
@@ -196,18 +205,21 @@ describe('Workers observability', () => {
       sleep,
     } as Steps
     let calls = 0
+
     try {
       const result = await withContext({ itemId: 'u42' }, () =>
         retry(
           step,
           'extract',
           async () => {
-            if (!calls++)
+            if (!calls++) {
               throw Object.assign(new Error('private-provider-body'), {
                 statusCode: 429,
                 requestID: 'req_42',
                 headers: new Headers({ 'retry-after': '20' }),
               })
+            }
+
             return 'ok'
           },
           () => 0.5
@@ -239,6 +251,7 @@ describe('Workers observability', () => {
   })
   it('correlates nested operations and isolates concurrent fiches', async () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+
     try {
       await Promise.all(
         ['fiche-a', 'fiche-b'].map((itemId) =>
@@ -253,6 +266,7 @@ describe('Workers observability', () => {
         )
       )
       const entries = output.mock.calls.map(([entry]) => entry)
+
       for (const itemId of ['fiche-a', 'fiche-b']) {
         const own = entries.filter((entry) => entry.itemId === itemId)
         expect(new Set(own.map((entry) => entry.traceId)).size).toBe(1)
@@ -270,6 +284,7 @@ describe('Workers observability', () => {
           inner.spanId
         )
       }
+
       expect(
         entries.find((entry) => entry.itemId === 'fiche-a').traceId
       ).not.toBe(entries.find((entry) => entry.itemId === 'fiche-b').traceId)
@@ -287,6 +302,7 @@ describe('Workers observability', () => {
     })
     error.stack =
       'Error: secret-token\n    at fetch (https://api.telegram.org/botsecret-token/sendMessage:1:2)\n    at execute (src/editor.ts:10:1)'
+
     try {
       await expect(
         observe('generate', {}, async () => {
@@ -319,6 +335,7 @@ describe('Workers observability', () => {
       do: vi.fn(async () => 'cached result'),
       sleep: vi.fn(),
     } as unknown as Steps
+
     try {
       expect(
         await observedSteps(step).do(

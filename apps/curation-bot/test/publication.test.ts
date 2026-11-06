@@ -23,8 +23,8 @@ async function pending(
   status: 'accepted' | 'unknown' = 'accepted',
   due = true
 ) {
-  const store = new Store(env.DB),
-    item = fixture('u990')
+  const store = new Store(env.DB)
+  const item = fixture('u990')
   item.state.publishedIds = ['fr-id', 'en-id']
   item.state.publicationStarted = true
   item.state.publicationRequested = status === 'accepted'
@@ -33,24 +33,32 @@ async function pending(
   await store.lock(env.PRISMIC_REPOSITORY, item.id)
   await schedulePublicationCheck(env, item, status)
   await store.finish(item, 'publication_pending', env.PRISMIC_REPOSITORY)
-  if (due)
+
+  if (due) {
     await env.DB.prepare(
       'UPDATE publication_checks SET next_check_at=0 WHERE item_id=?'
     )
       .bind(item.id)
       .run()
+  }
+
   return { store, item }
 }
+
 function remote(mode: 'ready' | 'missing' | 'partial' | 'unauthorized') {
-  let searches = 0,
-    writes = 0,
-    successes = 0
+  let searches = 0
+  let writes = 0
+  let successes = 0
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
+
       if (url.includes('api.telegram.org')) {
-        if (String(init?.body).includes('C’est publié')) successes++
+        if (String(init?.body).includes('C’est publié')) {
+          successes++
+        }
+
         return Response.json({
           ok: true,
           result: {
@@ -60,12 +68,20 @@ function remote(mode: 'ready' | 'missing' | 'partial' | 'unauthorized') {
           },
         })
       }
+
       if (init?.method === 'POST' || init?.method === 'PUT') {
         writes++
         throw new Error('No Prismic write allowed in cron')
       }
-      if (mode === 'unauthorized') return new Response('{}', { status: 401 })
-      if (!url.includes('/documents/search')) return Response.json(repository)
+
+      if (mode === 'unauthorized') {
+        return new Response('{}', { status: 401 })
+      }
+
+      if (!url.includes('/documents/search')) {
+        return Response.json(repository)
+      }
+
       searches++
       expect(new URL(url).searchParams.get('lang')).toBe('*')
       // Fields differ deliberately: cron checks availability, not editorial equality.
@@ -96,11 +112,12 @@ function remote(mode: 'ready' | 'missing' | 'partial' | 'unauthorized') {
     successes: () => successes,
   }
 }
+
 it.each(['accepted', 'unknown'] as const)(
   'confirme %s sans réécriture ni comparaison des champs',
   async (status) => {
-    const { store, item } = await pending(status),
-      api = remote('ready')
+    const { store, item } = await pending(status)
+    const api = remote('ready')
     await reconcilePublications(env)
     expect((await store.get(item.id)).status).toBe('done')
     expect(
@@ -117,8 +134,8 @@ it.each(['accepted', 'unknown'] as const)(
 it.each(['missing', 'partial'] as const)(
   'attend la disponibilité %s sans transformer le délai en erreur',
   async (mode) => {
-    const { store, item } = await pending(),
-      api = remote(mode)
+    const { store, item } = await pending()
+    const api = remote(mode)
     await reconcilePublications(env)
     expect((await store.get(item.id)).status).toBe('publication_pending')
     expect(
@@ -200,9 +217,10 @@ const steps = {
     fn(),
   sleep: vi.fn(async () => {}),
 } as unknown as Steps
+
 async function approved(id: string) {
-  const store = new Store(env.DB),
-    item = fixture(id)
+  const store = new Store(env.DB)
+  const item = fixture(id)
   item.state.approvedRevision = 1
   item.state.extractionKey = `extractions/${id}`
   item.state.checked = [item.state.url]
@@ -211,6 +229,7 @@ async function approved(id: string) {
   await store.claim('1')
   return { item, store }
 }
+
 it('une réponse de publication perdue reste inconnue sans renvoi aveugle', async () => {
   const { item, store } = await approved('u993')
   item.state.publishedIds = ['fr-id', 'en-id']
@@ -219,7 +238,7 @@ it('une réponse de publication perdue reste inconnue sans renvoi aveugle', asyn
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown) => {
-      if (String(input).includes('api.telegram.org'))
+      if (String(input).includes('api.telegram.org')) {
         return Response.json({
           ok: true,
           result: {
@@ -228,6 +247,8 @@ it('une réponse de publication perdue reste inconnue sans renvoi aveugle', asyn
             chat: { id: 1, type: 'private' },
           },
         })
+      }
+
       posts++
       throw new Error('Response lost')
     })
@@ -284,8 +305,10 @@ it('une erreur de notification finale ne garde pas le verrou et sera retentée s
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
-      if (String(input).includes('api.telegram.org'))
+      if (String(input).includes('api.telegram.org')) {
         throw new Error('Telegram unavailable')
+      }
+
       return initial(input as RequestInfo, init)
     })
   )
@@ -330,9 +353,9 @@ it('logs publication age, actual checks and the next scheduled check', async () 
 })
 
 it('reports the duplicate decision without logging the matching titles or URLs', async () => {
-  const store = new Store(env.DB),
-    existing = fixture('u997'),
-    item = fixture('u998')
+  const store = new Store(env.DB)
+  const existing = fixture('u997')
+  const item = fixture('u998')
   await store.enqueue(
     existing.id,
     997,
@@ -359,6 +382,7 @@ it.each(['missing', 'unauthorized'] as const)(
     await pending()
     const api = remote(mode)
     const delays: number[] = []
+
     for (let attempt = 1; attempt <= 5; attempt++) {
       await env.DB.prepare(
         'UPDATE publication_checks SET next_check_at=0'
@@ -369,12 +393,18 @@ it.each(['missing', 'unauthorized'] as const)(
         'SELECT status,attempts,next_check_at FROM publication_checks'
       ).first<{ status: string; attempts: number; next_check_at: number }>()
       expect(row?.attempts).toBe(attempt)
-      if (attempt < 5) delays.push(row!.next_check_at - before)
+
+      if (attempt < 5) {
+        delays.push(row!.next_check_at - before)
+      }
     }
+
     for (const [index, minimum] of [
       60_000, 120_000, 300_000, 600_000,
-    ].entries())
+    ].entries()) {
       expect(delays[index]).toBeGreaterThanOrEqual(minimum)
+    }
+
     expect(
       await env.DB.prepare('SELECT status FROM publication_checks').first()
     ).toEqual({ status: 'attention' })
@@ -472,8 +502,10 @@ async function webhook(
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
-      if (String(input).includes('api.github.com'))
+      if (String(input).includes('api.github.com')) {
         return new Response(null, { status: githubOk ? 204 : 500 })
+      }
+
       return prior(input as RequestInfo, init)
     })
   )

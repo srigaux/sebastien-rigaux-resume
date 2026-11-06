@@ -16,18 +16,24 @@ const service: LocalImageService = {
   },
   async parseURL(url, config, logger) {
     const options = await sharpService.parseURL(url, config, logger)
-    if (!options) throw new Error('Invalid watch image URL')
+
+    if (!options) {
+      throw new Error('Invalid watch image URL')
+    }
+
     return {
       ...options,
       preserveOriginal: url.searchParams.has('preserveOriginal'),
     }
   },
   async transform(bytes, options, config, logger) {
-    if (options.preserveOriginal)
+    if (options.preserveOriginal) {
       return {
         data: bytes,
         format: options.format as ImageOutputFormat,
       }
+    }
+
     return sharpService.transform(bytes, options, config, logger)
   },
 }

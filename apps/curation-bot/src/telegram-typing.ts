@@ -29,23 +29,32 @@ export async function withTyping<T>(
           AbortSignal.timeout(3000),
         ]) as unknown as Parameters<typeof api.sendChatAction>[3]
       )
-      if (!stop.signal.aborted)
+
+      if (!stop.signal.aborted) {
         timer = setTimeout(() => {
           pending = tick()
         }, 4000)
+      }
     } catch (error) {
       // A typing failure must not fail or repeat the LLM call. Stop refreshing
       // even on 429 rather than retrying in violation of Telegram's cooldown.
-      if (!stop.signal.aborted)
+      if (!stop.signal.aborted) {
         log('telegram.typing.failed', errorFields(error), 'warn')
+      }
     }
   }
+
   pending = tick()
+
   try {
     return await operation()
   } finally {
     stop.abort()
-    if (timer !== undefined) clearTimeout(timer)
+
+    if (timer !== undefined) {
+      clearTimeout(timer)
+    }
+
     await pending
   }
 }

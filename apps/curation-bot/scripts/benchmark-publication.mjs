@@ -3,12 +3,14 @@ import * as prismic from '@prismicio/client'
 // Read-only comparison of the old full-document reads and the current light read.
 // Run from apps/curation-bot with node --env-file=.dev.vars scripts/benchmark-publication.mjs FR_ID EN_ID.
 const [fr, en] = process.argv.slice(2)
+
 if (![fr, en].every((id) => /^[A-Za-z0-9_-]{10,64}$/.test(id ?? ''))) {
   throw new Error('Pass the IDs of an existing published FR/EN pair.')
 }
+
 async function measure(mode) {
-  let requests = 0,
-    bytes = 0
+  let requests = 0
+  let bytes = 0
   const start = performance.now()
   const client = prismic.createClient(
     process.env.PRISMIC_REPOSITORY || 'bd7d5fa0',
@@ -16,8 +18,10 @@ async function measure(mode) {
       accessToken: process.env.PRISMIC_ACCESS_TOKEN || undefined,
       fetchOptions: { cache: 'no-store' },
       fetch: async (url, init) => {
-        if (init?.method && init.method !== 'GET')
+        if (init?.method && init.method !== 'GET') {
           throw new Error('Only reads are allowed in this benchmark.')
+        }
+
         requests++
         const response = await fetch(url, {
           ...init,
@@ -40,6 +44,7 @@ async function measure(mode) {
             fetch: ['curated_link.url'],
           })
         ).results
+
   if (
     ![fr, en].every((id, i) =>
       documents.some(
@@ -49,6 +54,7 @@ async function measure(mode) {
   ) {
     throw new Error('The complete published FR/EN pair is required.')
   }
+
   return {
     mode,
     ms: Math.round((performance.now() - start) * 10) / 10,
@@ -56,16 +62,19 @@ async function measure(mode) {
     decodedResponseBytes: bytes,
   }
 }
+
 try {
   // Warm both paths, then alternate their order to reduce connection/CDN bias.
   await measure('full')
   await measure('light')
   const samples = []
+
   for (let round = 0; round < 5; round++) {
     for (const mode of round % 2 ? ['light', 'full'] : ['full', 'light']) {
       samples.push({ round: round + 1, ...(await measure(mode)) })
     }
   }
+
   const median = (values) =>
     [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]
   const summary = Object.fromEntries(

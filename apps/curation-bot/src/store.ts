@@ -2,14 +2,20 @@ import type { Action, Item, Stage, State } from '@/domain'
 
 export class Store {
   constructor(readonly db: D1Database) {}
+
   async get(id: string): Promise<Item> {
     const row = await this.db
       .prepare('SELECT * FROM items WHERE id=?')
       .bind(id)
       .first<Omit<Item, 'state'> & { state: string }>()
-    if (!row) throw new Error('Unknown item')
+
+    if (!row) {
+      throw new Error('Unknown item')
+    }
+
     return { ...row, state: JSON.parse(row.state) as State }
   }
+
   async active(chat: string) {
     const row = await this.db
       .prepare('SELECT id FROM items WHERE chat_id=? AND active=1')
@@ -17,6 +23,7 @@ export class Store {
       .first<{ id: string }>()
     return row ? this.get(row.id) : undefined
   }
+
   async save(item: Item, status: Stage = item.status) {
     await this.db
       .prepare('UPDATE items SET state=?,status=? WHERE id=?')
@@ -24,6 +31,7 @@ export class Store {
       .run()
     item.status = status
   }
+
   async enqueue(
     id: string,
     update: number,
@@ -39,6 +47,7 @@ export class Store {
       .run()
     return result.meta.changes > 0
   }
+
   async clearQueue(chat: string, updateId: number): Promise<number> {
     // A replayed reset cannot remove links received after that command.
     const result = await this.db
@@ -49,6 +58,7 @@ export class Store {
       .run()
     return result.meta.changes
   }
+
   async claim(chat: string): Promise<Item | undefined> {
     await this.db
       .prepare(
@@ -66,6 +76,7 @@ export class Store {
       .run()
     return this.active(chat)
   }
+
   async parkPublication(item: Item) {
     return this.db
       .prepare(
@@ -74,6 +85,7 @@ export class Store {
       .bind(item.id, item.generation)
       .run()
   }
+
   async publicationBlocker(chat: string): Promise<Item | undefined> {
     const row = await this.db
       .prepare(
@@ -83,6 +95,7 @@ export class Store {
       .first<{ id: string }>()
     return row ? this.get(row.id) : undefined
   }
+
   async resumeParkedPublication(chat: string, id: string) {
     const row = await this.db
       .prepare(
@@ -90,7 +103,11 @@ export class Store {
       )
       .bind(id, chat)
       .first()
-    if (!row) return undefined
+
+    if (!row) {
+      return undefined
+    }
+
     const result = await this.db
       .prepare(
         "UPDATE items SET status='queued',generation=generation+1,state=json_remove(state,'$.error') WHERE id=? AND chat_id=? AND active=0 AND status='error' AND NOT EXISTS(SELECT 1 FROM operations WHERE item_id=? AND status='pending' AND target LIKE '%prismic.io%')"
@@ -99,6 +116,7 @@ export class Store {
       .run()
     return result.meta.changes ? ('queued' as const) : ('blocked' as const)
   }
+
   async cancelParked(chat: string, id: string, revision?: number) {
     const result = await this.db
       .prepare(
@@ -108,6 +126,7 @@ export class Store {
       .run()
     return result.meta.changes > 0
   }
+
   async finish(
     item: Item,
     status: 'done' | 'cancelled' | 'publication_pending',
@@ -120,10 +139,11 @@ export class Store {
         )
         .bind(JSON.stringify(item.state), status, item.id, status),
     ]
+
     if (
       repository &&
       (status !== 'publication_pending' || item.state.publicationRequested)
-    )
+    ) {
       statements.push(
         this.db
           .prepare(
@@ -131,6 +151,8 @@ export class Store {
           )
           .bind(repository, item.id)
       )
+    }
+
     statements.push(
       this.db
         .prepare('UPDATE actions SET consumed=1 WHERE item_id=? AND consumed=0')
@@ -139,6 +161,7 @@ export class Store {
     await this.db.batch(statements)
     item.status = status
   }
+
   async rotate(item: Item) {
     await this.db
       .prepare(
@@ -147,6 +170,7 @@ export class Store {
       .bind(item.id, item.generation)
       .run()
   }
+
   async addAction(update: number, item: Item, action: Action) {
     await this.db
       .prepare(
@@ -155,6 +179,7 @@ export class Store {
       .bind(update, item.id, JSON.stringify(action))
       .run()
   }
+
   async resumePublicationCheck(chat: string, id?: string) {
     const row = await this.db
       .prepare(
@@ -166,7 +191,11 @@ export class Store {
       )
       .bind(chat, id ?? null, id ?? null, id ?? null)
       .first<{ item_id: string; status: string }>()
-    if (!row) return undefined
+
+    if (!row) {
+      return undefined
+    }
+
     const result = await this.db
       .prepare(
         `UPDATE publication_checks SET status=CASE WHEN status='attention' THEN 'unknown' ELSE status END,
@@ -177,6 +206,7 @@ export class Store {
       .run()
     return { id: row.item_id, scheduled: result.meta.changes > 0 }
   }
+
   async pendingCancellation(item: Item) {
     const row = await this.db
       .prepare(
@@ -188,6 +218,7 @@ export class Store {
       ? { id: row.id, action: JSON.parse(row.payload) as Action }
       : undefined
   }
+
   async nextAction(
     id: string
   ): Promise<{ id: number; action: Action } | undefined> {
@@ -201,16 +232,20 @@ export class Store {
       ? { id: row.id, action: JSON.parse(row.payload) as Action }
       : undefined
   }
+
   async consume(id: number) {
     await this.db
       .prepare('UPDATE actions SET consumed=1 WHERE id=?')
       .bind(id)
       .run()
   }
+
   async lock(repo: string, id: string) {
-    if (!(await this.tryLock(repo, id)))
+    if (!(await this.tryLock(repo, id))) {
       throw new Error('Publication lock held')
+    }
   }
+
   async tryLock(repo: string, id: string): Promise<boolean> {
     await this.db
       .prepare(
@@ -224,18 +259,21 @@ export class Store {
       .first<{ item_id: string }>()
     return row?.item_id === id
   }
+
   async unlock(repo: string, id: string) {
     await this.db
       .prepare('DELETE FROM publication_lock WHERE repository=? AND item_id=?')
       .bind(repo, id)
       .run()
   }
+
   async operation(key: string) {
     return this.db
       .prepare('SELECT status,response FROM operations WHERE key=?')
       .bind(key)
       .first<{ status: string; response: string | null }>()
   }
+
   async begin(key: string, id: string, target = '', request: unknown = null) {
     return this.db
       .prepare(
@@ -244,6 +282,7 @@ export class Store {
       .bind(key, id, target, JSON.stringify(request), new Date().toISOString())
       .run()
   }
+
   async completed(key: string, response: unknown, status = 'done') {
     await this.db
       .prepare(
@@ -252,6 +291,7 @@ export class Store {
       .bind(status, JSON.stringify(response), new Date().toISOString(), key)
       .run()
   }
+
   async cache<T>(key: string): Promise<T | undefined> {
     const row = await this.db
       .prepare('SELECT value FROM cache WHERE key=? AND expires_at>?')
@@ -259,6 +299,7 @@ export class Store {
       .first<{ value: string }>()
     return row ? (JSON.parse(row.value) as T) : undefined
   }
+
   async putCache(key: string, value: unknown, ttl: number) {
     await this.db
       .prepare(
@@ -267,6 +308,7 @@ export class Store {
       .bind(key, JSON.stringify(value), Date.now() + ttl)
       .run()
   }
+
   async duplicates(item: Item, url: string) {
     const { normalizeUrl } = await import('@/domain')
     const key = normalizeUrl(url)

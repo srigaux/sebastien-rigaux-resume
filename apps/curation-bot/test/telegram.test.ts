@@ -11,9 +11,9 @@ it.each([false, true])(
   async (queued) => {
     const { analysisNotice, present } = await import('@/telegram')
     const { cats } = await import('@test/fixtures')
-    const calls = receiptApi(),
-      store = new Store(env.DB),
-      item = fixture('u970')
+    const calls = receiptApi()
+    const store = new Store(env.DB)
+    const item = fixture('u970')
     item.state.draft = undefined
     await store.enqueue(item.id, 970, '1', item.state, item.created_at)
     await store.claim('1')
@@ -82,9 +82,9 @@ it('une erreur de progression Telegram n’interrompt pas l’analyse et une ann
 
 it('retrouve le verrou d’une publication inactive avec les commandes sans identifiant', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    failed = fixture('u967'),
-    waiting = fixture('u974')
+  const store = new Store(env.DB)
+  const failed = fixture('u967')
+  const waiting = fixture('u974')
   failed.state.publicationStarted = true
   failed.state.error = 'Réponse Prismic manquante'
   await store.enqueue(failed.id, 967, '1', failed.state, failed.created_at)
@@ -169,6 +169,7 @@ function telegramApi() {
     )
   )
 }
+
 function update(id: number, text: string, replyId?: number): Update {
   return {
     update_id: id,
@@ -191,6 +192,7 @@ function update(id: number, text: string, replyId?: number): Update {
     },
   }
 }
+
 it('enregistre un seul lien par soumission et demande le choix lorsque plusieurs liens sont possibles', async () => {
   telegramApi()
   const event = update(301, 'https://example.com/a https://example.org/b')
@@ -205,8 +207,8 @@ it('enregistre un seul lien par soumission et demande le choix lorsque plusieurs
 })
 it('accepte une réponse à la bonne version et refuse une approbation sans référence', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture()
+  const store = new Store(env.DB)
+  const item = fixture()
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
   await store.save(item, 'review')
@@ -223,8 +225,8 @@ it('accepte une réponse à la bonne version et refuse une approbation sans réf
 })
 it('n’enregistre pas une ancienne réponse et déduplique les callbacks', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture()
+  const store = new Store(env.DB)
+  const item = fixture()
   item.state.revision = 2
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
@@ -258,7 +260,7 @@ it('n’enregistre pas une ancienne réponse et déduplique les callbacks', asyn
 it('présente les textes sans envoyer les médias, y compris lors des corrections', async () => {
   const { present } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls: { method: string; body?: Record<string, any> }[] = []
+  const calls: Array<{ method: string; body?: Record<string, any> }> = []
   let messageId = 1000
   vi.stubGlobal(
     'fetch',
@@ -279,8 +281,8 @@ it('présente les textes sans envoyer les médias, y compris lors des correction
       })
     })
   )
-  const item = fixture(),
-    store = new Store(env.DB)
+  const item = fixture()
+  const store = new Store(env.DB)
   item.state.media = {
     failures: [],
     image: {
@@ -330,8 +332,8 @@ it('présente les textes sans envoyer les médias, y compris lors des correction
 
 it('opens source and image menus from messages without adding review buttons', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture()
+  const store = new Store(env.DB)
+  const item = fixture()
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
   await handleUpdate(env, update(401, 'Change l’image'))
@@ -346,7 +348,7 @@ it('opens source and image menus from messages without adding review buttons', a
 })
 
 function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
-  const calls: { method: string; body: Record<string, any> }[] = []
+  const calls: Array<{ method: string; body: Record<string, any> }> = []
   let serial = 1000
   const edited = new Map<string, string>()
   vi.stubGlobal(
@@ -354,6 +356,7 @@ function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const method = String(input).split('/').at(-1)!
       let body = typeof init?.body === 'string' ? JSON.parse(init.body) : {}
+
       if (method === 'editMessageMedia') {
         const form = await new Request(String(input), init).formData()
         body = {
@@ -361,8 +364,10 @@ function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
           media: JSON.parse(String(form.get('media'))),
         }
       }
+
       calls.push({ method, body })
-      if (method === 'getMe')
+
+      if (method === 'getMe') {
         return Response.json({
           ok: true,
           result: {
@@ -372,14 +377,22 @@ function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
             username: 'curation_test_bot',
           },
         })
-      if (method === 'sendChatAction')
+      }
+
+      if (method === 'sendChatAction') {
         return Response.json({ ok: true, result: true })
+      }
+
       if (method === 'editMessageText' || method === 'editMessageMedia') {
-        if (mode === 'network') throw new Error('Network disconnected')
+        if (mode === 'network') {
+          throw new Error('Network disconnected')
+        }
+
         const key = `${method}:${body.message_id}`
         const unchanged = edited.get(key) === JSON.stringify(body)
         edited.set(key, JSON.stringify(body))
-        if (mode === 'deleted' || unchanged)
+
+        if (mode === 'deleted' || unchanged) {
           return Response.json({
             ok: false,
             error_code: 400,
@@ -388,7 +401,9 @@ function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
                 ? 'Bad Request: message to edit not found'
                 : 'Bad Request: message is not modified',
           })
+        }
       }
+
       return Response.json({
         ok: true,
         result: {
@@ -408,8 +423,8 @@ function receiptApi(mode: 'normal' | 'deleted' | 'network' = 'normal') {
 it('replaces the durable receipt with the proposal, tolerates replay and keeps revisions separate', async () => {
   const { present } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi(),
-    store = new Store(env.DB)
+  const calls = receiptApi()
+  const store = new Store(env.DB)
   const incoming = update(501, 'https://example.com/article')
   await handleUpdate(env, incoming)
   await handleUpdate(env, incoming)
@@ -454,9 +469,9 @@ it('replaces the durable receipt with the proposal, tolerates replay and keeps r
 it('sends a replacement if the original receipt was deleted', async () => {
   const { present } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi('deleted'),
-    store = new Store(env.DB),
-    item = fixture()
+  const calls = receiptApi('deleted')
+  const store = new Store(env.DB)
+  const item = fixture()
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
   await store.begin(`telegram:receipt:${item.id}`, item.id, 'telegram.receipt')
@@ -479,9 +494,9 @@ it('sends a replacement if the original receipt was deleted', async () => {
 it('does not send a duplicate proposal after an edit with an unknown network result', async () => {
   const { present } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi('network'),
-    store = new Store(env.DB),
-    item = fixture()
+  const calls = receiptApi('network')
+  const store = new Store(env.DB)
+  const item = fixture()
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
   await store.begin(`telegram:receipt:${item.id}`, item.id, 'telegram.receipt')
@@ -496,8 +511,8 @@ it('does not send a duplicate proposal after an edit with an unknown network res
 it('turns the initial receipt into the image and sends the complete texts separately', async () => {
   const { present, sendPreview } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi(),
-    store = new Store(env.DB)
+  const calls = receiptApi()
+  const store = new Store(env.DB)
   await handleUpdate(env, update(601, 'https://example.com/article'))
   const item = (await store.claim('1'))!
   item.state.media = {
@@ -546,9 +561,9 @@ it('acknowledges each correction once and replaces that receipt with the new rev
   const { present } = await import('@/telegram')
   const { applyAction } = await import('@/flow')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi(),
-    store = new Store(env.DB),
-    item = fixture()
+  const calls = receiptApi()
+  const store = new Store(env.DB)
+  const item = fixture()
   await store.enqueue(item.id, 100, '1', item.state, item.created_at)
   await store.claim('1')
   await store.save(item, 'review')
@@ -590,8 +605,8 @@ it('acknowledges each correction once and replaces that receipt with the new rev
 
 it('vide l’attente du chat sans toucher à la fiche active ni aux nouveaux liens', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture('u700')
+  const store = new Store(env.DB)
+  const item = fixture('u700')
   await store.enqueue(item.id, 700, '1', item.state, item.created_at)
   await store.claim('1')
   await store.enqueue('u701', 701, '1', item.state, item.created_at)
@@ -609,8 +624,8 @@ it.each([false, true])(
   'reset protège une publication commencée : %s',
   async (started) => {
     telegramApi()
-    const store = new Store(env.DB),
-      item = fixture('u710')
+    const store = new Store(env.DB)
+    const item = fixture('u710')
     item.state.publicationStarted = started
     await store.enqueue(item.id, 710, '1', item.state, item.created_at)
     await store.claim('1')
@@ -631,8 +646,8 @@ it.each([false, true])(
 )
 it('help et les commandes inconnues ne deviennent pas des corrections', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture('u720')
+  const store = new Store(env.DB)
+  const item = fixture('u720')
   await store.enqueue(item.id, 720, '1', item.state, item.created_at)
   await store.claim('1')
   await handleUpdate(env, update(721, '/help'))
@@ -648,8 +663,8 @@ it('help et les commandes inconnues ne deviennent pas des corrections', async ()
 it('un reset rejoué ne peut pas annuler une nouvelle fiche active', async () => {
   telegramApi()
   await handleUpdate(env, update(730, '/reset'))
-  const store = new Store(env.DB),
-    item = fixture('u731')
+  const store = new Store(env.DB)
+  const item = fixture('u731')
   await store.enqueue(item.id, 731, '1', item.state, item.created_at)
   await store.claim('1')
   await handleUpdate(env, update(730, '/reset'))
@@ -659,8 +674,8 @@ it('un reset rejoué ne peut pas annuler une nouvelle fiche active', async () =>
 
 it('retire uniquement les claviers de la fiche, sans supprimer les messages ni leur version', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    item = fixture('u800')
+  const store = new Store(env.DB)
+  const item = fixture('u800')
   await store.enqueue(item.id, 800, '1', item.state, item.created_at)
   await store.enqueue('u801', 801, '1', item.state, item.created_at)
   await env.DB.prepare('INSERT INTO messages VALUES(?,?,?,?)')
@@ -682,8 +697,8 @@ it('retire uniquement les claviers de la fiche, sans supprimer les messages ni l
   ).toHaveLength(2)
 })
 it('une erreur de retrait de clavier ne bloque pas le traitement', async () => {
-  const item = fixture('u810'),
-    store = new Store(env.DB)
+  const item = fixture('u810')
+  const store = new Store(env.DB)
   await store.enqueue(item.id, 810, '1', item.state, item.created_at)
   await env.DB.prepare('INSERT INTO messages VALUES(?,?,?,?)')
     .bind('1', 810, item.id, 1)
@@ -699,8 +714,8 @@ it('une erreur de retrait de clavier ne bloque pas le traitement', async () => {
 
 it('réutilise le message de publication lors d’une reprise et le remplace par la confirmation', async () => {
   telegramApi()
-  const item = fixture('u820'),
-    store = new Store(env.DB)
+  const item = fixture('u820')
+  const store = new Store(env.DB)
   await store.enqueue(item.id, 820, '1', item.state, item.created_at)
   await publicationNotice(env, item)
   await publicationNotice(env, item)
@@ -721,9 +736,9 @@ it.each([false, true])(
   async (withImage) => {
     const { present, sendPreview } = await import('@/telegram')
     const { cats } = await import('@test/fixtures')
-    const calls = receiptApi(),
-      store = new Store(env.DB),
-      first = fixture('u900')
+    const calls = receiptApi()
+    const store = new Store(env.DB)
+    const first = fixture('u900')
     await store.enqueue(first.id, 900, '1', first.state, first.created_at)
     await store.claim('1')
     await handleUpdate(env, update(901, 'https://example.com/queued'))
@@ -736,6 +751,7 @@ it.each([false, true])(
     item.state.draft = structuredClone(first.state.draft)
     item.state.sourceUid = null
     item.state.media = { failures: [] }
+
     if (withImage) {
       item.state.media.image = {
         key: 'queued/image',
@@ -749,6 +765,7 @@ it.each([false, true])(
       item.state.previewImageKey = undefined
       await sendPreview(env, item) // Replay must not send the image twice.
     }
+
     expect(calls.filter((call) => call.method === 'sendPhoto')).toHaveLength(
       withImage ? 1 : 0
     )
@@ -772,9 +789,9 @@ it.each([false, true])(
 it('préserve aussi les accusés anciens dont l’origine immédiate ou différée est inconnue', async () => {
   const { present } = await import('@/telegram')
   const { cats } = await import('@test/fixtures')
-  const calls = receiptApi(),
-    store = new Store(env.DB),
-    item = fixture('u910')
+  const calls = receiptApi()
+  const store = new Store(env.DB)
+  const item = fixture('u910')
   await store.enqueue(item.id, 910, '1', item.state, item.created_at)
   await store.begin(`telegram:receipt:${item.id}`, item.id)
   await store.completed(`telegram:receipt:${item.id}`, { messageId: 10 })
@@ -784,8 +801,8 @@ it('préserve aussi les accusés anciens dont l’origine immédiate ou différ�
 
 it('édite le même message à chaque étape sans répéter une étape inchangée', async () => {
   telegramApi()
-  const item = fixture('u920'),
-    store = new Store(env.DB)
+  const item = fixture('u920')
+  const store = new Store(env.DB)
   await store.enqueue(item.id, 920, '1', item.state, item.created_at)
   await publicationNotice(env, item)
   await publicationNotice(env, item, 'image')
@@ -810,8 +827,8 @@ it('édite le même message à chaque étape sans répéter une étape inchangé
 })
 
 it('un échec Telegram de progression ne fait pas échouer une opération Prismic', async () => {
-  const item = fixture('u921'),
-    store = new Store(env.DB)
+  const item = fixture('u921')
+  const store = new Store(env.DB)
   await store.enqueue(item.id, 921, '1', item.state, item.created_at)
   telegramApi()
   await publicationNotice(env, item)
@@ -832,6 +849,7 @@ it('edits the same proposal through source selection, reselection and none', asy
   const item = fixture('u-source-edit')
   await present(env, item, cats)
   const messageId = item.state.proposalMessageId
+
   for (const value of ['src-js', 'none']) {
     await applyAction(env, {} as never, 'source-test', item, cats, {
       kind: 'sources',
@@ -852,6 +870,7 @@ it('edits the same proposal through source selection, reselection and none', asy
       await new Store(env.DB).cache(`last-source:${item.chat_id}`)
     ).toEqual({ uid: value === 'none' ? null : 'javascript-weekly' })
   }
+
   const cacheKey = `last-source:${item.chat_id}`
   const cached = await env.DB.prepare(
     'SELECT expires_at FROM cache WHERE key=?'
@@ -875,9 +894,9 @@ it('edits the same proposal through source selection, reselection and none', asy
 
 it('can resume an inactive publication while another item is waiting for its slot', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    first = fixture('u880'),
-    next = fixture('u881')
+  const store = new Store(env.DB)
+  const first = fixture('u880')
+  const next = fixture('u881')
   await store.enqueue(first.id, 880, '1', first.state, first.created_at)
   await store.claim('1')
   await store.finish(first, 'publication_pending')
@@ -905,9 +924,9 @@ it('can resume an inactive publication while another item is waiting for its slo
 
 it('renders a paginated queue with titles and keeps the active review intact when cancelling a parked draft', async () => {
   telegramApi()
-  const store = new Store(env.DB),
-    parked = fixture('u820'),
-    active = fixture('u821')
+  const store = new Store(env.DB)
+  const parked = fixture('u820')
+  const active = fixture('u821')
   parked.state.approvedRevision = parked.state.revision
   await store.enqueue(parked.id, 820, '1', parked.state, parked.created_at)
   await store.claim('1')
@@ -917,10 +936,12 @@ it('renders a paginated queue with titles and keeps the active review intact whe
   await store.enqueue(active.id, 821, '1', active.state, active.created_at)
   await store.claim('1')
   await store.save(active, 'review')
+
   for (let i = 0; i < 9; i++) {
     const next = fixture(`u${830 + i}`)
     await store.enqueue(next.id, 830 + i, '1', next.state, next.created_at)
   }
+
   await handleUpdate(env, update(850, '/queue'))
   const response = vi
     .mocked(fetch)
@@ -947,6 +968,7 @@ it('changes format in the same message, preserves text and rejects stale choices
   const original = structuredClone(item.state.draft!)
   await present(env, item, cats)
   const messageId = item.state.proposalMessageId
+
   for (const value of ['Release', 'Other']) {
     await applyAction(env, {} as never, 'type-test', item, cats, {
       kind: 'formats',
@@ -984,6 +1006,7 @@ it('changes format in the same message, preserves text and rejects stale choices
     expect(item.state.draft!.fr).toEqual(original.fr)
     expect(item.state.draft!.en).toEqual(original.en)
   }
+
   expect(calls.filter((call) => call.method === 'sendMessage')).toHaveLength(1)
   const last = calls.filter((call) => call.method === 'editMessageText').at(-1)!
   expect(last.body.text).toContain('🧩 Autre')

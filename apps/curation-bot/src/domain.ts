@@ -15,8 +15,12 @@ export const formats = [
   'Other',
 ] as const
 const summaryMarkdown = new MarkdownIt({ html: true, linkify: false })
+
 function validSummary(value: string): boolean {
-  if (value.trim().split(/\s+/).length > 140) return false
+  if (value.trim().split(/\s+/).length > 140) {
+    return false
+  }
+
   const tokens = summaryMarkdown.parse(value.trim(), {})
   const paragraphs = tokens.filter(
     (token) => token.type === 'paragraph_open'
@@ -37,6 +41,7 @@ function validSummary(value: string): boolean {
     )
   )
 }
+
 const copy = z.object({
   title: z
     .string()
@@ -110,8 +115,11 @@ export const draftSchema = z.object({
 })
 export type Draft = z.infer<typeof draftSchema> & {
   revisionNote?: string | null
-  formatRanking?: { format: (typeof formats)[number]; probability: number }[]
-  sourceRanking?: { uid: string; probability: number }[]
+  formatRanking?: Array<{
+    format: (typeof formats)[number]
+    probability: number
+  }>
+  sourceRanking?: Array<{ uid: string; probability: number }>
 }
 export type Entry = { id: string; uid: string; name: string; url?: string }
 export type Catalog = { topics: Entry[]; sources: Entry[] }
@@ -135,7 +143,7 @@ export type Media = {
 export type MediaSet = {
   image?: Media
   icon?: Media
-  failures: { kind: 'image' | 'icon'; url: string; reason: string }[]
+  failures: Array<{ kind: 'image' | 'icon'; url: string; reason: string }>
 }
 export type PublicationStage =
   | 'prepare'
@@ -186,7 +194,7 @@ export type State = {
   imagePending?: boolean
   choices?: string[]
   checked?: string[]
-  duplicateMatches?: (string | { title: string; url?: string })[]
+  duplicateMatches?: Array<string | { title: string; url?: string }>
   extractionKey?: string
   media?: MediaSet
   draft?: Draft
@@ -252,43 +260,58 @@ export type Env = {
 }
 export function webUrl(value: string): string {
   const url = new URL(value)
+
   if (
     !['https:', 'http:'].includes(url.protocol) ||
     url.username ||
     url.password
-  )
+  ) {
     throw new Error('URL HTTP(S) attendue.')
+  }
+
   const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase()
+
   if (
     host === 'localhost' ||
     host.endsWith('.local') ||
     host.includes(':') ||
     /^\d+(?:\.\d+)*$/.test(host)
-  )
+  ) {
     throw new Error('Utilisez un nom de domaine public.')
+  }
+
   return url.href
 }
+
 export function normalizeUrl(value: string): string {
   const url = new URL(webUrl(value))
   url.hash = ''
-  for (const key of [...url.searchParams.keys()])
-    if (/^utm_|^(fbclid|gclid|msclkid)$/i.test(key))
+
+  for (const key of [...url.searchParams.keys()]) {
+    if (/^utm_|^(fbclid|gclid|msclkid)$/i.test(key)) {
       url.searchParams.delete(key)
+    }
+  }
+
   url.searchParams.sort()
   return url.href
 }
+
 export function canonicalFor(resolved: string, hint: unknown): string {
   try {
     if (
       typeof hint === 'string' &&
       normalizeUrl(hint) === normalizeUrl(resolved)
-    )
+    ) {
       return webUrl(hint)
+    }
   } catch {
     /* Keep resolved URL. */
   }
+
   return resolved
 }
+
 export function dateInBrussels(now = new Date()): string {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-GB', {
@@ -302,6 +325,7 @@ export function dateInBrussels(now = new Date()): string {
   )
   return `${p.year}-${p.month}-${p.day}`
 }
+
 export function slug(title: string, locale: 'fr' | 'en' = 'fr'): string {
   return slugify(title, { lower: true, strict: true, trim: true, locale })
 }
@@ -309,11 +333,14 @@ export function slug(title: string, locale: 'fr' | 'en' = 'fr'): string {
 export function linksIn(text: string): string[] {
   const found = [...text.matchAll(/https?:\/\/[^\s<>]+/g)].map((match) => {
     let url = match[0].replace(/[.,;]+$/, '')
+
     while (
       url.endsWith(')') &&
       (url.match(/\)/g)?.length ?? 0) > (url.match(/\(/g)?.length ?? 0)
-    )
+    ) {
       url = url.slice(0, -1)
+    }
+
     return url
   })
   return [
@@ -328,11 +355,16 @@ export function linksIn(text: string): string[] {
     ),
   ]
 }
+
 export function errorText(error: unknown): string {
   // Do not expose credentials, SDK request bodies, or raw provider responses in the chat.
-  if (error instanceof Error && error.name === 'BotError') return error.message
+  if (error instanceof Error && error.name === 'BotError') {
+    return error.message
+  }
+
   return 'Le service a rencontré une erreur. Utilisez /retry ; consultez les journaux avec l’identifiant de la fiche.'
 }
+
 export class BotError extends Error {
   constructor(
     message: string,
@@ -353,8 +385,10 @@ export class AmbiguousWrite extends BotError {
   }
 }
 export function editorialSchema(catalog: Catalog) {
-  if (!catalog.topics.length || !catalog.sources.length)
+  if (!catalog.topics.length || !catalog.sources.length) {
     throw new BotError('Catalogue éditorial vide.', 'catalog_empty')
+  }
+
   return draftSchema.extend({
     revisionNote: z
       .string()
@@ -423,6 +457,7 @@ export function editorialSchema(catalog: Catalog) {
 
 export function assertDraft(draft: Draft, catalog: Catalog): Draft {
   draftSchema.parse(draft)
+
   if (
     draft.formatRanking &&
     (draft.formatRanking.length !== formats.length ||
@@ -435,8 +470,10 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
           entry.probability < 0 ||
           entry.probability > 1
       ))
-  )
+  ) {
     throw new BotError('Classement des types invalide.')
+  }
+
   if (
     draft.sourceRanking &&
     (draft.sourceRanking.length !== catalog.sources.length ||
@@ -449,8 +486,10 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
           entry.probability < 0 ||
           entry.probability > 1
       ))
-  )
+  ) {
     throw new BotError('Classement des sources invalide.')
+  }
+
   if (
     new Set(draft.topics).size !== draft.topics.length ||
     draft.topics.some((uid) => !catalog.topics.some((t) => t.uid === uid))
@@ -467,13 +506,16 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
       'Le modèle a proposé un sujet inconnu ou répété. Utilisez /retry pour réessayer.'
     )
   }
+
   if (
     draft.publishedOn &&
     (!/^\d{4}-\d{2}-\d{2}$/.test(draft.publishedOn) ||
       new Date(`${draft.publishedOn}T00:00:00Z`).toISOString().slice(0, 10) !==
         draft.publishedOn)
-  )
+  ) {
     throw new BotError('Date de publication invalide.')
+  }
+
   return draft
 }
 

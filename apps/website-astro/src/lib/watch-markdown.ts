@@ -22,7 +22,11 @@ markdown.renderer.rules.link_open = (tokens, index, options, _env, self) => {
 // Highlight parsed text only: never insert marks into Markdown syntax or URLs.
 function highlightedText(text: string, expression?: unknown): string {
   const escape = markdown.utils.escapeHtml
-  if (!(expression instanceof RegExp)) return escape(text)
+
+  if (!(expression instanceof RegExp)) {
+    return escape(text)
+  }
+
   return text
     .split(expression)
     .map((part, index) =>
@@ -89,50 +93,48 @@ function mdLink(label: string, url: string): string {
 export function watchLinkMarkdown(link: WatchLink, site: URL): string {
   const fr = link.locale === 'fr'
   const canonical = new URL(watchLinkPath(link.locale, link.uid), site).href
-  return (
-    [
-      `# ${escapeText(link.title)}`,
-      `${fr ? 'Source canonique' : 'Canonical source'} : ${mdLink(link.title, canonical)}`,
-      link.summary,
-      `- ${fr ? 'Sélectionné le' : 'Selected on'} : ${link.selectedOn}`,
-      ...(link.publishedOn
-        ? [
-            `- ${fr ? 'Publication de la ressource' : 'Resource publication'} : ${link.publishedOn}`,
-          ]
-        : []),
-      `- ${fr ? 'Mise à jour de la fiche' : 'Entry updated'} : ${link.updatedAt}`,
-      `- Format : ${escapeText(link.format)}`,
-      ...(link.sourceLanguage
-        ? [
-            `- ${fr ? 'Langue de la source' : 'Source language'} : ${link.sourceLanguage}`,
-          ]
-        : []),
-      ...(link.credit
-        ? [`- ${fr ? 'Crédit' : 'Credit'} : ${escapeText(link.credit)}`]
-        : []),
-      ...(link.discoveredVia
-        ? [
-            `- ${fr ? 'Repéré via' : 'Found via'} : ${mdLink(link.discoveredVia.name, link.discoveredVia.url)}`,
-          ]
-        : []),
-      `${fr ? 'Ressource originale' : 'Original resource'} : ${mdLink(link.title, link.url)}`,
-      `${fr ? 'Sujets' : 'Topics'} : ${link.topics.map((topic) => mdLink(topic.name, new URL(watchPath(link.locale, 1, topic.uid), site).href)).join(' · ')}`,
-      `${fr ? 'Versions disponibles' : 'Available versions'} : ${Object.entries(
-        link.alternatePaths
-      )
-        .map(([locale, path]) =>
-          mdLink(
-            locale === 'fr' ? 'Français' : 'English',
-            new URL(path, site).href
-          )
+  return `${[
+    `# ${escapeText(link.title)}`,
+    `${fr ? 'Source canonique' : 'Canonical source'} : ${mdLink(link.title, canonical)}`,
+    link.summary,
+    `- ${fr ? 'Sélectionné le' : 'Selected on'} : ${link.selectedOn}`,
+    ...(link.publishedOn
+      ? [
+          `- ${fr ? 'Publication de la ressource' : 'Resource publication'} : ${link.publishedOn}`,
+        ]
+      : []),
+    `- ${fr ? 'Mise à jour de la fiche' : 'Entry updated'} : ${link.updatedAt}`,
+    `- Format : ${escapeText(link.format)}`,
+    ...(link.sourceLanguage
+      ? [
+          `- ${fr ? 'Langue de la source' : 'Source language'} : ${link.sourceLanguage}`,
+        ]
+      : []),
+    ...(link.credit
+      ? [`- ${fr ? 'Crédit' : 'Credit'} : ${escapeText(link.credit)}`]
+      : []),
+    ...(link.discoveredVia
+      ? [
+          `- ${fr ? 'Repéré via' : 'Found via'} : ${mdLink(link.discoveredVia.name, link.discoveredVia.url)}`,
+        ]
+      : []),
+    `${fr ? 'Ressource originale' : 'Original resource'} : ${mdLink(link.title, link.url)}`,
+    `${fr ? 'Sujets' : 'Topics'} : ${link.topics.map((topic) => mdLink(topic.name, new URL(watchPath(link.locale, 1, topic.uid), site).href)).join(' · ')}`,
+    `${fr ? 'Versions disponibles' : 'Available versions'} : ${Object.entries(
+      link.alternatePaths
+    )
+      .map(([locale, path]) =>
+        mdLink(
+          locale === 'fr' ? 'Français' : 'English',
+          new URL(path, site).href
         )
-        .join(' · ')}`,
-      mdLink(
-        fr ? 'Retour à la veille' : 'Back to tech watch',
-        new URL(watchPath(link.locale), site).href
-      ),
-    ].join('\n\n') + '\n'
-  )
+      )
+      .join(' · ')}`,
+    mdLink(
+      fr ? 'Retour à la veille' : 'Back to tech watch',
+      new URL(watchPath(link.locale), site).href
+    ),
+  ].join('\n\n')}\n`
 }
 
 export function watchIndexMarkdown(
@@ -140,19 +142,17 @@ export function watchIndexMarkdown(
   links: WatchLink[],
   site: URL
 ): string {
-  return (
-    [
-      `# ${locale === 'fr' ? 'Veille technologique' : 'Tech watch'}`,
-      mdLink(
-        locale === 'fr' ? 'Index HTML' : 'HTML index',
-        new URL(watchPath(locale), site).href
-      ),
-      ...links.map((link) => {
-        const path = watchLinkTarget(link, locale)
-        return `- ${mdLink(link.title, new URL(path, site).href)} — ${link.selectedOn} · ${mdLink('Markdown', new URL(pageMarkdownPath(path), site).href)}\n  ${link.summary.replace(/\n/g, ' ')}`
-      }),
-    ].join('\n\n') + '\n'
-  )
+  return `${[
+    `# ${locale === 'fr' ? 'Veille technologique' : 'Tech watch'}`,
+    mdLink(
+      locale === 'fr' ? 'Index HTML' : 'HTML index',
+      new URL(watchPath(locale), site).href
+    ),
+    ...links.map((link) => {
+      const path = watchLinkTarget(link, locale)
+      return `- ${mdLink(link.title, new URL(path, site).href)} — ${link.selectedOn} · ${mdLink('Markdown', new URL(pageMarkdownPath(path), site).href)}\n  ${link.summary.replace(/\n/g, ' ')}`
+    }),
+  ].join('\n\n')}\n`
 }
 
 export function markdownResponse(content: string): Response {
@@ -165,35 +165,33 @@ export function watchArchiveMarkdown(props: WatchPageProps, site: URL): string {
   const { locale, topic, links, page, totalPages } = props
   const title = locale === 'fr' ? 'Veille technologique' : 'Tech watch'
   const path = watchPath(locale, page, topic?.uid)
-  return (
-    [
-      `# ${escapeText(topic ? `${topic.name} · ${title}` : title)}`,
-      mdLink(
-        locale === 'fr' ? 'Source canonique' : 'Canonical source',
-        new URL(path, site).href
-      ),
-      ...(topic?.description ? [topic.description] : []),
-      ...links.map((link) => {
-        const target = watchLinkTarget(link, locale)
-        return `## ${mdLink(link.title, new URL(target, site).href)}\n\n${link.summary}\n\n${link.selectedOn} · ${mdLink('Markdown', new URL(pageMarkdownPath(target), site).href)} · ${mdLink(locale === 'fr' ? 'Ressource originale' : 'Original resource', link.url)}`
-      }),
-      ...(totalPages > 1 ? [`Page ${page} / ${totalPages}`] : []),
-      ...(page > 1
-        ? [
-            mdLink(
-              locale === 'fr' ? 'Précédent' : 'Previous',
-              new URL(watchPath(locale, page - 1, topic?.uid), site).href
-            ),
-          ]
-        : []),
-      ...(page < totalPages
-        ? [
-            mdLink(
-              locale === 'fr' ? 'Suivant' : 'Next',
-              new URL(watchPath(locale, page + 1, topic?.uid), site).href
-            ),
-          ]
-        : []),
-    ].join('\n\n') + '\n'
-  )
+  return `${[
+    `# ${escapeText(topic ? `${topic.name} · ${title}` : title)}`,
+    mdLink(
+      locale === 'fr' ? 'Source canonique' : 'Canonical source',
+      new URL(path, site).href
+    ),
+    ...(topic?.description ? [topic.description] : []),
+    ...links.map((link) => {
+      const target = watchLinkTarget(link, locale)
+      return `## ${mdLink(link.title, new URL(target, site).href)}\n\n${link.summary}\n\n${link.selectedOn} · ${mdLink('Markdown', new URL(pageMarkdownPath(target), site).href)} · ${mdLink(locale === 'fr' ? 'Ressource originale' : 'Original resource', link.url)}`
+    }),
+    ...(totalPages > 1 ? [`Page ${page} / ${totalPages}`] : []),
+    ...(page > 1
+      ? [
+          mdLink(
+            locale === 'fr' ? 'Précédent' : 'Previous',
+            new URL(watchPath(locale, page - 1, topic?.uid), site).href
+          ),
+        ]
+      : []),
+    ...(page < totalPages
+      ? [
+          mdLink(
+            locale === 'fr' ? 'Suivant' : 'Next',
+            new URL(watchPath(locale, page + 1, topic?.uid), site).href
+          ),
+        ]
+      : []),
+  ].join('\n\n')}\n`
 }

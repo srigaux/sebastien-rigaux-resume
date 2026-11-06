@@ -49,6 +49,7 @@ export function steps() {
     sleep: vi.fn(async () => {}),
   } as unknown as Steps
 }
+
 describe('URL, éditorial et attributions', () => {
   it('normalise le suivi sans supprimer les paramètres fonctionnels ni confondre les chemins', () => {
     expect(
@@ -69,9 +70,11 @@ describe('URL, éditorial et attributions', () => {
   })
   it('valide une date sans heure et un crédit nommé dans la sortie éditoriale', () => {
     const schema = editorialSchema(cats)
+
     for (const publishedOn of [null, '2024-02-29', '2026-10-30']) {
       expect(schema.safeParse({ ...draft, publishedOn }).success).toBe(true)
     }
+
     for (const publishedOn of [
       '2026-02-30',
       '2026-02-29',
@@ -80,9 +83,11 @@ describe('URL, éditorial et attributions', () => {
     ]) {
       expect(schema.safeParse({ ...draft, publishedOn }).success).toBe(false)
     }
+
     for (const credit of [null, 'Jane Doe', 'Vercel', '@jdoe']) {
       expect(schema.safeParse({ ...draft, credit }).success).toBe(true)
     }
+
     for (const credit of [
       'https://example.com/jane',
       'www.example.com',
@@ -174,8 +179,8 @@ describe('URL, éditorial et attributions', () => {
 })
 describe('politique durable de réessai', () => {
   it('borne à trois essais, désactive les reprises de step et respecte Retry-After', async () => {
-    const step = steps(),
-      calls: number[] = []
+    const step = steps()
+    const calls: number[] = []
     await expect(
       retry(
         step,
@@ -210,7 +215,11 @@ describe('politique durable de réessai', () => {
     expect(
       await retry(step, 'timeout', async (attempt, timedOut) => {
         seen.push(timedOut)
-        if (!attempt) throw new RemoteError('timeout', true, true)
+
+        if (!attempt) {
+          throw new RemoteError('timeout', true, true)
+        }
+
         return 'ok'
       })
     ).toBe('ok')
@@ -346,10 +355,12 @@ it('autorise un à trois paragraphes et les micro-exemples inline, sans listes n
     'Un premier paragraphe suffisamment long.\n\n![image](https://example.com/image.png)',
     'Premier paragraphe.\n\nDeuxième paragraphe.\n\nTroisième paragraphe.\n\nQuatrième paragraphe.',
   ]
-  for (const value of invalid)
+
+  for (const value of invalid) {
     expect(() =>
       assertDraft({ ...draft, fr: { ...draft.fr, summary: value } }, cats)
     ).toThrow()
+  }
 })
 
 it('requires a complete valid format ranking and rejects duplicates', () => {
@@ -362,6 +373,7 @@ it('requires a complete valid format ranking and rejects duplicates', () => {
       assertDraft({ ...draft, formatRanking: ranking }, cats)
     ).toThrow()
   }
+
   expect(
     editorialSchema(cats).safeParse({ ...draft, formatRanking: [] }).success
   ).toBe(false)

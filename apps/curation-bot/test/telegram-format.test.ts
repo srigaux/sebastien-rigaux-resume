@@ -72,6 +72,7 @@ it('displays the model revision note with its version, and maps every format to 
   expect(proposalHtml(item, cats)).toMatch(
     /^<i>Version 2 — Titres raccourcis et résumés recentrés sur les usages en équipe\.<\/i>/
   )
+
   for (const format of formats) {
     item.state.draft.format = format
     expect(proposalHtml(item, cats)).toMatch(/<b>[^a-zA-Z<]+ [^<]+<\/b>\n🏷️/)

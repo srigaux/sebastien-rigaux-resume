@@ -18,9 +18,10 @@ export type WatchPageProps = {
 
 export async function getWatchStaticPaths(locale: Locale) {
   const { links, topics } = await getWatchData(locale)
-  const paths: { params: { path?: string }; props: WatchPageProps }[] = []
+  const paths: Array<{ params: { path?: string }; props: WatchPageProps }> = []
   const append = (items: WatchLink[], topic?: WatchTopic) => {
     const count = Math.max(1, Math.ceil(items.length / WATCH_PAGE_SIZE))
+
     for (let page = 1; page <= count; page++) {
       const pagination = paginateLinks(items, page)
       paths.push({
@@ -45,12 +46,16 @@ export async function getWatchStaticPaths(locale: Locale) {
       })
     }
   }
+
   append(links)
-  for (const topic of topics)
+
+  for (const topic of topics) {
     append(
       links.filter((link) => link.topics.some((item) => item.id === topic.id)),
       topic
     )
+  }
+
   return paths
 }
 

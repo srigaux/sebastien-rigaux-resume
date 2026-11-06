@@ -43,9 +43,17 @@ async function queueView(env: Env, page: number) {
     .all<QueueRow>()
   const { text, pages } = queueHtml(rows.results, page)
   const kb = new InlineKeyboard()
-  if (page > 1) kb.text('← Précédents', `queue:${page - 1}`)
+
+  if (page > 1) {
+    kb.text('← Précédents', `queue:${page - 1}`)
+  }
+
   kb.text('🔄 Actualiser', `queue:${page}`)
-  if (page < pages) kb.text('Suivants →', `queue:${page + 1}`)
+
+  if (page < pages) {
+    kb.text('Suivants →', `queue:${page + 1}`)
+  }
+
   return {
     text,
     options: {
@@ -55,10 +63,13 @@ async function queueView(env: Env, page: number) {
     },
   }
 }
+
 let botInfo: UserFromGetMe | undefined
+
 function button(item: Item, kind: Action['kind'], value = '') {
   return `${item.id}:${item.state.revision}:${kind}:${value}`
 }
+
 const sourceEmojis: Record<string, string> = {
   'the-ai-report': '🤖',
   'tldr-ai': '🤖',
@@ -81,6 +92,7 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
   const kb = new InlineKeyboard()
   const showApproval =
     !item.state.choices?.length && ['review', 'source'].includes(item.status)
+
   if (item.state.choices?.length) {
     item.state.choices.forEach((url, i) =>
       kb
@@ -90,9 +102,9 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
         )
         .row()
     )
-  } else if (item.status === 'duplicate')
+  } else if (item.status === 'duplicate') {
     kb.text('✨ Créer une nouvelle proposition', button(item, 'continue')).row()
-  else if (showApproval) {
+  } else if (showApproval) {
     const source = cats.sources.find(
       (entry) => entry.uid === item.state.sourceUid
     )
@@ -109,7 +121,8 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
   } else if (item.status === 'error') {
     kb.text('Réessayer', button(item, 'resume')).row()
   }
-  if (item.state.media?.failures.length)
+
+  if (item.state.media?.failures.length) {
     kb.text('Réessayer les médias', button(item, 'resume'))
       .row()
       .text(
@@ -117,30 +130,51 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
         button(item, 'omit-media')
       )
       .row()
-  if (!item.state.publicationStarted)
+  }
+
+  if (!item.state.publicationStarted) {
     kb.text('🗑 Annuler', button(item, 'cancel'))
-  if (showApproval) kb.text('🚀 Publier', button(item, 'approve'))
+  }
+
+  if (showApproval) {
+    kb.text('🚀 Publier', button(item, 'approve'))
+  }
+
   return kb
 }
+
 export async function sendText(env: Env, text: string, kb?: InlineKeyboard) {
   const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
   const chunks: string[] = []
+
   while (text.length > 3500) {
     let split = text.lastIndexOf('\n', 3500)
-    if (split < 1000) split = 3500
+
+    if (split < 1000) {
+      split = 3500
+    }
+
     chunks.push(text.slice(0, split))
     text = text.slice(split)
   }
+
   chunks.push(text)
   let last
-  for (let i = 0; i < chunks.length; i++)
+
+  for (let i = 0; i < chunks.length; i++) {
     last = await api.sendMessage(env.TELEGRAM_CHAT_ID, chunks[i], {
       link_preview_options: { is_disabled: true },
       reply_markup: i === chunks.length - 1 ? kb : undefined,
     })
-  if (!last) throw new Error('Telegram returned no message')
+  }
+
+  if (!last) {
+    throw new Error('Telegram returned no message')
+  }
+
   return last
 }
+
 async function remember(store: Store, item: Item, messageId: number) {
   await store.db
     .prepare(
@@ -149,6 +183,7 @@ async function remember(store: Store, item: Item, messageId: number) {
     .bind(item.chat_id, messageId, item.id, item.state.revision)
     .run()
 }
+
 // Clear only the keyboard: text, media and reply/version tracking stay intact.
 export async function clearItemButtons(env: Env, item: Item) {
   const messages = await env.DB.prepare(
@@ -157,13 +192,17 @@ export async function clearItemButtons(env: Env, item: Item) {
     .bind(item.chat_id, item.id)
     .all<{ message_id: number }>()
   const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
+
   for (const message of messages.results) {
     try {
       await api.editMessageReplyMarkup(item.chat_id, message.message_id, {
         reply_markup: { inline_keyboard: [] },
       })
     } catch (error) {
-      if (isNotModified(error) || isMissingMessage(error)) continue
+      if (isNotModified(error) || isMissingMessage(error)) {
+        continue
+      }
+
       // A Telegram UI failure must never block publication or queue release.
       log(
         'telegram.buttons.clear_failed',
@@ -177,6 +216,7 @@ export async function clearItemButtons(env: Env, item: Item) {
     }
   }
 }
+
 export function sourceKeyboard(item: Item, cats: Catalog): InlineKeyboard {
   const kb = new InlineKeyboard()
   const ranking = item.state.draft?.sourceRanking
@@ -193,11 +233,13 @@ export function sourceKeyboard(item: Item, cats: Catalog): InlineKeyboard {
       button(item, 'source', source.id)
     ).row()
   }
+
   return kb.text(
-    `${item.state.sourceUid == null ? '✓ ' : ''}Aucun`,
+    `${item.state.sourceUid === null || item.state.sourceUid === undefined ? '✓ ' : ''}Aucun`,
     button(item, 'source', 'none')
   )
 }
+
 export function formatKeyboard(item: Item): InlineKeyboard {
   const probabilities = new Map(
     item.state.draft?.formatRanking?.map((entry) => [
@@ -209,14 +251,17 @@ export function formatKeyboard(item: Item): InlineKeyboard {
     .filter((format) => format !== 'Other')
     .sort((a, b) => (probabilities.get(a) ?? 0) - (probabilities.get(b) ?? 0))
   const kb = new InlineKeyboard()
+
   for (const format of [...ordered, 'Other' as const]) {
     kb.text(
       `${item.state.draft?.format === format ? '✓ ' : ''}${formatLabels[format]}`,
       button(item, 'format', format)
     ).row()
   }
+
   return kb
 }
+
 export async function formatMenu(env: Env, item: Item, cats: Catalog) {
   const store = new Store(env.DB)
   const messageId = await sendProposal(
@@ -232,6 +277,7 @@ export async function formatMenu(env: Env, item: Item, cats: Catalog) {
   await remember(store, item, messageId)
   await store.save(item)
 }
+
 export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   const store = new Store(env.DB)
   const messageId = await sendProposal(
@@ -247,28 +293,39 @@ export async function sourceMenu(env: Env, item: Item, cats: Catalog) {
   await remember(store, item, messageId)
   await store.save(item)
 }
+
 export async function sendPreview(env: Env, item: Item) {
   const media = item.state.media?.image
-  if (!media || media.key === item.state.previewImageKey)
+
+  if (!media || media.key === item.state.previewImageKey) {
     return item.state.previewImageKey ?? null
+  }
+
   return withTyping(env, item.chat_id, () =>
     replaceReceiptWithPreview(env, item)
   )
 }
+
 async function replaceReceiptWithPreview(env: Env, item: Item) {
-  const s = item.state,
-    media = s.media!.image!,
-    store = new Store(env.DB)
+  const s = item.state
+  const media = s.media!.image!
+  const store = new Store(env.DB)
   const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
-  const key = await processingReceiptKey(store, item.id),
-    receipt = await readReceiptKey(store, key)
+  const key = await processingReceiptKey(store, item.id)
+  const receipt = await readReceiptKey(store, key)
+
   if (receipt?.kind === 'media' && receipt.mediaKey === media.key) {
     s.previewImageKey = media.key
     await store.save(item)
     return media.key
   }
+
   const object = await env.BUCKET.get(media.key)
-  if (!object) throw new BotError('Fichier aperçu manquant. Utilisez /retry.')
+
+  if (!object) {
+    throw new BotError('Fichier aperçu manquant. Utilisez /retry.')
+  }
+
   const bytes = new Uint8Array(await object.arrayBuffer())
   const caption = `<a href="${escapeHtml(s.url)}">${escapeHtml(new URL(s.url).hostname)}</a>`
   const replace =
@@ -276,6 +333,7 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
   const photo = ['image/jpeg', 'image/png', 'image/webp'].includes(media.mime)
   let type: 'photo' | 'document' = photo ? 'photo' : 'document'
   let messageId: number | undefined
+
   if (replace) {
     for (;;) {
       try {
@@ -292,13 +350,21 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
           messageId = receipt.messageId
           break
         }
-        if (isMissingMessage(error)) break
-        if (type !== 'photo' || !isRejectedPhoto(error)) throw error
+
+        if (isMissingMessage(error)) {
+          break
+        }
+
+        if (type !== 'photo' || !isRejectedPhoto(error)) {
+          throw error
+        }
+
         type = 'document'
         log('telegram.photo.fallback', { itemId: item.id })
       }
     }
   }
+
   if (messageId === undefined) {
     if (type === 'photo') {
       try {
@@ -309,10 +375,14 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
         )
         messageId = message.message_id
       } catch (error) {
-        if (!isRejectedPhoto(error)) throw error
+        if (!isRejectedPhoto(error)) {
+          throw error
+        }
+
         log('telegram.photo.fallback', { itemId: item.id })
       }
     }
+
     messageId ??= (
       await api.sendDocument(
         item.chat_id,
@@ -321,6 +391,7 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
       )
     ).message_id
   }
+
   if (replace || !receipt) {
     await ensureReceipt(store, key, item.id, () =>
       Promise.resolve({
@@ -333,11 +404,13 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
       mediaKey: media.key,
     })
   }
+
   // A photo alone is not an approval target. The complete FR/EN message is.
   s.previewImageKey = media.key
   await store.save(item)
   return media.key
 }
+
 function isNotModified(error: unknown) {
   return (
     error instanceof GrammyError &&
@@ -345,6 +418,7 @@ function isNotModified(error: unknown) {
     /message is not modified/i.test(error.description)
   )
 }
+
 function isMissingMessage(error: unknown) {
   return (
     error instanceof GrammyError &&
@@ -354,6 +428,7 @@ function isMissingMessage(error: unknown) {
     )
   )
 }
+
 function isRejectedPhoto(error: unknown) {
   return (
     error instanceof GrammyError &&
@@ -365,6 +440,7 @@ function isRejectedPhoto(error: unknown) {
 function receiptKey(id: string) {
   return `telegram:receipt:${id}`
 }
+
 async function processingReceiptKey(store: Store, id: string) {
   const receipt = await readReceiptKey(store, receiptKey(id))
   // Unknown legacy receipts may be old queue acknowledgements: keep them intact.
@@ -374,9 +450,14 @@ async function processingReceiptKey(store: Store, id: string) {
     ? receiptKey(id)
     : `telegram:processing:${id}`
 }
+
 async function readReceiptKey(store: Store, key: string) {
   const operation = await store.operation(key)
-  if (operation?.status !== 'done' || !operation.response) return
+
+  if (operation?.status !== 'done' || !operation.response) {
+    return
+  }
+
   const receipt = JSON.parse(operation.response) as {
     messageId: number
     revision?: number
@@ -392,6 +473,7 @@ async function readReceiptKey(store: Store, key: string) {
     ? receipt
     : undefined
 }
+
 async function ensureReceipt(
   store: Store,
   key: string,
@@ -399,7 +481,10 @@ async function ensureReceipt(
   send: () => Promise<{ message_id: number }>,
   metadata: { replaceable?: boolean; text?: string; complete?: boolean } = {}
 ) {
-  if (await readReceiptKey(store, key)) return
+  if (await readReceiptKey(store, key)) {
+    return
+  }
+
   const receipt = await send()
   await store.db
     .prepare(
@@ -414,15 +499,17 @@ async function ensureReceipt(
     )
     .run()
 }
+
 export async function retryWaitNotice(
   env: Env,
   item: Item,
   name: string,
   delayMs?: number
 ) {
-  const store = new Store(env.DB),
-    api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
+  const store = new Store(env.DB)
+  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
   const key = `telegram:retry-wait:${item.id}:${name}`
+
   if (delayMs !== undefined) {
     const minutes = Math.ceil(delayMs / 60_000)
     const until = new Intl.DateTimeFormat('fr-BE', {
@@ -441,10 +528,17 @@ export async function retryWaitNotice(
       api.sendMessage(item.chat_id, text, kb ? { reply_markup: kb } : {})
     )
     const receipt = await readReceiptKey(store, key)
-    if (receipt) await remember(store, item, receipt.messageId)
+
+    if (receipt) {
+      await remember(store, item, receipt.messageId)
+    }
   } else {
     const receipt = await readReceiptKey(store, key)
-    if (!receipt) return
+
+    if (!receipt) {
+      return
+    }
+
     try {
       await api.editMessageText(
         item.chat_id,
@@ -453,7 +547,9 @@ export async function retryWaitNotice(
         { reply_markup: { inline_keyboard: [] } }
       )
     } catch (error) {
-      if (!isNotModified(error) && !isMissingMessage(error)) throw error
+      if (!isNotModified(error) && !isMissingMessage(error)) {
+        throw error
+      }
     }
   }
 }
@@ -465,12 +561,17 @@ export async function publicationNotice(
   detail?: string
 ) {
   const complete = stage === true
+
   try {
-    const store = new Store(env.DB),
-      api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch, timeoutSeconds: 10 })
+    const store = new Store(env.DB)
+    const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch, timeoutSeconds: 10 })
     const key = `telegram:publication:${item.id}`
     let receipt = await readReceiptKey(store, key)
-    if (receipt?.complete) return
+
+    if (receipt?.complete) {
+      return
+    }
+
     const checklist = publicationChecklist(
       item,
       stage === true || stage === false ? 'prepare' : stage,
@@ -493,10 +594,12 @@ export async function publicationNotice(
       publicationDone: checklist.done,
       publicationStage: checklist.stage,
     }
+
     if (receipt?.text === text) {
       await store.completed(key, { ...receipt, ...metadata })
       return
     }
+
     if (receipt) {
       try {
         await api.editMessageText(item.chat_id, receipt.messageId, text)
@@ -507,9 +610,13 @@ export async function publicationNotice(
           await store.completed(key, { ...receipt, ...metadata })
           return
         }
-        if (!isMissingMessage(error)) throw error
+
+        if (!isMissingMessage(error)) {
+          throw error
+        }
       }
     }
+
     // Recreate a deleted progress message once, then keep editing its replacement.
     const sendKey = receipt ? `${key}:replacement:${receipt.messageId}` : key
     await ensureReceipt(
@@ -520,11 +627,16 @@ export async function publicationNotice(
       metadata
     )
     receipt = await readReceiptKey(store, sendKey)
-    if (receipt && sendKey !== key)
+
+    if (receipt && sendKey !== key) {
       await store.completed(key, { ...receipt, ...metadata })
+    }
   } catch (error) {
     // UI updates must never cause a Prismic operation to fail or be retried.
-    if (complete) throw error
+    if (complete) {
+      throw error
+    }
+
     log(
       'telegram.publication_progress.failed',
       { itemId: item.id, ...errorFields(error) },
@@ -538,10 +650,13 @@ export async function analysisNotice(
   item: Item,
   stage: AnalysisStage | 'paused' | 'cancelled'
 ) {
-  if (item.state.draft || item.state.publicationStarted) return
+  if (item.state.draft || item.state.publicationStarted) {
+    return
+  }
+
   try {
-    const store = new Store(env.DB),
-      key = `telegram:analysis:${item.id}`
+    const store = new Store(env.DB)
+    const key = `telegram:analysis:${item.id}`
     const old = await store.operation(key)
     const previous = old?.response
       ? (JSON.parse(old.response) as { text: string; stage: AnalysisStage })
@@ -556,7 +671,11 @@ export async function analysisNotice(
       stage === 'paused',
       stage === 'cancelled'
     )
-    if (previous?.text === text) return
+
+    if (previous?.text === text) {
+      return
+    }
+
     await sendProposal(
       item,
       { topics: [], sources: [] },
@@ -609,6 +728,7 @@ async function sendProposal(
     reply_markup: markup ?? keyboard(item, cats),
   }
   const text = html ?? proposalHtml(item, cats)
+
   if (item.state.sourceEditMessageId) {
     try {
       await api.editMessageText(
@@ -619,11 +739,18 @@ async function sendProposal(
       )
       return item.state.sourceEditMessageId
     } catch (error) {
-      if (isNotModified(error)) return item.state.sourceEditMessageId
-      if (!isMissingMessage(error)) throw error
+      if (isNotModified(error)) {
+        return item.state.sourceEditMessageId
+      }
+
+      if (!isMissingMessage(error)) {
+        throw error
+      }
+
       delete item.state.sourceEditMessageId
     }
   }
+
   if (editable) {
     try {
       await api.editMessageText(item.chat_id, receipt.messageId, text, options)
@@ -645,11 +772,17 @@ async function sendProposal(
         })
         return receipt.messageId
       }
-      if (!isMissingMessage(error)) throw error
+
+      if (!isMissingMessage(error)) {
+        throw error
+      }
+
       log('telegram.receipt.unavailable', { itemId: item.id }, 'warn')
     }
   }
+
   const message = await api.sendMessage(item.chat_id, text, options)
+
   // A missing/deleted receipt gets a replacement; subsequent revisions remain
   // separate messages, so replying to an older proposal stays version-safe.
   if (editable || !receipt) {
@@ -659,6 +792,7 @@ async function sendProposal(
       revision: item.state.revision,
     })
   }
+
   return message.message_id
 }
 
@@ -672,8 +806,10 @@ export async function sendActionNotice(
   const receipt = action.receiptKey
     ? await readReceiptKey(store, action.receiptKey)
     : undefined
+
   if (receipt && receipt.kind !== 'media') {
     const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
+
     try {
       await api.editMessageText(
         item.chat_id,
@@ -683,10 +819,16 @@ export async function sendActionNotice(
       )
       return
     } catch (error) {
-      if (isNotModified(error)) return
-      if (!isMissingMessage(error)) throw error
+      if (isNotModified(error)) {
+        return
+      }
+
+      if (!isMissingMessage(error)) {
+        throw error
+      }
     }
   }
+
   await sendText(env, text)
 }
 
@@ -696,8 +838,14 @@ export async function present(
   cats: Catalog,
   attempt?: string
 ) {
-  if (item.state.showFormats) return formatMenu(env, item, cats)
-  if (item.state.showSources) return sourceMenu(env, item, cats)
+  if (item.state.showFormats) {
+    return formatMenu(env, item, cats)
+  }
+
+  if (item.state.showSources) {
+    return sourceMenu(env, item, cats)
+  }
+
   if (item.state.showImages) {
     const object = await env.BUCKET.get(item.state.extractionKey!)
     const extraction = await object?.json<{ imageUrls: string[] }>()
@@ -715,17 +863,19 @@ export async function present(
     await remember(new Store(env.DB), item, message.message_id)
     return
   }
-  const store = new Store(env.DB),
-    api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch }),
-    s = item.state,
-    draft = s.draft
+
+  const store = new Store(env.DB)
+  const api = new Api(env.TELEGRAM_BOT_TOKEN, { fetch })
+  const s = item.state
+  const draft = s.draft
   const header = `Fiche ${item.id} — version ${s.revision}`
   const messages: string[] = []
-  if (s.choices?.length)
+
+  if (s.choices?.length) {
     messages.push(
       `${header}\nPlusieurs liens ont été trouvés. Lequel faut-il traiter ?\n${s.choices.map((u, i) => `${i + 1}. ${u}`).join('\n')}`
     )
-  else if (item.status === 'duplicate') {
+  } else if (item.status === 'duplicate') {
     const messageId = await sendProposal(
       item,
       cats,
@@ -768,7 +918,11 @@ export async function present(
       )
     )
     const receipt = await readReceiptKey(store, key)
-    if (receipt) await remember(store, item, receipt.messageId)
+
+    if (receipt) {
+      await remember(store, item, receipt.messageId)
+    }
+
     return
   } else if (draft) {
     const messageId = await sendProposal(item, cats, api, store)
@@ -777,6 +931,7 @@ export async function present(
     await store.save(item)
     return
   }
+
   for (let i = 0; i < messages.length; i++) {
     const message = await sendText(
       env,
@@ -786,6 +941,7 @@ export async function present(
     await remember(store, item, message.message_id)
   }
 }
+
 export function createBot(env: Env) {
   const bot = new Bot(env.TELEGRAM_BOT_TOKEN, { botInfo, client: { fetch } })
   bot.use(async (ctx, next) => {
@@ -793,20 +949,27 @@ export function createBot(env: Env) {
       String(ctx.from?.id) !== env.TELEGRAM_USER_ID ||
       String(ctx.chat?.id) !== env.TELEGRAM_CHAT_ID ||
       ctx.chat?.type !== 'private'
-    )
+    ) {
       return
+    }
+
     await next()
   })
   bot.on('callback_query:data', async (ctx) => {
     const recoveryId = /^recover-open:(u\d+)$/.exec(ctx.callbackQuery.data)?.[1]
+
     if (recoveryId) {
       await ctx.answerCallbackQuery({ text: '🔎 Je vérifie…' })
-      if (!(await beginRecovery(env, recoveryId)))
+
+      if (!(await beginRecovery(env, recoveryId))) {
         await ctx.reply(
           '🔄 Utilise /retry pour vérifier l’état actuel de cette fiche.'
         )
+      }
+
       return
     }
+
     if (ctx.callbackQuery.data.startsWith('recover:')) {
       await ctx.answerCallbackQuery({ text: '🔎 Je vérifie…' })
       await recoveryCallback(
@@ -816,26 +979,36 @@ export function createBot(env: Env) {
       )
       return
     }
+
     const queuePage = /^queue:([1-9]\d{0,5})$/.exec(ctx.callbackQuery.data)
+
     if (queuePage) {
       const view = await queueView(env, Number(queuePage[1]))
+
       try {
         await ctx.editMessageText(view.text, view.options)
       } catch (error) {
-        if (!isNotModified(error)) throw error
+        if (!isNotModified(error)) {
+          throw error
+        }
       }
+
       await ctx.answerCallbackQuery()
       return
     }
+
     const [id, rev, kind, value] = ctx.callbackQuery.data.split(':')
+
     if (!Number.isSafeInteger(Number(rev)) || Number(rev) < 0) {
       await ctx.answerCallbackQuery({
         text: 'Ce bouton n’est plus utilisable. Ouvre /queue pour voir les liens en attente.',
       })
       return
     }
+
     if (kind === 'resume') {
       const parked = await new Store(env.DB).get(id).catch(() => undefined)
+
       if (
         parked?.chat_id === env.TELEGRAM_CHAT_ID &&
         parked.state.revision === Number(rev)
@@ -844,6 +1017,7 @@ export function createBot(env: Env) {
           env.TELEGRAM_CHAT_ID,
           id
         )
+
         if (resumed) {
           await ctx.answerCallbackQuery({
             text:
@@ -852,7 +1026,11 @@ export function createBot(env: Env) {
                 : '⚠️ Une écriture Prismic doit être réconciliée avant reprise.',
             show_alert: resumed === 'blocked',
           })
-          if (resumed === 'blocked') await beginRecovery(env, id)
+
+          if (resumed === 'blocked') {
+            await beginRecovery(env, id)
+          }
+
           return
         }
       }
@@ -874,15 +1052,18 @@ export function createBot(env: Env) {
       })
       return
     }
-    const store = new Store(env.DB),
-      item = await store.active(env.TELEGRAM_CHAT_ID)
+
+    const store = new Store(env.DB)
+    const item = await store.active(env.TELEGRAM_CHAT_ID)
+
     if (item?.id !== id || item.state.revision !== Number(rev)) {
       await ctx.answerCallbackQuery({
         text: '⏳ Cette proposition n’est plus active. Utilise la dernière version.',
       })
       return
     }
-    const allowed: Action['kind'][] = [
+
+    const allowed: Array<Action['kind']> = [
       'continue',
       'cancel',
       'approve',
@@ -896,7 +1077,11 @@ export function createBot(env: Env) {
       'images',
       'image',
     ]
-    if (!allowed.includes(kind as Action['kind'])) return
+
+    if (!allowed.includes(kind as Action['kind'])) {
+      return
+    }
+
     if (kind === 'image' && !item.state.publicationStarted) {
       await ctx.answerCallbackQuery({ text: '👌 C’est noté !' })
       const key = `telegram:revision:${item.id}:${ctx.update.update_id}`
@@ -911,6 +1096,7 @@ export function createBot(env: Env) {
       })
       return
     }
+
     await store.addAction(ctx.update.update_id, item, {
       kind: kind as Action['kind'],
       revision: Number(rev),
@@ -919,14 +1105,15 @@ export function createBot(env: Env) {
     await ctx.answerCallbackQuery({ text: '👌 C’est noté !' })
   })
   bot.on(['message:text', 'message:caption'], async (ctx) => {
-    const store = new Store(env.DB),
-      item = await store.active(env.TELEGRAM_CHAT_ID)
+    const store = new Store(env.DB)
+    const item = await store.active(env.TELEGRAM_CHAT_ID)
     const message = ctx.message
     const text = message.text ?? message.caption ?? ''
     const legacy =
       /^\/(aide|statut|file|vider|annuler|reprendre)(?:@\w+)?(?:\s|$)/i.exec(
         text
       )
+
     if (legacy) {
       const names: Record<string, string> = {
         aide: 'help',
@@ -941,16 +1128,24 @@ export function createBot(env: Env) {
       )
       return
     }
-    if (await recoveryReply(env, message.reply_to_message?.message_id, text))
+
+    if (await recoveryReply(env, message.reply_to_message?.message_id, text)) {
       return
+    }
+
     const revise = async () => {
-      if (!item) return
+      if (!item) {
+        return
+      }
+
       const key = `telegram:revision:${item.id}:${ctx.update.update_id}`
+
       if (!item.state.publicationStarted && text.length <= 8000) {
         await ensureReceipt(store, key, item.id, () =>
           ctx.reply('✍️ C’est noté ! Je prépare la nouvelle version.')
         )
       }
+
       await store.addAction(ctx.update.update_id, item, {
         kind: 'revise',
         revision: item.state.revision,
@@ -958,16 +1153,18 @@ export function createBot(env: Env) {
         receiptKey: key,
       })
     }
+
     if (/^\/(start|help)(?:@\w+)?(?:\s|$)/i.test(text)) {
       await ctx.reply(
-        '👋 Envoie un lien avec un commentaire éventuel et « source: nom ». Corrige la proposition par message, puis confirme sa publication FR + EN.\n\n' +
-          commands
-            .map((entry) => `/${entry.command} — ${entry.description}`)
-            .join('\n') +
-          '\n\n/reset conserve une publication déjà commencée : utilise /retry pour la vérifier. Aucun document Prismic publié n’est supprimé. /start affiche aussi cet accueil. Exemples : /queue 2 · /retry u123 · /cancel u123. Une réponse de publication perdue ouvre un dialogue de déblocage.'
+        `👋 Envoie un lien avec un commentaire éventuel et « source: nom ». Corrige la proposition par message, puis confirme sa publication FR + EN.\n\n${commands
+          .map((entry) => `/${entry.command} — ${entry.description}`)
+          .join(
+            '\n'
+          )}\n\n/reset conserve une publication déjà commencée : utilise /retry pour la vérifier. Aucun document Prismic publié n’est supprimé. /start affiche aussi cet accueil. Exemples : /queue 2 · /retry u123 · /cancel u123. Une réponse de publication perdue ouvre un dialogue de déblocage.`
       )
       return
     }
+
     if (/^\/(clear|reset)(?:@\w+)?(?:\s|$)/i.test(text)) {
       const count = await store.clearQueue(
         env.TELEGRAM_CHAT_ID,
@@ -975,6 +1172,7 @@ export function createBot(env: Env) {
       )
       const reset = /^\/reset(?:@\w+)?(?:\s|$)/i.test(text)
       let note = 'La fiche active est conservée.'
+
       if (reset && item && item.update_id <= ctx.update.update_id) {
         if (item.state.publicationStarted) {
           note =
@@ -986,24 +1184,31 @@ export function createBot(env: Env) {
           })
           note = 'L’annulation de la fiche active est demandée.'
         }
-      } else if (!item) note = 'Tu peux m’envoyer un nouveau lien !'
+      } else if (!item) {
+        note = 'Tu peux m’envoyer un nouveau lien !'
+      }
+
       await ctx.reply(
         `🧹 File vidée : ${count} lien(s) en attente retiré(s).\n${note}`
       )
       return
     }
+
     if (/^\/queue\b/.test(text)) {
       const match = /^\/queue(?:@\w+)?(?:\s+([1-9]\d{0,5}))?\s*$/.exec(text)
+
       if (!match) {
         await ctx.reply(
           'Pour voir ta file : /queue ou /queue 2 pour la page suivante.'
         )
         return
       }
+
       const view = await queueView(env, Number(match[1] ?? 1))
       await ctx.reply(view.text, view.options)
       return
     }
+
     if (/^\/status\b/.test(text)) {
       const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID)
       const waiting = await store.db
@@ -1023,7 +1228,7 @@ export function createBot(env: Env) {
         : ''
       await ctx.reply(
         (item
-          ? `${item.id} — ${item.status === 'waiting_publish_slot' ? 'prête, en attente de Prismic' : item.status}, version ${item.state.revision}${item.state.error ? '\n' + item.state.error : ''}`
+          ? `${item.id} — ${item.status === 'waiting_publish_slot' ? 'prête, en attente de Prismic' : item.status}, version ${item.state.revision}${item.state.error ? `\n${item.state.error}` : ''}`
           : blocker || waiting?.count
             ? '📚 Aucune fiche en cours de préparation.'
             : background
@@ -1039,25 +1244,31 @@ export function createBot(env: Env) {
       )
       return
     }
+
     const command = /^\/(cancel|retry)\b/.exec(text)?.[1]
+
     if (command) {
       const cancelId = /^\/cancel(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1]
+
       if (cancelId) {
-        if (await store.cancelParked(env.TELEGRAM_CHAT_ID, cancelId))
+        if (await store.cancelParked(env.TELEGRAM_CHAT_ID, cancelId)) {
           await ctx.reply(
             `🗑 ${cancelId} est retiré de la file de publication. Les autres liens sont conservés.`
           )
-        else if (item?.id === cancelId)
+        } else if (item?.id === cancelId) {
           await store.addAction(ctx.update.update_id, item, {
             kind: 'cancel',
             revision: item.state.revision,
           })
-        else
+        } else {
           await ctx.reply(
             'Ce lien ne peut pas être annulé ici : il est déjà en publication ou n’attend plus son tour.'
           )
+        }
+
         return
       }
+
       if (command === 'retry') {
         let requestedId =
           /^\/retry(?:@\w+)?\s+(u\d+)\s*$/.exec(text)?.[1] ??
@@ -1071,11 +1282,16 @@ export function createBot(env: Env) {
             .bind(env.TELEGRAM_CHAT_ID)
             .first<{ id: string }>()
         )?.id
-        if (requestedId && (await beginRecovery(env, requestedId))) return
+
+        if (requestedId && (await beginRecovery(env, requestedId))) {
+          return
+        }
+
         const check = await store.resumePublicationCheck(
           env.TELEGRAM_CHAT_ID,
           requestedId
         )
+
         if (check) {
           await ctx.reply(
             check.scheduled
@@ -1084,12 +1300,17 @@ export function createBot(env: Env) {
           )
           return
         }
+
         if (requestedId) {
-          if (await beginRecovery(env, requestedId)) return
+          if (await beginRecovery(env, requestedId)) {
+            return
+          }
+
           const resumed = await store.resumeParkedPublication(
             env.TELEGRAM_CHAT_ID,
             requestedId
           )
+
           if (!resumed && item?.id === requestedId) {
             await store.addAction(ctx.update.update_id, item, {
               kind: 'resume',
@@ -1098,6 +1319,7 @@ export function createBot(env: Env) {
             await ctx.reply(`🔄 Je reprends le traitement de ${requestedId}.`)
             return
           }
+
           await ctx.reply(
             resumed === 'queued'
               ? `🔄 La reprise de ${requestedId} est enregistrée. Elle réutilisera les écritures déjà confirmées.`
@@ -1108,15 +1330,18 @@ export function createBot(env: Env) {
           return
         }
       }
+
       if (item) {
         await store.addAction(ctx.update.update_id, item, {
           kind: command === 'cancel' ? 'cancel' : 'resume',
           revision: item.state.revision,
         })
-        if (command === 'retry')
+
+        if (command === 'retry') {
           await ctx.reply(
             `🔄 Je reprends là où on en était !\n🔗 ${item.state.url}`
           )
+        }
       } else {
         const blocker = await store.publicationBlocker(env.TELEGRAM_CHAT_ID)
         await ctx.reply(
@@ -1125,14 +1350,17 @@ export function createBot(env: Env) {
             : '☕ Rien en cours pour le moment. Envoie-moi un lien pour commencer !'
         )
       }
+
       return
     }
+
     if (text.startsWith('/')) {
       await ctx.reply(
         '🤔 Je ne connais pas cette commande. Tape /help pour voir les commandes disponibles.'
       )
       return
     }
+
     const reply =
       message.reply_to_message &&
       (await store.db
@@ -1141,6 +1369,7 @@ export function createBot(env: Env) {
         )
         .bind(env.TELEGRAM_CHAT_ID, message.reply_to_message.message_id)
         .first<{ item_id: string; revision: number }>())
+
     if (
       reply &&
       (item?.id !== reply.item_id || item.state.revision !== reply.revision)
@@ -1150,6 +1379,7 @@ export function createBot(env: Env) {
       )
       return
     }
+
     if (/^\s*(valider|publier|oui)\s*[.!]?$/i.test(text)) {
       if (!item || !reply) {
         await ctx.reply(
@@ -1157,16 +1387,19 @@ export function createBot(env: Env) {
         )
         return
       }
+
       await store.addAction(ctx.update.update_id, item, {
         kind: 'approve',
         revision: reply.revision,
       })
       return
     }
+
     const menu =
       /^(?:change(?:r)?|modifie(?:r)?)\s+(?:l['’]image|la source)[.!?]?$/i.exec(
         text.trim()
       ) ?? /^(?:autre image|autre source)[.!?]?$/i.exec(text.trim())
+
     if (item?.state.draft && menu) {
       await store.addAction(ctx.update.update_id, item, {
         kind: /source/i.test(text) ? 'sources' : 'images',
@@ -1174,6 +1407,7 @@ export function createBot(env: Env) {
       })
       return
     }
+
     if (
       item?.state.draft &&
       /^(?:sans image|(?:retire|supprime|enlève)\s+l['’]image)[.!]?$/i.test(
@@ -1187,10 +1421,12 @@ export function createBot(env: Env) {
       })
       return
     }
+
     if (item && reply) {
       await revise()
       return
     }
+
     const entities = [
       ...(message.entities ?? []),
       ...(message.caption_entities ?? []),
@@ -1201,6 +1437,7 @@ export function createBot(env: Env) {
     const urls = [
       ...new Set([...linksIn(text), ...hidden.flatMap((u) => linksIn(u))]),
     ]
+
     if (urls.length) {
       const id = `u${ctx.update.update_id}`
       // Persist the receipt separately from mutable item checkpoints. A replay
@@ -1231,7 +1468,8 @@ export function createBot(env: Env) {
         },
         new Date(message.date * 1000).toISOString()
       )
-      if (inserted)
+
+      if (inserted) {
         log('item.queued', {
           itemId: `u${ctx.update.update_id}`,
           updateId: ctx.update.update_id,
@@ -1239,16 +1477,22 @@ export function createBot(env: Env) {
           waitingBehindActive: Boolean(item),
           urlCount: urls.length,
         })
+      }
+
       return
     }
-    if (item) await revise()
-    else
+
+    if (item) {
+      await revise()
+    } else {
       await ctx.reply(
         '🔗 Envoie-moi un lien HTTP(S) et je te prépare une proposition !'
       )
+    }
   })
   return bot
 }
+
 export async function handleUpdate(env: Env, update: Update) {
   const bot = createBot(env)
   await bot.init()

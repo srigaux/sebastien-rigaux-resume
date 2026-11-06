@@ -4,12 +4,17 @@ import { Store } from '@/store'
 
 // Shared by webhook/cron dispatch and the workflow's durable queue handoff.
 export async function dispatchQueue(env: Env) {
-  const store = new Store(env.DB),
-    item = await store.claim(env.TELEGRAM_CHAT_ID)
-  if (!item) return
+  const store = new Store(env.DB)
+  const item = await store.claim(env.TELEGRAM_CHAT_ID)
+
+  if (!item) {
+    return
+  }
+
   const id = `${item.id}-g${item.generation}`
   let instance: WorkflowInstance | undefined
   let created = false
+
   try {
     instance = await env.CURATION.get(id)
     await instance.status()
@@ -22,6 +27,7 @@ export async function dispatchQueue(env: Env) {
         ? { queueWaitMs: Math.max(0, Date.now() - Date.parse(item.created_at)) }
         : {}),
     })
+
     try {
       instance = await env.CURATION.create({
         id,
@@ -33,7 +39,9 @@ export async function dispatchQueue(env: Env) {
       await instance.status()
     }
   }
+
   const status = await instance.status()
+
   if (
     !created &&
     !item.state.publicationStarted &&
@@ -46,15 +54,26 @@ export async function dispatchQueue(env: Env) {
         await instance.terminate()
       } catch (error) {
         const latest = await instance.status()
-        if (!['errored', 'terminated', 'complete'].includes(latest.status))
+
+        if (!['errored', 'terminated', 'complete'].includes(latest.status)) {
           throw error
+        }
       }
     }
+
     const stopped = await store.get(item.id)
-    if (!stopped.active || stopped.generation !== item.generation) return
+
+    if (!stopped.active || stopped.generation !== item.generation) {
+      return
+    }
+
     await store.rotate(stopped)
     const next = await store.get(item.id)
-    if (!next.active) return
+
+    if (!next.active) {
+      return
+    }
+
     const nextId = `${next.id}-g${next.generation}`
     log('workflow.cancel_interrupt', {
       itemId: next.id,
@@ -62,6 +81,7 @@ export async function dispatchQueue(env: Env) {
       nextWorkflowId: nextId,
       publicationStarted: !!next.state.publicationStarted,
     })
+
     try {
       await env.CURATION.create({
         id: nextId,
@@ -72,8 +92,10 @@ export async function dispatchQueue(env: Env) {
       const existing = await env.CURATION.get(nextId)
       await existing.status()
     }
+
     return
   }
+
   if (['errored', 'terminated', 'complete'].includes(status.status)) {
     // An unexpected workflow failure/notification error is recoverable from the
     // journal and item checkpoints. No external write bypasses that journal.
@@ -85,6 +107,7 @@ export async function dispatchQueue(env: Env) {
     await store.rotate(item)
     return
   }
+
   // Also wake workflows from older deployments which were already waiting
   // on an input event when their publication slot became blocked.
   if (
@@ -98,6 +121,8 @@ export async function dispatchQueue(env: Env) {
       { kind: 'resume', revision: item.state.revision }
     )
   }
-  if (await store.nextAction(item.id))
+
+  if (await store.nextAction(item.id)) {
     await instance.sendEvent({ type: 'input', payload: { id: item.id } })
+  }
 }

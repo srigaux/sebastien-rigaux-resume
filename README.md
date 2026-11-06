@@ -71,6 +71,25 @@ Les fichiers Astro utilisent le parser Astro avec prise en charge de TypeScript 
 leur vérification de types reste assurée par `astro check`. Le preset Vitest
 s'applique uniquement aux tests du bot, les autres suites utilisant `node:test`.
 
+Le socle impose les accolades pour les conditions et les boucles, les comparaisons
+strictes (`===` et `!==`), une ligne vide avant/après les fonctions déclarées,
+avant les `if`, `for`, `while`, `do`, `switch`, `try` et après les blocs. Les lignes vides avant les `return` restent
+facultatives. Ces règles sont corrigées par `lint:fix` ; Prettier gère le reste
+du formatage. Les membres de classe sont séparés par une ligne vide. Les tableaux
+TypeScript utilisent `Item[]` pour les types simples et `Array<…>` pour les types
+complexes ; les exports de types sont explicites dans les fichiers analysés avec
+informations de types. Chaque variable possède sa propre déclaration ; les
+`switch` placent `default` en dernier et couvrent toutes les variantes connues
+des unions TypeScript.
+
+Le socle vérifie aussi les retours des callbacks de tableaux et des exécuteurs
+Promise, les affectations dans les retours, les comparaisons d'une valeur avec
+elle-même et la base explicite de `parseInt`. Il privilégie `const`, les propriétés
+raccourcies, le spread d'objets, les templates et les callbacks fléchés ; il
+simplifie les `else` et retours inutiles. Il interdit notamment `eval`, les
+constructeurs de fonctions dynamiques, les wrappers primitifs et la modification
+des prototypes natifs.
+
 Better Tailwind vérifie les classes dans les composants Astro et React avec le
 thème de `apps/website-astro/src/styles/global.css` et impose le tri `strict`.
 Les marqueurs de l'observateur d'intersection et les hooks JavaScript connus

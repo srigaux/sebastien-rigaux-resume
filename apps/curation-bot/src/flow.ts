@@ -29,12 +29,14 @@ export const stepConfig = {
   retries: { limit: 0, delay: '1 second' },
   timeout: '5 minutes',
 } as const
+
 async function checkpoint(env: Env, step: Steps, name: string, item: Item) {
   await step.do(name, stepConfig, async () => {
     await new Store(env.DB).save(item)
     return true
   })
 }
+
 async function duplicates(
   env: Env,
   step: Steps,
@@ -42,12 +44,16 @@ async function duplicates(
   item: Item,
   url: string
 ): Promise<boolean> {
-  if (item.state.checked?.includes(normalizeUrl(url))) return false
+  if (item.state.checked?.includes(normalizeUrl(url))) {
+    return false
+  }
+
   const found = await retry(step, name, async () => [
     ...(await publishedDuplicates(env, url)),
     ...(await new Store(env.DB).duplicates(item, url)),
   ])
   item.state.checked = [...(item.state.checked ?? []), normalizeUrl(url)]
+
   if (found.length) {
     item.state.duplicateMatches = found
     item.status = 'duplicate'
@@ -58,16 +64,23 @@ async function duplicates(
     })
     return true
   }
+
   return false
 }
+
 export async function loadExtraction(
   env: Env,
   item: Item
 ): Promise<Extraction> {
   const object = await env.BUCKET.get(item.state.extractionKey!)
-  if (!object) throw new BotError('Extraction enregistrée introuvable.')
+
+  if (!object) {
+    throw new BotError('Extraction enregistrée introuvable.')
+  }
+
   return object.json<Extraction>()
 }
+
 export function explicitSource(
   note: string,
   cats: Catalog
@@ -76,8 +89,15 @@ export function explicitSource(
     .exec(note)?.[1]
     .trim()
     .toLowerCase()
-  if (!label) return undefined
-  if (['aucune', 'none', 'non'].includes(label)) return null
+
+  if (!label) {
+    return undefined
+  }
+
+  if (['aucune', 'none', 'non'].includes(label)) {
+    return null
+  }
+
   return cats.sources.find(
     (s) =>
       s.name.toLowerCase() === label ||
@@ -85,6 +105,7 @@ export function explicitSource(
       s.url?.toLowerCase() === label
   )?.uid
 }
+
 export async function advance(
   env: Env,
   step: Steps,
@@ -93,6 +114,7 @@ export async function advance(
   cats: Catalog
 ): Promise<void> {
   const s = item.state
+
   if (
     item.status === 'error' ||
     item.status === 'duplicate' ||
@@ -101,25 +123,35 @@ export async function advance(
     s.showFormats ||
     s.showSources ||
     s.showImages
-  )
+  ) {
     return
+  }
+
   if (s.choices?.length) {
     item.status = 'choose'
     return
   }
+
   const progress = async (stage: AnalysisStage) => {
-    if (s.draft) return
+    if (s.draft) {
+      return
+    }
+
     await step.do(`${prefix}-analysis-${stage}`, stepConfig, async () => {
       await analysisNotice(env, item, stage)
       return true
     })
   }
+
   if (!s.extractionKey) {
     await progress('duplicates')
+
     if (
       await duplicates(env, step, `${prefix}-duplicates-original`, item, s.url)
-    )
+    ) {
       return
+    }
+
     await progress('extract')
     const extraction = await scrape(
       env,
@@ -139,19 +171,29 @@ export async function advance(
     s.url = canonicalFor(extraction.url, extraction.metadata.canonicalUrl)
     await checkpoint(env, step, `${prefix}-checkpoint-extraction`, item)
   }
+
   await progress('canonical')
-  if (await duplicates(env, step, `${prefix}-duplicates-resolved`, item, s.url))
+
+  if (
+    await duplicates(env, step, `${prefix}-duplicates-resolved`, item, s.url)
+  ) {
     return
+  }
+
   const extraction = await step.do(
     `${prefix}-load-extraction`,
     stepConfig,
     () => loadExtraction(env, item)
   )
-  if (s.sourceUid === undefined)
+
+  if (s.sourceUid === undefined) {
     s.sourceUid = explicitSource(s.note, cats) ?? null
+  }
+
   const selectedExtraction = s.imageChoice
     ? { ...extraction, imageUrls: [s.imageChoice] }
     : extraction
+
   if (!s.media || s.imagePending) {
     await progress('media')
     s.media = await collectMedia(
@@ -164,6 +206,7 @@ export async function advance(
     s.imagePending = false
     await checkpoint(env, step, `${prefix}-checkpoint-media`, item)
   }
+
   if (!s.draft || s.needsRevision) {
     await progress('generate')
     delete s.sourceEditMessageId
@@ -173,45 +216,61 @@ export async function advance(
         generateDraft(env, item, extraction, cats)
       )
     )
-    if (previous) s.revisionNote = s.draft.revisionNote ?? undefined
+
+    if (previous) {
+      s.revisionNote = s.draft.revisionNote ?? undefined
+    }
+
     s.needsRevision = false
     await checkpoint(env, step, `${prefix}-checkpoint-draft`, item)
   }
+
   if (s.approvedRevision === s.revision) {
     if (!s.publicationStarted) {
       assertDraft(s.draft, cats)
       webUrl(s.url)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(s.selectedOn))
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s.selectedOn)) {
         throw new BotError('Date de sélection invalide.')
+      }
     }
+
     if (
       !s.publicationStarted &&
       (s.draft.topics.some((uid) => !cats.topics.some((t) => t.uid === uid)) ||
         (s.sourceUid &&
           !cats.sources.some((source) => source.uid === s.sourceUid)))
-    )
+    ) {
       throw new BotError(
         'Le catalogue Prismic a changé. Corrigez la fiche avant publication.',
         'catalog_changed'
       )
-    if (env.PUBLISH_ENABLED !== 'true')
+    }
+
+    if (env.PUBLISH_ENABLED !== 'true') {
       throw new BotError(
         'Publication désactivée : terminer la procédure d’activation dans le README.',
         'publication_disabled'
       )
-    if (s.media.failures.length)
+    }
+
+    if (s.media.failures.length) {
       throw new BotError(
         'Confirmez l’omission des médias indisponibles avant publication.',
         'media_rejected'
       )
+    }
+
     const locked = await step.do(`${prefix}-publication-lock`, stepConfig, () =>
       new Store(env.DB).tryLock(env.PRISMIC_REPOSITORY, item.id)
     )
+
     if (!locked) {
       item.status = 'waiting_publish_slot'
       log('publication.slot.waiting', { itemId: item.id, status: item.status })
       return
     }
+
     s.references ??= {
       topics: Object.fromEntries(cats.topics.map((t) => [t.uid, t.id])),
       sourceId: cats.sources.find((source) => source.uid === s.sourceUid)?.id,
@@ -225,6 +284,7 @@ export async function advance(
       await publicationNotice(env, item)
       return true
     })
+
     if (!s.publishedIds) {
       try {
         const result = await retry(step, `${prefix}-migrate`, () =>
@@ -238,6 +298,7 @@ export async function advance(
         )
           .bind(item.id)
           .first()
+
         if (error instanceof MediaRejected && !documentWrites) {
           s.publicationStarted = false
           s.approvedRevision = undefined
@@ -245,6 +306,7 @@ export async function advance(
           const affected = (['image', 'icon'] as const).filter(
             (kind) => s.media?.[kind]?.filename === error.filename
           )
+
           for (const kind of affected) {
             const media = s.media[kind]!
             s.media.failures.push({
@@ -254,6 +316,7 @@ export async function advance(
             })
             delete s.media[kind]
           }
+
           await step.do(
             `${prefix}-release-media-lock`,
             stepConfig,
@@ -263,15 +326,19 @@ export async function advance(
             }
           )
         }
+
         throw error
       }
+
       await checkpoint(env, step, `${prefix}-checkpoint-ids`, item)
     }
+
     const uncertainPublish = await env.DB.prepare(
       "SELECT key FROM operations WHERE item_id=? AND target LIKE '%migration-release/publish' AND status='pending'"
     )
       .bind(item.id)
       .first()
+
     if (!s.publicationRequested && !uncertainPublish) {
       await step.do(
         `${prefix}-register-publication-check`,
@@ -281,6 +348,7 @@ export async function advance(
           return true
         }
       )
+
       try {
         await retry(step, `${prefix}-publish`, async () => {
           await progress('publish')
@@ -294,14 +362,18 @@ export async function advance(
         )
           .bind(item.id)
           .first()
+
         if (!pending) {
           await schedulePublicationCheck(env, item, 'attention')
           throw error
         }
+
         s.publicationUnknown = true
       }
-    } else if (uncertainPublish && !s.publicationRequested)
+    } else if (uncertainPublish && !s.publicationRequested) {
       s.publicationUnknown = true
+    }
+
     await step.do(`${prefix}-schedule-availability`, stepConfig, async () => {
       await schedulePublicationCheck(
         env,
@@ -325,8 +397,10 @@ export async function advance(
     await checkpoint(env, step, `${prefix}-checkpoint-accepted`, item)
     return
   }
+
   item.status = 'review'
 }
+
 export async function applyAction(
   env: Env,
   step: Steps,
@@ -336,8 +410,11 @@ export async function applyAction(
   action: Action
 ): Promise<string | undefined> {
   const s = item.state
-  if (action.revision !== s.revision)
+
+  if (action.revision !== s.revision) {
     return 'Cette proposition n’est plus active.'
+  }
+
   if (
     action.kind === 'resume' &&
     (item.status === 'error' ||
@@ -351,16 +428,18 @@ export async function applyAction(
         )
         .bind(item.id)
         .first<{ key: string }>()
-      if (pending)
-        return (
-          '⏸ Une réponse d’écriture Prismic manque. Relancer pourrait créer un doublon : la reprise attend une réconciliation. Vérifie le brouillon dans la release de migration Prismic, puis fais rapprocher son ID avec le journal de la fiche ' +
-          item.id +
-          '. Les liens en file sont conservés. /reset ne peut pas résoudre cette incertitude.'
-        )
+
+      if (pending) {
+        return `⏸ Une réponse d’écriture Prismic manque. Relancer pourrait créer un doublon : la reprise attend une réconciliation. Vérifie le brouillon dans la release de migration Prismic, puis fais rapprocher son ID avec le journal de la fiche ${
+          item.id
+        }. Les liens en file sont conservés. /reset ne peut pas résoudre cette incertitude.`
+      }
     }
+
     // If an external write is uncertain, replay protection will stop it again.
     // A publish that went live despite a lost response can be reconciled.
     s.error = undefined
+
     if (!s.publicationStarted && s.media?.failures.length) {
       s.media = await collectMedia(
         env,
@@ -375,30 +454,41 @@ export async function applyAction(
       s.revision++
       s.approvedRevision = undefined
     }
+
     item.status = 'queued'
     return
   }
-  if (s.publicationStarted)
+
+  if (s.publicationStarted) {
     return '🔒 La migration a déjà commencé : je conserve les documents et ta file pour éviter une publication incomplète. Une réconciliation dans Prismic est nécessaire avant toute annulation ; /retry ne pourra continuer qu’une fois les écritures incertaines résolues.'
+  }
+
   if (action.kind === 'cancel') {
     item.status = 'cancelled'
     return
   }
+
   if (action.kind === 'choose' && s.choices?.length) {
     const url = s.choices[Number(action.value)]
-    if (!url) return 'Lien inconnu.'
+
+    if (!url) {
+      return 'Lien inconnu.'
+    }
+
     s.url = url
     delete s.choices
     s.revision++
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'continue' && item.status === 'duplicate') {
     delete s.duplicateMatches
     s.revision++
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'omit-media' && s.media?.failures.length) {
     s.mediaOmissions = [
       ...(s.mediaOmissions ?? []),
@@ -411,6 +501,7 @@ export async function applyAction(
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'images' && s.draft) {
     s.showFormats = false
     s.showImages = true
@@ -420,13 +511,18 @@ export async function applyAction(
     item.status = 'review'
     return
   }
+
   if (action.kind === 'image' && s.draft && s.media) {
     const extraction = await loadExtraction(env, item)
     const selected =
       action.value === 'none'
         ? undefined
         : extraction.imageUrls[Number(action.value)]
-    if (action.value !== 'none' && !selected) return 'Image inconnue.'
+
+    if (action.value !== 'none' && !selected) {
+      return 'Image inconnue.'
+    }
+
     s.showImages = false
     s.showFormats = false
     s.showSources = false
@@ -434,11 +530,15 @@ export async function applyAction(
     s.revisionNote = selected ? 'Image modifiée.' : 'Image retirée.'
     s.imageChoice = selected
     s.imagePending = !!selected
+
     if (!selected) {
-      if (s.media.image)
+      if (s.media.image) {
         s.mediaOmissions = [...(s.mediaOmissions ?? []), s.media.image.url]
+      }
+
       delete s.media.image
     }
+
     s.media.failures = s.media.failures.filter((f) => f.kind !== 'image')
     s.needsRevision = !!selected
     s.revision++
@@ -446,6 +546,7 @@ export async function applyAction(
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'formats' && s.draft) {
     s.showSources = false
     s.showImages = false
@@ -456,9 +557,14 @@ export async function applyAction(
     item.status = 'review'
     return
   }
+
   if (action.kind === 'format' && s.draft) {
     const format = formats.find((format) => format === action.value)
-    if (!format) return 'Type inconnu. Rouvrez la liste des types.'
+
+    if (!format) {
+      return 'Type inconnu. Rouvrez la liste des types.'
+    }
+
     s.draft.format = format
     s.confirmedFormat = format
     s.showFormats = false
@@ -469,6 +575,7 @@ export async function applyAction(
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'sources' && s.draft) {
     s.showImages = false
     s.showFormats = false
@@ -479,10 +586,14 @@ export async function applyAction(
     item.status = 'source'
     return
   }
+
   if (action.kind === 'source' && s.draft) {
     const source = cats.sources.find((source) => source.id === action.value)
-    if (action.value !== 'none' && !source)
+
+    if (action.value !== 'none' && !source) {
       return 'Source inconnue. Rouvrez la liste des sources.'
+    }
+
     s.sourceUid = source?.uid ?? null
     await new Store(env.DB).putCache(
       `last-source:${item.chat_id}`,
@@ -496,21 +607,28 @@ export async function applyAction(
     item.status = 'queued'
     return
   }
+
   if (action.kind === 'approve') {
     if (
       !['review', 'source'].includes(item.status) ||
       !s.draft ||
       s.media?.failures.length
-    )
+    ) {
       return 'Les éventuels médias indisponibles doivent être résolus avant validation.'
+    }
+
     // Also allow publication of older fiches that were awaiting a source.
-    if (s.sourceUid === undefined) s.sourceUid = null
+    if (s.sourceUid === undefined) {
+      s.sourceUid = null
+    }
+
     s.showSources = false
     s.showFormats = false
     s.approvedRevision = s.revision
     item.status = 'queued'
     return
   }
+
   if (
     action.kind === 'revise' &&
     action.text &&
@@ -521,6 +639,7 @@ export async function applyAction(
       `source: ${action.text.replace(/^source\s*:\s*/i, '')}`,
       cats
     )
+
     if (
       source !== undefined &&
       (item.status === 'source' || /^source\s*:/i.test(action.text))
@@ -529,11 +648,14 @@ export async function applyAction(
       s.revisionNote = 'Source de découverte modifiée.'
       s.showSources = false
     } else {
-      if (action.text.length > 8000)
+      if (action.text.length > 8000) {
         return 'Consigne trop longue (8 000 caractères maximum).'
+      }
+
       s.instructions.push(action.text)
       s.needsRevision = true
     }
+
     s.showFormats = false
     s.showSources = false
     s.revisionReceiptKey = action.receiptKey
@@ -542,6 +664,8 @@ export async function applyAction(
     item.status = 'queued'
     return
   }
+
   return 'Cette action ne correspond pas à l’étape actuelle.'
 }
+
 export { catalog, errorText }

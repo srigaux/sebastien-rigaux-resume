@@ -24,6 +24,7 @@ export function mediaWidths(width, icon = false, detail = false) {
 /** @param {string} value */
 export function mediaUrl(value) {
   const url = new URL(value)
+
   if (
     url.protocol !== 'https:' ||
     url.username ||
@@ -34,8 +35,10 @@ export function mediaUrl(value) {
         url.pathname.startsWith('/bd7d5fa0/')) ||
       url.hostname === 'bd7d5fa0.cdn.prismic.io'
     )
-  )
+  ) {
     throw new Error(`Unsupported watch media origin: ${url.origin}`)
+  }
+
   // Request the original bytes: CDN format negotiation could flatten animation.
   url.search = ''
   return url.href
@@ -51,19 +54,26 @@ export async function inspectMedia(bytes) {
     bytes.readUInt16LE(2) === 1
   ) {
     const count = bytes.readUInt16LE(4)
-    if (!count || bytes.length < 6 + count * 16)
+
+    if (!count || bytes.length < 6 + count * 16) {
       throw new Error('Invalid ICO directory')
+    }
+
     const entries = Array.from({ length: count }, (_, index) => {
       const offset = 6 + index * 16
       const size = bytes.readUInt32LE(offset + 8)
       const start = bytes.readUInt32LE(offset + 12)
-      if (!size || start < 6 + count * 16 || start + size > bytes.length)
+
+      if (!size || start < 6 + count * 16 || start + size > bytes.length) {
         throw new Error('Invalid ICO payload')
+      }
+
       return { width: bytes[offset] || 256, height: bytes[offset + 1] || 256 }
     })
     const largest = entries.sort((a, b) => b.width - a.width)[0]
     return { ...largest, format: 'ico', preserve: true }
   }
+
   const metadata = await sharp(bytes, { animated: true }).metadata()
   const { format, pages = 1, hasAlpha } = metadata
   const rotated = metadata.orientation && metadata.orientation >= 5
@@ -71,12 +81,16 @@ export async function inspectMedia(bytes) {
   const height = rotated
     ? metadata.width
     : metadata.pageHeight || metadata.height
-  if (!width || !height || !format)
+
+  if (!width || !height || !format) {
     throw new Error('Watch media has no intrinsic dimensions or format')
+  }
+
   const preserve = format === 'svg' || pages > 1
   let placeholder
   const opaque =
     !hasAlpha || (!preserve && (await sharp(bytes).stats()).isOpaque)
+
   if (!preserve && opaque) {
     const tiny = await sharp(bytes)
       .rotate()
@@ -85,8 +99,12 @@ export async function inspectMedia(bytes) {
       .toBuffer()
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><filter id="b"><feGaussianBlur stdDeviation="${Math.max(width, height) / 40}"/></filter><image width="100%" height="100%" preserveAspectRatio="none" filter="url(#b)" href="data:image/webp;base64,${tiny.toString('base64')}"/></svg>`
     const data = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
-    if (Buffer.byteLength(data) < 1024) placeholder = data
+
+    if (Buffer.byteLength(data) < 1024) {
+      placeholder = data
+    }
   }
+
   return { width, height, format, preserve, placeholder }
 }
 
@@ -99,7 +117,7 @@ const pending = new Map()
  * @returns {Promise<(MediaInfo & {src: string}) | undefined>}
  */
 export function prepareMedia(value) {
-  if (!pending.has(value))
+  if (!pending.has(value)) {
     pending.set(
       value,
       (async () => {
@@ -111,6 +129,8 @@ export function prepareMedia(value) {
         }
       })()
     )
+  }
+
   return pending.get(value)
 }
 
@@ -120,24 +140,36 @@ async function loadMedia(url) {
   const key = createHash('sha256').update(`v2:${url}`).digest('hex')
   const file = resolve(directory, `${key}.json`)
   let cached
+
   try {
     cached = JSON.parse(await readFile(file, 'utf8'))
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error
+    if (error.code !== 'ENOENT') {
+      throw error
+    }
   }
-  if (cached?.expires > Date.now()) return { src: url, ...cached.info }
+
+  if (cached?.expires > Date.now()) {
+    return { src: url, ...cached.info }
+  }
+
   const response = await fetch(url, {
     redirect: 'error',
     signal: AbortSignal.timeout(30000),
     headers: cached?.etag ? { 'If-None-Match': cached.etag } : {},
   })
-  if (!response.ok && response.status !== 304)
+
+  if (!response.ok && response.status !== 304) {
     throw new Error(`Watch media HTTP ${response.status}: ${url}`)
+  }
+
   if (
     response.status !== 304 &&
     response.headers.get('content-type')?.includes('text/html')
-  )
+  ) {
     throw new Error('Expected an image, received text/html')
+  }
+
   const info =
     response.status === 304 && cached
       ? cached.info

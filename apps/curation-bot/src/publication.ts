@@ -10,6 +10,7 @@ import { publicationNotice } from '@/telegram'
 export const MAX_PUBLICATION_CHECKS = 5
 export const PUBLICATION_FALLBACK_DELAY_MS = 60_000
 const RECHECK_DELAYS_MS = [180_000, 600_000, 1800_000, 3600_000]
+
 function nextCheck(attempts: number, createdAt = 0) {
   return (
     (createdAt || Date.now()) +
@@ -75,8 +76,8 @@ export async function recordPublicationWebhook(
 // One pending release at most: this bounded pass performs no sleeps and no writes
 // to Prismic. A lease makes overlapping cron invocations harmless.
 export async function reconcilePublications(env: Env) {
-  const now = Date.now(),
-    store = new Store(env.DB)
+  const now = Date.now()
+  const store = new Store(env.DB)
   // Compatibility: accepted publications from older deployments must not retain
   // the repository lock while waiting for Content API propagation.
   await env.DB.prepare(
@@ -96,12 +97,15 @@ export async function reconcilePublications(env: Env) {
   )
     .bind(env.TELEGRAM_CHAT_ID, now, now)
     .first<{ id: string }>()
-  if (intervention && (await beginRecovery(env, intervention.id)))
+
+  if (intervention && (await beginRecovery(env, intervention.id))) {
     await env.DB.prepare(
       'UPDATE publication_checks SET notified=1 WHERE item_id=?'
     )
       .bind(intervention.id)
       .run()
+  }
+
   const row = await env.DB.prepare(
     `SELECT p.item_id,p.status,p.attempts,p.created_at FROM publication_checks p
     JOIN items i ON i.id=p.item_id WHERE p.lease_until<=? AND p.next_check_at<=?
@@ -116,16 +120,20 @@ export async function reconcilePublications(env: Env) {
       attempts: number
       created_at: number
     }>()
+
   if (row) {
     const claim = await env.DB.prepare(
       'UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=?'
     )
       .bind(now + 120_000, row.item_id, now, now, row.status)
       .run()
+
     if (claim.meta.changes) {
       let checks = row.attempts
+
       try {
         let item = await store.get(row.item_id)
+
         if (row.status !== 'confirmed') {
           // Old deployments may already have exceeded the budget. Do not issue
           // hundreds more reads just because the state survived a deployment.
@@ -139,6 +147,7 @@ export async function reconcilePublications(env: Env) {
             await publicationNotice(env, item, 'attention')
             return
           }
+
           checks++
           const available = await withContext({ itemId: item.id }, () =>
             observe(
@@ -148,6 +157,7 @@ export async function reconcilePublications(env: Env) {
               { resultFields: (available) => ({ available }) }
             )
           )
+
           if (!available) {
             const needsAttention = checks >= MAX_PUBLICATION_CHECKS
             const nextCheckAt = nextCheck(checks, row.created_at)
@@ -160,8 +170,9 @@ export async function reconcilePublications(env: Env) {
                 item.id
               )
               .run()
+
             if (needsAttention) {
-              if (row.status !== 'attention')
+              if (row.status !== 'attention') {
                 log(
                   'publication.attention',
                   {
@@ -171,10 +182,13 @@ export async function reconcilePublications(env: Env) {
                   },
                   'warn'
                 )
+              }
+
               // Stop remote reads. The user can re-arm this check explicitly
               // after resolving the migration release; no write is replayed.
               await publicationNotice(env, item, 'attention')
             }
+
             log('publication.availability.pending', {
               itemId: item.id,
               checks,
@@ -203,6 +217,7 @@ export async function reconcilePublications(env: Env) {
             })
           }
         }
+
         if (row.status === 'confirmed') {
           item = await store.get(row.item_id)
           await publicationNotice(env, item, true)
@@ -231,6 +246,7 @@ export async function reconcilePublications(env: Env) {
             row.item_id
           )
           .run()
+
         if (needsAttention) {
           log(
             'publication.attention',
@@ -243,6 +259,7 @@ export async function reconcilePublications(env: Env) {
             'attention'
           )
         }
+
         log(
           row.status === 'confirmed'
             ? 'publication.notification.failed'
@@ -261,9 +278,11 @@ export async function reconcilePublications(env: Env) {
       }
     }
   }
+
   // Wake only an already-approved selection waiting for the publication lock.
   // Human review is never auto-approved by cron.
   const waiting = await store.active(env.TELEGRAM_CHAT_ID)
+
   if (
     waiting?.status === 'waiting_publish_slot' &&
     waiting.state.approvedRevision === waiting.state.revision
@@ -273,6 +292,7 @@ export async function reconcilePublications(env: Env) {
     )
       .bind(env.PRISMIC_REPOSITORY)
       .first()
+
     if (!held) {
       await store.addAction(
         -(waiting.update_id * 1000 + waiting.state.revision),

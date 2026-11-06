@@ -27,7 +27,11 @@ import siteSitemap from '#site-sitemap'
 
 // Astro loads .env files after this config, so load the local browser path here.
 const envFile = new URL('../../.env.local', import.meta.url)
-if (existsSync(envFile)) loadEnvFile(fileURLToPath(envFile))
+
+if (existsSync(envFile)) {
+  loadEnvFile(fileURLToPath(envFile))
+}
+
 const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
 const fastBuild =
   process.env.BUILD_FAST === '1' || process.env.BUILD_FAST === 'true'
@@ -195,6 +199,7 @@ function astroLlmsTxtForFileBuild(options) {
   integration.hooks['astro:build:done'] = async (context) => {
     const temporary = await mkdtemp(join(tmpdir(), 'astro-llms-'))
     const temporaryDir = pathToFileURL(`${temporary}/`)
+
     try {
       await mkdir(new URL('en/', temporaryDir))
       await Promise.all([
@@ -212,6 +217,7 @@ function astroLlmsTxtForFileBuild(options) {
         dir: temporaryDir,
         pages: [{ pathname: '/' }, { pathname: 'en/' }],
       })
+
       for (const name of ['llms.txt', 'fr.md', 'en.md', 'llms-full.txt']) {
         await copyFile(new URL(name, temporaryDir), new URL(name, context.dir))
       }
@@ -236,12 +242,15 @@ function astroLlmsTxtForFileBuild(options) {
         'Sources canoniques : [français](https://sebastien.rigaux.be/) · [English](https://sebastien.rigaux.be/en)',
       ],
     ]
+
     for (const [name, source] of exports) {
       const file = fileURLToPath(new URL(name, context.dir))
       const content = await readFile(file, 'utf8')
+
       if (content.length < 500 || !content.startsWith('<SYSTEM>')) {
         throw new Error(`Incomplete LLM export: ${name}`)
       }
+
       const clean = content.replace(
         /^<SYSTEM>(.*?)<\/SYSTEM>\n\n/s,
         (_, description) => `> ${description}\n\n${source}\n\n`
@@ -249,5 +258,6 @@ function astroLlmsTxtForFileBuild(options) {
       await writeFile(file, clean, 'utf8')
     }
   }
+
   return integration
 }

@@ -15,6 +15,7 @@ const publication = {
   masterRef: 'new-master',
   documents: ['document-id'],
 }
+
 function send(payload: unknown = publication, overrides = {}) {
   return worker.fetch(
     new Request('https://worker.test/prismic/webhook', {
@@ -25,6 +26,7 @@ function send(payload: unknown = publication, overrides = {}) {
     createExecutionContext()
   )
 }
+
 describe('Prismic rebuild webhook', () => {
   it.each([200, 204])(
     'dispatches published/unpublished documents, GitHub %s',

@@ -206,7 +206,11 @@ export async function generateDraft(
     totalTokens: usage.totalTokens,
   })
   const draft = assertDraft(result.output, cats)
-  if (item.state.confirmedFormat) draft.format = item.state.confirmedFormat
+
+  if (item.state.confirmedFormat) {
+    draft.format = item.state.confirmedFormat
+  }
+
   log('editorial.complete', {
     provider: 'openai',
     itemId: item.id,
@@ -214,6 +218,7 @@ export async function generateDraft(
     topics: draft.topics,
     rankedSourcesCount: draft.sourceRanking?.length ?? 0,
   })
+
   // Attribution must have evidence in the original material or an explicit user
   // correction. A model's unsupported name is never promoted into a credit.
   if (
@@ -231,6 +236,7 @@ export async function generateDraft(
       ...item.state.instructions,
     ]
     const metadataMatch = extraction.author?.name === draft.credit
+
     if (
       !metadataMatch &&
       (!evidence ||
@@ -241,7 +247,10 @@ export async function generateDraft(
       draft.creditEvidence = null
     }
   }
-  if (!draft.fr.summary.trim() || !draft.en.summary.trim())
+
+  if (!draft.fr.summary.trim() || !draft.en.summary.trim()) {
     throw new BotError('Proposition éditoriale vide.', 'draft_invalid')
+  }
+
   return draft
 }

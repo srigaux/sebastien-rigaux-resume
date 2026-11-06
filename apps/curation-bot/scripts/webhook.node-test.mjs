@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import { main } from './webhook.mjs'
 
 const env = { TELEGRAM_BOT_TOKEN: 'secret-token' }
+
 function mock(results) {
   const calls = []
   return {
@@ -17,6 +18,7 @@ function mock(results) {
     },
   }
 }
+
 test('identity leaves an existing webhook intact', async () => {
   const api = mock([
     { ok: true, result: { url: 'https://example.com/telegram' } },

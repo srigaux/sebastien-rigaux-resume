@@ -21,14 +21,18 @@ const steps = () =>
   }) as unknown as Steps
 
 it('utilise le SDK Context.dev avec un délai API inférieur au délai client et zéro retry interne', async () => {
-  const bodies: Record<string, unknown>[] = []
+  const bodies: Array<Record<string, unknown>> = []
   let attempts = 0
   vi.stubGlobal(
     'fetch',
     vi.fn(async (_input: unknown, init: RequestInit) => {
       bodies.push(JSON.parse(String(init.body)))
       attempts++
-      if (attempts === 1) return new Response('{}', { status: 408 })
+
+      if (attempts === 1) {
+        return new Response('{}', { status: 408 })
+      }
+
       return Response.json({
         url: extraction.url,
         markdown: { success: true, data: extraction.markdown },
@@ -51,8 +55,8 @@ it('utilise le SDK Context.dev avec un délai API inférieur au délai client et
 })
 it('conserve les bons médias dans R2 et ne retélécharge que celui en échec', async () => {
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
-  let iconCalls = 0,
-    imageCalls = 0
+  let iconCalls = 0
+  let imageCalls = 0
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown) => {
@@ -60,6 +64,7 @@ it('conserve les bons médias dans R2 et ne retélécharge que celui en échec',
         iconCalls++
         return new Response('', { status: 404 })
       }
+
       imageCalls++
       return new Response(new Uint8Array([1, 2, 3]), {
         headers: { 'content-type': 'image/png' },
@@ -142,10 +147,10 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
   expect(JSON.stringify(usage)).not.toContain(extraction.markdown)
   expect(result.credit).toBeNull()
   expect(result.format).toBe('Release')
-  const messages = body.input as {
+  const messages = body.input as Array<{
     role: string
-    content: { text: string }[]
-  }[]
+    content: Array<{ text: string }>
+  }>
   const context = JSON.parse(
     messages.find((message) => message.role === 'user')!.content[0].text
   )
@@ -167,6 +172,7 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
     '\n\nUn compromis utile pour la **code review** avec `Array<T>`.'
   item.state.draft!.en.summary +=
     '\n\nA useful trade-off for **code review** with `Array<T>`.'
+
   for (const kind of ['image', 'icon'] as const) {
     const key = `sdk/${kind}`
     await env.BUCKET.put(key, new Uint8Array([1, 2, 3]))
@@ -178,21 +184,25 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
       size: 3,
     }
   }
-  const puts: Record<string, any>[] = []
-  const creates: Record<string, any>[] = []
-  let assetCount = 0,
-    publishCount = 0,
-    rejectedEn = false
+
+  const puts: Array<Record<string, any>> = []
+  const creates: Array<Record<string, any>> = []
+  let assetCount = 0
+  let publishCount = 0
+  let rejectedEn = false
   const assets: Record<string, any> = {}
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
+
       if (
         url.includes('cdn.prismic.io/api/v2') &&
         !url.includes('documents/search')
-      )
+      ) {
         return Response.json(repository)
+      }
+
       if (url.includes('/assets') && init?.method === 'POST') {
         const form = init.body as FormData
         const file = form.get('file') as File
@@ -205,8 +215,10 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
         assets[file.name] = value
         return Response.json(value)
       }
+
       if (url.endsWith('/documents') && init?.method === 'POST') {
         const body = JSON.parse(String(init.body))
+
         if (body.lang === 'en-us' && !rejectedEn) {
           rejectedEn = true
           return new Response('', {
@@ -214,20 +226,24 @@ it('importe réellement deux médias via le SDK officiel, lie EN à FR et repren
             headers: { 'Retry-After': '1' },
           })
         }
+
         creates.push(body)
         return Response.json(
           { id: body.lang === 'fr-be' ? 'fr-id' : 'en-id' },
           { status: 201 }
         )
       }
+
       if (url.includes('/documents/') && init?.method === 'PUT') {
         puts.push(JSON.parse(String(init.body)))
         return Response.json({})
       }
+
       if (url.includes('migration-release/publish')) {
         publishCount++
         return Response.json({ totalItems: 2 }, { status: 202 })
       }
+
       throw new Error(`Unexpected SDK request ${init?.method} ${url}`)
     })
   )
@@ -307,9 +323,9 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
   const { advance } = await import('@/flow')
   const { present } = await import('@/telegram')
   const { Store } = await import('@/store')
-  const item = fixture(),
-    store = new Store(env.DB),
-    order: string[] = []
+  const item = fixture()
+  const store = new Store(env.DB)
+  const order: string[] = []
   item.state.draft = undefined
   item.state.extractionKey = 'extractions/early-preview.json'
   item.state.checked = [item.state.url]
@@ -331,6 +347,7 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
     'fetch',
     vi.fn(async (input: unknown) => {
       const url = String(input)
+
       if (url.includes('api.telegram.org')) {
         const method = url.split('/').at(-1)!
         order.push(method)
@@ -346,6 +363,7 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
                 },
         })
       }
+
       if (url.includes('api.openai.com')) {
         order.push('openai')
         return Response.json({
@@ -372,6 +390,7 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
           usage: { input_tokens: 100, output_tokens: 200, total_tokens: 300 },
         })
       }
+
       throw new Error('Unexpected external request')
     })
   )
@@ -413,8 +432,10 @@ it('déduplique FR/EN et utilise le permalien FR actuel même si le slug a chang
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown) => {
-      if (!String(input).includes('/documents/search'))
+      if (!String(input).includes('/documents/search')) {
         return Response.json(repository)
+      }
+
       expect(new URL(String(input)).searchParams.get('lang')).toBe('*')
       const results = [
         page('en-id', 'en-us', 'english-title', 'English title', 'fr-id'),

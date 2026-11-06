@@ -13,9 +13,9 @@ import { Store } from '@/store'
 
 describe('inbox, file et verrous D1', () => {
   it('déduplique les envois et ne rend active qu’une fiche malgré des prises concurrentes', async () => {
-    const store = new Store(env.DB),
-      a = fixture('u1'),
-      b = fixture('u2')
+    const store = new Store(env.DB)
+    const a = fixture('u1')
+    const b = fixture('u2')
     await store.enqueue(a.id, 1, '1', a.state, a.created_at)
     await store.enqueue(a.id, 1, '1', a.state, a.created_at)
     await store.enqueue(b.id, 2, '1', b.state, b.created_at)
@@ -33,8 +33,8 @@ describe('inbox, file et verrous D1', () => {
     expect((await store.claim('1'))?.id).toBe('u2')
   })
   it('conserve les actions et les verrous après création d’un nouvel adaptateur', async () => {
-    const store = new Store(env.DB),
-      item = fixture()
+    const store = new Store(env.DB)
+    const item = fixture()
     await store.enqueue(item.id, 100, '1', item.state, item.created_at)
     await store.claim('1')
     await store.addAction(101, item, { kind: 'approve', revision: 1 })
@@ -238,9 +238,9 @@ it('logs the specific CMS activity, safe failure reason and replay without sendi
 })
 
 it('lets preparation continue while approved drafts wait, then claims them fairly in a new generation', async () => {
-  const store = new Store(env.DB),
-    first = fixture('u810'),
-    second = fixture('u811')
+  const store = new Store(env.DB)
+  const first = fixture('u810')
+  const second = fixture('u811')
   first.state.approvedRevision = first.state.revision
   await store.enqueue(first.id, 810, '1', first.state, first.created_at)
   await store.claim('1')
@@ -263,8 +263,8 @@ it('lets preparation continue while approved drafts wait, then claims them fairl
   expect(resumed?.state.approvedRevision).toBe(first.state.revision)
 })
 it('keeps uncertain writes protected while releasing the conversational slot and requires reconciliation before retry', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u812')
+  const store = new Store(env.DB)
+  const item = fixture('u812')
   item.state.publicationStarted = true
   await store.enqueue(item.id, 812, '1', item.state, item.created_at)
   await store.claim('1')
@@ -289,8 +289,8 @@ it('keeps uncertain writes protected while releasing the conversational slot and
   expect((await store.get(item.id)).generation).toBe(1)
 })
 it('cancels only an unstarted parked publication with the matching revision', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u813')
+  const store = new Store(env.DB)
+  const item = fixture('u813')
   item.state.approvedRevision = item.state.revision
   await store.enqueue(item.id, 813, '1', item.state, item.created_at)
   await store.claim('1')

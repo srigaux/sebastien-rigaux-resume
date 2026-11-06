@@ -43,6 +43,7 @@ const link = {
 test('Markdown exports preserve the summary, metadata, canonical and actual translation slugs', () => {
   const text = watchLinkMarkdown(link, site)
   assert.ok(text.includes(link.summary))
+
   for (const value of [
     link.url,
     link.selectedOn,
@@ -52,8 +53,10 @@ test('Markdown exports preserve the summary, metadata, canonical and actual tran
     link.discoveredVia.url,
     `${site.origin}${fr}`,
     `${site.origin}${en}`,
-  ])
+  ]) {
     assert.ok(text.includes(value), value)
+  }
+
   assert.ok(text.startsWith('# Un outil \\[utile\\]'))
   assert.equal(summaryText(link.summary), 'Un outil pour React et TypeScript.')
   assert.equal(

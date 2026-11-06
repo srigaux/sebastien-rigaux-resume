@@ -96,16 +96,20 @@ type Results = {
   nbPages: number
 }
 let clientPromise: Promise<ReturnType<typeof liteClient>> | undefined
+
 function getClient() {
-  return (clientPromise ??= import('algoliasearch/lite')
+  clientPromise ??= import('algoliasearch/lite')
     .then(({ liteClient }) =>
       liteClient(ALGOLIA_APP_ID, ALGOLIA_SEARCH_API_KEY)
     )
     .catch((error) => {
       clientPromise = undefined
       throw error
-    }))
+    })
+
+  return clientPromise
 }
+
 const control =
   'min-h-11 cursor-pointer rounded-sm border border-rule px-4 text-sm font-medium text-accent transition-colors hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent disabled:cursor-default disabled:opacity-40'
 
@@ -116,7 +120,11 @@ function Highlight({ text, query = '' }: { text: string; query: string }) {
     .split(/\s+/)
     .filter(Boolean)
     .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  if (!terms.length) return <>{text}</>
+
+  if (!terms.length) {
+    return <>{text}</>
+  }
+
   const expression = new RegExp(`(${terms.join('|')})`, 'ig')
   return (
     <>
@@ -172,12 +180,15 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
       const nextExpanded =
         Boolean(params.get('q')?.trim()) || formats.includes(selected)
       setExpanded(nextExpanded)
+
       if (!nextExpanded) {
         setResults(null)
         setSearchStatus(null)
       }
+
       setPage(0)
     }
+
     // Mount this portal into Astro's server-rendered trigger slot.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTriggerTarget(
@@ -198,25 +209,48 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     const browse = document.querySelector<HTMLElement>('[data-watch-browse]')
-    if (browse) browse.hidden = active
+
+    if (browse) {
+      browse.hidden = active
+    }
+
     return () => {
-      if (browse) browse.hidden = false
+      if (browse) {
+        browse.hidden = false
+      }
     }
   }, [active])
 
   useEffect(() => {
-    if (!initialized) return
+    if (!initialized) {
+      return
+    }
+
     const url = new URL(location.href)
-    if (query.trim()) url.searchParams.set('q', query.trim())
-    else url.searchParams.delete('q')
-    if (format) url.searchParams.set('format', format)
-    else url.searchParams.delete('format')
+
+    if (query.trim()) {
+      url.searchParams.set('q', query.trim())
+    } else {
+      url.searchParams.delete('q')
+    }
+
+    if (format) {
+      url.searchParams.set('format', format)
+    } else {
+      url.searchParams.delete('format')
+    }
+
     history.replaceState(history.state, '', url)
-    if (!expanded) return
+
+    if (!expanded) {
+      return
+    }
+
     let cancelled = false
     const timer = window.setTimeout(() => {
       void search()
     }, 250)
+
     async function search() {
       try {
         const [client, { renderSummaryMarkdown }] = await Promise.all([
@@ -275,11 +309,17 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
           ],
         })
         const result = response.results[0]
-        if (!result || !('hits' in result))
+
+        if (!result || !('hits' in result)) {
           throw new Error('Unexpected search response')
+        }
+
         const facetResult = format ? response.results[1] : result
-        if (!facetResult || !('hits' in facetResult))
+
+        if (!facetResult || !('hits' in facetResult)) {
           throw new Error('Unexpected facet response')
+        }
+
         if (!cancelled) {
           setResults({
             formatCounts: facetResult.facets?.format ?? {},
@@ -295,9 +335,12 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
           setSearchStatus({ key: searchKey, state: 'ready' })
         }
       } catch {
-        if (!cancelled) setSearchStatus({ key: searchKey, state: 'error' })
+        if (!cancelled) {
+          setSearchStatus({ key: searchKey, state: 'error' })
+        }
       }
     }
+
     return () => {
       cancelled = true
       clearTimeout(timer)
@@ -310,6 +353,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
     setPage(0)
     input.current?.focus()
   }
+
   function close() {
     setQuery('')
     setFormat('')
@@ -319,10 +363,12 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
     setSearchStatus(null)
     trigger.current?.focus()
   }
+
   function changePage(next: number) {
     setPage(next)
     heading.current?.focus()
   }
+
   return (
     <div className={expanded ? 'mt-6 mb-10' : ''}>
       {triggerTarget &&
@@ -336,8 +382,9 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
               aria-expanded={expanded}
               aria-controls="watch-search-controls"
               onClick={() => {
-                if (expanded) close()
-                else {
+                if (expanded) {
+                  close()
+                } else {
                   focusOnOpen.current = true
                   setExpanded(true)
                 }
@@ -379,6 +426,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
           <form
             onSubmit={(event) => {
               event.preventDefault()
+
               if (active) {
                 setRevision((value) => value + 1)
                 heading.current?.focus()

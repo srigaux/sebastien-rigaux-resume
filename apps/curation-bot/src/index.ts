@@ -15,13 +15,18 @@ export async function drainInbox(env: Env) {
   )
     .bind(Date.now())
     .all<{ update_id: number; payload: string }>()
+
   for (const row of rows.results) {
     const lease = await env.DB.prepare(
       'UPDATE inbox SET lease_until=? WHERE update_id=? AND processed=0 AND lease_until<?'
     )
       .bind(Date.now() + 120_000, row.update_id, Date.now())
       .run()
-    if (!lease.meta.changes) continue
+
+    if (!lease.meta.changes) {
+      continue
+    }
+
     try {
       await withContext({ updateId: row.update_id }, () =>
         observe('telegram.update', {}, () =>
@@ -42,6 +47,7 @@ export async function drainInbox(env: Env) {
     }
   }
 }
+
 export async function dispatch(env: Env) {
   await drainInbox(env)
   await dispatchQueue(env)
@@ -54,29 +60,51 @@ export default {
     ctx: ExecutionContext
   ): Promise<Response> {
     const path = new URL(request.url).pathname
-    if (path === '/prismic/webhook' && request.method === 'POST')
+
+    if (path === '/prismic/webhook' && request.method === 'POST') {
       return handlePrismicWebhook(request, env, ctx)
-    if (path === '/health' && request.method === 'GET')
+    }
+
+    if (path === '/health' && request.method === 'GET') {
       return Response.json({ ok: true })
-    if (path !== '/telegram' || request.method !== 'POST')
+    }
+
+    if (path !== '/telegram' || request.method !== 'POST') {
       return new Response('Not found', { status: 404 })
+    }
+
     if (
       !env.TELEGRAM_WEBHOOK_SECRET ||
       request.headers.get('X-Telegram-Bot-Api-Secret-Token') !==
         env.TELEGRAM_WEBHOOK_SECRET
-    )
+    ) {
       return new Response('Unauthorized', { status: 401 })
+    }
+
     const length = Number(request.headers.get('content-length'))
-    if (length > 64_000) return new Response('Too large', { status: 413 })
+
+    if (length > 64_000) {
+      return new Response('Too large', { status: 413 })
+    }
+
     const body = await request.text()
-    if (body.length > 64_000) return new Response('Too large', { status: 413 })
+
+    if (body.length > 64_000) {
+      return new Response('Too large', { status: 413 })
+    }
+
     let update: Update
+
     try {
       update = JSON.parse(body) as Update
-      if (!Number.isSafeInteger(update.update_id)) throw new Error()
+
+      if (!Number.isSafeInteger(update.update_id)) {
+        throw new Error()
+      }
     } catch {
       return new Response('Invalid update', { status: 400 })
     }
+
     const sender =
       'message' in update
         ? update.message?.from?.id
@@ -89,12 +117,15 @@ export default {
         : 'callback_query' in update
           ? update.callback_query?.message?.chat
           : undefined
+
     if (
       String(sender) !== env.TELEGRAM_USER_ID ||
       String(chat?.id) !== env.TELEGRAM_CHAT_ID ||
       chat?.type !== 'private'
-    )
+    ) {
       return new Response('OK')
+    }
+
     const traceId = crypto.randomUUID()
     const receipt = await env.DB.prepare(
       'INSERT OR IGNORE INTO inbox(update_id,payload,received_at) VALUES(?,?,?)'
@@ -126,6 +157,7 @@ export default {
     } catch (error) {
       log('scheduled.publications.failed', errorFields(error), 'error')
     }
+
     await observe('scheduled.dispatch', {}, () => dispatch(env), {
       lifecycleLogs: false,
     })

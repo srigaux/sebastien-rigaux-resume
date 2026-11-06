@@ -29,9 +29,16 @@ function startAnalytics() {
   const measurementId = document.querySelector<HTMLMetaElement>(
     'meta[name="google-analytics-id"]'
   )?.content
+
   // The ID is only rendered in production. Print/PDF rendering never tracks.
-  if (!measurementId || analyticsStarted || window.matchMedia('print').matches)
+  if (
+    !measurementId ||
+    analyticsStarted ||
+    window.matchMedia('print').matches
+  ) {
     return
+  }
+
   analyticsStarted = true
 
   const init = document.createElement('script')
@@ -67,7 +74,10 @@ function startAnalytics() {
 }
 
 function safeReferrer() {
-  if (!document.referrer) return ''
+  if (!document.referrer) {
+    return ''
+  }
+
   try {
     const url = new URL(document.referrer)
     return url.origin + url.pathname
@@ -77,7 +87,10 @@ function safeReferrer() {
 }
 
 function updateAnalyticsConsent() {
-  if (!analyticsStarted) return
+  if (!analyticsStarted) {
+    return
+  }
+
   const analyticsStorage: ConsentState = acceptedService('ga', 'analytics')
     ? 'granted'
     : 'denied'
@@ -85,6 +98,7 @@ function updateAnalyticsConsent() {
     analytics_storage: analyticsStorage,
     ...advertisingConsent,
   })
+
   if (analyticsStorage === 'denied') {
     // Also covers rejection of just the GA service and expired consent cookies.
     for (const cookie of analyticsCookies()) {
@@ -97,9 +111,12 @@ function updateAnalyticsConsent() {
 function analyticsCookies(): CookieItem[] {
   const domains = [location.hostname]
   const labels = location.hostname.split('.')
+
   // Browsers ignore attempts to clear a public-suffix cookie.
-  for (let i = 1; i < labels.length - 1; i++)
+  for (let i = 1; i < labels.length - 1; i++) {
     domains.push(labels.slice(i).join('.'))
+  }
+
   return [
     { name: /^_ga(?:_|$)/, path: '/' },
     ...domains.map((domain) => ({ name: /^_ga(?:_|$)/, path: '/', domain })),
@@ -152,7 +169,10 @@ function translation(fr: boolean): Translation {
 
 export async function initCookieConsent() {
   // Neither the banner nor analytics belongs in the generated CV PDFs.
-  if (window.matchMedia('print').matches) return
+  if (window.matchMedia('print').matches) {
+    return
+  }
+
   startAnalytics()
   await run({
     mode: 'opt-in',
@@ -193,6 +213,9 @@ export async function initCookieConsent() {
       translations: { fr: translation(true), en: translation(false) },
     },
   })
+
   // No callback runs until a first choice; clear cookies from expired revisions too.
-  if (!validConsent()) updateAnalyticsConsent()
+  if (!validConsent()) {
+    updateAnalyticsConsent()
+  }
 }

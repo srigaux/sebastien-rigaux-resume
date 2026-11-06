@@ -20,7 +20,11 @@ export function sitemapMetadata(html, url) {
         /\bnoindex\b/i.test(attribute(tag, 'content') ?? '')) ||
       attribute(tag, 'http-equiv')?.toLowerCase() === 'refresh'
   )
-  if (excluded || !canonical || attribute(canonical, 'href') !== url) return
+
+  if (excluded || !canonical || attribute(canonical, 'href') !== url) {
+    return
+  }
+
   const links = tags
     .filter(
       (tag) =>
@@ -58,6 +62,7 @@ export default function siteSitemap() {
       const path = new URL(item.url).pathname
         .replace(/^\//, '')
         .replace(/\/$/, '')
+
       try {
         const html = await readFile(
           new URL(path ? `${path}.html` : 'index.html', directory),
@@ -74,8 +79,12 @@ export default function siteSitemap() {
   integration.hooks['astro:build:done'] = async (context) => {
     directory = context.dir
     await onBuildDone?.(context)
+
     // @astrojs/sitemap logs serialization failures; propagate them to fail CI.
-    if (serializationError) throw serializationError
+    if (serializationError) {
+      throw serializationError
+    }
   }
+
   return integration
 }

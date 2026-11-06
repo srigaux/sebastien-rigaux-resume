@@ -48,6 +48,7 @@ test('seeded topic and source UIDs are clean and unique', async () => {
       'utf8'
     )
   )
+
   for (const collection of [seed.topics, seed.discoverySources]) {
     assert.ok(collection.every(({ uid }) => isCleanSlug(uid)))
     assert.equal(
@@ -55,6 +56,7 @@ test('seeded topic and source UIDs are clean and unique', async () => {
       collection.length
     )
   }
+
   assert.equal(seed.topics.find(({ name }) => name === 'C#').uid, 'c-sharp')
   assert.equal(seed.topics.find(({ name }) => name === '.NET').uid, 'dotnet')
 })
@@ -74,6 +76,7 @@ test('prepared examples have original URLs and use the controlled vocabulary', a
   )
   const topicUids = new Set(seed.topics.map(({ uid }) => uid))
   const urls = new Set()
+
   for (const example of examples.curatedLinks) {
     assert.ok(isCleanSlug(example.uid))
     assert.equal(new URL(example.url).protocol, 'https:')
@@ -229,6 +232,7 @@ test('single-language entries remain listed in both languages and target the act
         }),
       ]
     )
+
     for (const listLocale of ['fr', 'en']) {
       assert.equal(data[listLocale].links.length, 1)
       assert.equal(data[listLocale].links[0].locale, locale)
@@ -333,6 +337,7 @@ test('Prismic image dimensions survive normalization only as a valid pair', asyn
       height: 800,
     }
   )
+
   for (const dimensions of [
     { width: 0, height: 10 },
     { width: Infinity, height: 10 },
@@ -344,6 +349,7 @@ test('Prismic image dimensions survive normalization only as a valid pair', asyn
       { url: 'https://images.example/photo', alt: '' }
     )
   }
+
   assert.equal(normalizeWatchImage(null), undefined)
   assert.equal(normalizeWatchImage({ url: '' }), undefined)
 })

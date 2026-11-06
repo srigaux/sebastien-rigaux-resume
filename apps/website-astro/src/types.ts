@@ -1,7 +1,7 @@
 export type Locale = 'fr' | 'en'
 
 export type TimelineText =
-  string | readonly (string | { text: string; href: string })[]
+  string | ReadonlyArray<string | { text: string; href: string }>
 
 export type TimelineItem = {
   id: string
@@ -30,5 +30,5 @@ export type Person = {
     locality: string
     country: string
   }
-  socialLinks: readonly { label: string; identifier: string; url: string }[]
+  socialLinks: ReadonlyArray<{ label: string; identifier: string; url: string }>
 }

@@ -15,8 +15,8 @@ async function queuedChoice(store: Store, id: string, update: number) {
 }
 
 it('attend une action persistée dans un véritable Workflow Cloudflare et rejette une ancienne confirmation', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u900')
+  const store = new Store(env.DB)
+  const item = fixture('u900')
   item.status = 'duplicate'
   item.state.duplicateMatches = ['Fiche existante']
   item.state.checked = [item.state.url]
@@ -42,6 +42,7 @@ it('attend une action persistée dans un véritable Workflow Cloudflare et rejet
   const id = 'workflow-test-wait'
   const inspector = await introspectWorkflowInstance(env.CURATION, id)
   const next = await queuedChoice(store, 'u950', 950)
+
   try {
     await env.CURATION.create({ id, params: { id: item.id, generation: 0 } })
     await inspector.waitForStepResult({ name: 'g0-c0-present' })
@@ -90,8 +91,8 @@ it('attend une action persistée dans un véritable Workflow Cloudflare et rejet
 
 it('libère la file dès l’acceptation sans attendre le contrôle cron des deux versions', async () => {
   const { repository, extraction } = await import('@test/fixtures')
-  const store = new Store(env.DB),
-    item = fixture('u901')
+  const store = new Store(env.DB)
+  const item = fixture('u901')
   item.state.extractionKey = 'extractions/u901.json'
   item.state.checked = [item.state.url]
   await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction))
@@ -103,26 +104,34 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
   let publicationConfirmed = false
   let publicationAccepted = false
   const publicationUpdates: string[] = []
-  let messageId = 0,
-    published = false,
-    publishCalls = 0,
-    createCalls = 0
+  let messageId = 0
+  let published = false
+  let publishCalls = 0
+  let createCalls = 0
   const docs = new Map<string, Record<string, unknown>>()
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
+
       if (url.includes('api.telegram.org')) {
         const body = JSON.parse(String(init?.body ?? '{}'))
-        if (body.text?.includes('acceptée par Prismic'))
+
+        if (body.text?.includes('acceptée par Prismic')) {
           publicationAccepted = true
-        if (body.text?.includes('Publication en cours'))
+        }
+
+        if (body.text?.includes('Publication en cours')) {
           publicationUpdates.push(body.text)
+        }
+
         if (
           url.endsWith('/sendMessage') &&
           body.text?.includes('Publication en cours')
-        )
+        ) {
           publicationMessageId = messageId + 1
+        }
+
         if (
           url.endsWith('/editMessageText') &&
           body.text?.includes('C’est publié')
@@ -132,6 +141,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
           expect(body.message_id).toBe(publicationMessageId)
           publicationConfirmed = true
         }
+
         return Response.json({
           ok: true,
           result: {
@@ -142,11 +152,14 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
           },
         })
       }
+
       if (
         url.includes('cdn.prismic.io/api/v2') &&
         !url.includes('documents/search')
-      )
+      ) {
         return Response.json(repository)
+      }
+
       if (url.endsWith('/documents') && init?.method === 'POST') {
         const body = JSON.parse(String(init.body))
         const id = body.lang === 'fr-be' ? 'live-fr' : 'live-en'
@@ -163,11 +176,13 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
         createCalls++
         return Response.json({ id }, { status: 201 })
       }
+
       if (url.includes('/documents/') && init?.method === 'PUT') {
         const id = new URL(url).pathname.split('/').pop()!
         docs.set(id, { ...docs.get(id), ...JSON.parse(String(init.body)) })
         return Response.json({})
       }
+
       if (url.includes('migration-release/publish')) {
         // Ordering assertions belong to the mocked publish endpoint.
         // eslint-disable-next-line vitest/no-conditional-expect
@@ -184,6 +199,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
         publishCalls++
         return Response.json({ totalItems: 2 }, { status: 202 })
       }
+
       if (url.includes('/documents/search')) {
         const query = new URL(url).searchParams.get('q') ?? ''
         const locale = new URL(url).searchParams.get('lang') ?? 'fr-be'
@@ -205,12 +221,14 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
           results,
         })
       }
+
       throw new Error(`Unexpected ${url}`)
     })
   )
-  const id = 'workflow-test-publish',
-    inspector = await introspectWorkflowInstance(env.CURATION, id)
+  const id = 'workflow-test-publish'
+  const inspector = await introspectWorkflowInstance(env.CURATION, id)
   const next = await queuedChoice(store, 'u951', 951)
+
   try {
     await inspector.modify(async (m) => {
       await m.disableSleeps()
@@ -229,6 +247,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
     expect(createCalls).toBe(2)
     expect(publicationAccepted).toBe(true)
     expect(publicationConfirmed).toBe(false)
+
     for (const text of [
       '⏳ Création de la fiche FR',
       '✅ Création de la fiche FR',
@@ -240,6 +259,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
         true
       )
     }
+
     await next.waitForStepResult({ name: 'g0-c0-present' })
     expect((await store.get('u951')).status).toBe('choose')
     expect((await store.active('1'))?.id).toBe('u951')
@@ -268,8 +288,8 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
 }, 30000)
 
 it('recrée une instance après panne en reprenant la fiche persistée et ses actions', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u902')
+  const store = new Store(env.DB)
+  const item = fixture('u902')
   item.status = 'duplicate'
   item.state.duplicateMatches = ['Déjà publié']
   await store.enqueue(item.id, 902, '1', item.state, item.created_at)
@@ -299,6 +319,7 @@ it('recrée une instance après panne en reprenant la fiche persistée et ses ac
   await dispatch(recovering)
   expect((await store.get(item.id)).generation).toBe(1)
   const inspector = await introspectWorkflowInstance(env.CURATION, 'u902-g1')
+
   try {
     await dispatch(recovering)
     await inspector.waitForStepResult({ name: 'g1-c0-present' })
@@ -317,8 +338,8 @@ it('recrée une instance après panne en reprenant la fiche persistée et ses ac
 
 it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appeler le LLM', async () => {
   const { extraction, repository } = await import('@test/fixtures')
-  const store = new Store(env.DB),
-    item = fixture('u903')
+  const store = new Store(env.DB)
+  const item = fixture('u903')
   item.state.extractionKey = 'extractions/u903.json'
   item.state.checked = [item.state.url]
   delete item.state.media
@@ -332,9 +353,14 @@ it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appele
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
+
       if (url.includes('api.telegram.org')) {
         const body = JSON.parse(String(init?.body ?? '{}'))
-        if (body.text) sent.push(body.text)
+
+        if (body.text) {
+          sent.push(body.text)
+        }
+
         return Response.json({
           ok: true,
           result: {
@@ -344,21 +370,27 @@ it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appele
           },
         })
       }
-      if (url === 'https://example.com/image.png')
+
+      if (url === 'https://example.com/image.png') {
         return new Response('', {
           status: 429,
           headers: { 'Retry-After': '900' },
         })
+      }
+
       if (
         url.includes('cdn.prismic.io/api/v2') &&
         !url.includes('documents/search')
-      )
+      ) {
         return Response.json(repository)
+      }
+
       throw new Error('Unexpected request during cancellation')
     })
   )
   const first = await introspectWorkflowInstance(env.CURATION, 'u903-g0')
   const second = await introspectWorkflowInstance(env.CURATION, 'u903-g1')
+
   try {
     await env.CURATION.create({
       id: 'u903-g0',
@@ -390,8 +422,8 @@ it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appele
 }, 30000)
 
 it('ne termine pas un workflow si la publication a déjà commencé', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u904')
+  const store = new Store(env.DB)
+  const item = fixture('u904')
   item.state.publicationStarted = true
   await store.enqueue(item.id, 904, '1', item.state, item.created_at)
   await store.claim('1')
@@ -414,8 +446,8 @@ it('ne termine pas un workflow si la publication a déjà commencé', async () =
 })
 
 it('parks an approved publication behind an uncertain release and starts the next preparation workflow', async () => {
-  const store = new Store(env.DB),
-    item = fixture('u860')
+  const store = new Store(env.DB)
+  const item = fixture('u860')
   item.state.approvedRevision = item.state.revision
   item.state.extractionKey = 'extractions/u860'
   item.state.checked = [item.state.url]
@@ -441,6 +473,7 @@ it('parks an approved publication behind an uncertain release and starts the nex
   const id = 'workflow-test-park-publication'
   const inspector = await introspectWorkflowInstance(env.CURATION, id)
   const next = await queuedChoice(store, 'u861', 861)
+
   try {
     await env.CURATION.create({ id, params: { id: item.id, generation: 0 } })
     await inspector.waitForStatus('complete')

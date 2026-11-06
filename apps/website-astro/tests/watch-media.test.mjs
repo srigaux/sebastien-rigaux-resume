@@ -22,13 +22,15 @@ test('only approved original Prismic assets are downloaded', () => {
     mediaUrl('https://bd7d5fa0.cdn.prismic.io/icon.svg'),
     'https://bd7d5fa0.cdn.prismic.io/icon.svg'
   )
+
   for (const url of [
     'https://example.com/a.png',
     'http://images.prismic.io/bd7d5fa0/a.png',
     'https://images.prismic.io/other/a.png',
     'https://user@images.prismic.io/bd7d5fa0/a.png',
-  ])
+  ]) {
     assert.throws(() => mediaUrl(url))
+  }
 })
 
 test('derive intrinsic dimensions and a bounded opaque placeholder', async () => {
@@ -108,6 +110,7 @@ test('invalid optional media is omitted with one warning per URL', async () => {
   const messages = []
   const warn = console.warn
   console.warn = (message) => messages.push(message)
+
   try {
     const url = 'https://unsupported.invalid/asset.png'
     assert.deepEqual(

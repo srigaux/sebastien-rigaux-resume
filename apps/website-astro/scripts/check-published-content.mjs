@@ -13,7 +13,10 @@ export async function checkPublishedContent({
   now = new Date(),
   fetcher = fetch,
 }) {
-  if (!sourceRevision) throw new Error('Source revision is required')
+  if (!sourceRevision) {
+    throw new Error('Source revision is required')
+  }
+
   const response = await fetcher(
     `https://${repositoryName}.cdn.prismic.io/api/v2`,
     {
@@ -21,14 +24,19 @@ export async function checkPublishedContent({
       signal: AbortSignal.timeout(30_000),
     }
   )
-  if (!response.ok)
+
+  if (!response.ok) {
     throw new Error(
       `Prismic repository request failed: HTTP ${response.status}`
     )
+  }
+
   const repository = await response.json()
   const ref = repository.refs?.find((item) => item.isMasterRef)?.ref
-  if (typeof ref !== 'string' || !ref)
+
+  if (typeof ref !== 'string' || !ref) {
     throw new Error('Prismic repository has no published master ref')
+  }
 
   // The annual PDF refresh falls on February 1. Including its period also
   // retries that refresh on subsequent schedules if the annual run fails.
@@ -44,6 +52,7 @@ export async function checkPublishedContent({
       })
     )
     .digest('hex')
+
   if (eventName !== 'schedule' || schedule === '0 6 1 2 *') {
     return {
       changed: true,
@@ -59,6 +68,7 @@ export async function checkPublishedContent({
     cache: 'no-store',
     signal: AbortSignal.timeout(30_000),
   })
+
   if (deployed.status === 404) {
     return {
       changed: true,
@@ -66,9 +76,13 @@ export async function checkPublishedContent({
       reason: 'No deployed content fingerprint yet',
     }
   }
-  if (!deployed.ok)
+
+  if (!deployed.ok) {
     throw new Error(`Deployed content check failed: HTTP ${deployed.status}`)
+  }
+
   let previous
+
   try {
     previous = await deployed.json()
   } catch {
@@ -79,6 +93,7 @@ export async function checkPublishedContent({
       reason: 'No valid deployed content fingerprint',
     }
   }
+
   const changed = previous?.fingerprint !== fingerprint
   return {
     changed,
@@ -133,6 +148,7 @@ async function main() {
     process.env.GITHUB_OUTPUT,
     `changed=${result.changed}\nfingerprint=${result.fingerprint}\nchecked_at=${checkedAt} (Europe/Brussels)\n`
   )
+
   if (process.env.GITHUB_STEP_SUMMARY) {
     const title = result.changed
       ? '🚀 Publication needed'
@@ -150,8 +166,11 @@ if (
 ) {
   if (process.argv[2] === 'write') {
     const fingerprint = process.env.CONTENT_FINGERPRINT
-    if (!/^[a-f0-9]{64}$/.test(fingerprint ?? ''))
+
+    if (!/^[a-f0-9]{64}$/.test(fingerprint ?? '')) {
       throw new Error('Invalid content fingerprint')
+    }
+
     // Capture the ref BEFORE building. A publication during the build will
     // therefore trigger another build, rather than risk being missed.
     await writeFile(

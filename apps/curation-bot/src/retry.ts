@@ -31,15 +31,23 @@ export function retryAfter(headers?: {
   get(name: string): string | null
 }): number {
   const value = headers?.get('retry-after')
-  if (!value) return 0
+
+  if (!value) {
+    return 0
+  }
+
   const seconds = Number(value)
   return Number.isFinite(seconds)
     ? Math.max(0, seconds * 1000)
     : Math.max(0, Date.parse(value) - Date.now()) || 0
 }
+
 export function classify(error: unknown): RemoteError {
-  if (error instanceof RemoteError) return error
-  if (error instanceof BotError)
+  if (error instanceof RemoteError) {
+    return error
+  }
+
+  if (error instanceof BotError) {
     return new RemoteError(
       error.message,
       false,
@@ -49,6 +57,8 @@ export function classify(error: unknown): RemoteError {
       error.reasonCode,
       error.statusCode
     )
+  }
+
   const e = error as {
     status?: number
     statusCode?: number
@@ -83,6 +93,7 @@ export function classify(error: unknown): RemoteError {
     status
   )
 }
+
 export async function retry<T>(
   step: Steps,
   name: string,
@@ -90,12 +101,14 @@ export async function retry<T>(
   random = Math.random
 ): Promise<T> {
   let timedOut = false
+
   for (let attempt = 0; attempt < 3; attempt++) {
     const result = await step.do(
       `${name}-${attempt}`,
       { retries: { limit: 0, delay: '1 second' }, timeout: '5 minutes' },
       async () => {
         const started = Date.now()
+
         try {
           const value = await operation(attempt, timedOut)
           return { ok: true as const, value }
@@ -135,7 +148,11 @@ export async function retry<T>(
         }
       }
     )
-    if (result.ok) return result.value
+
+    if (result.ok) {
+      return result.value
+    }
+
     if (!result.retryable || attempt === 2) {
       log(
         'retry.stopped',
@@ -149,13 +166,18 @@ export async function retry<T>(
         },
         'error'
       )
-      if (result.mediaFilename) throw new MediaRejected(result.mediaFilename)
+
+      if (result.mediaFilename) {
+        throw new MediaRejected(result.mediaFilename)
+      }
+
       throw new BotError(
         result.message,
         result.reasonCode,
         typeof result.httpStatus === 'number' ? result.httpStatus : undefined
       )
     }
+
     timedOut ||= result.timeout
     const delayMs = Math.max(
       result.retryAfter,
@@ -164,5 +186,6 @@ export async function retry<T>(
     log('retry.scheduled', { operation: name, attempt: attempt + 2, delayMs })
     await step.sleep(`${name}-backoff-${attempt}`, delayMs)
   }
+
   throw new Error('Unreachable')
 }

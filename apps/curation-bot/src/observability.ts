@@ -60,11 +60,13 @@ export function errorFields(error: unknown): Fields {
         : undefined,
   }
 }
+
 function safeId(value: unknown) {
   return typeof value === 'string' && /^[a-zA-Z0-9_.:-]{1,150}$/.test(value)
     ? value
     : undefined
 }
+
 const descriptions: Record<string, string> = {
   'publication.attention':
     'Publication bloquée ; intervention nécessaire dans la release Prismic',
@@ -152,15 +154,24 @@ const activities: Record<string, string> = {
   dispatch: 'Prise en charge des liens en attente',
   'telegram.update': 'Traitement du message Telegram',
 }
+
 function activity(fields: Fields): string {
   const name = String(fields.step ?? fields.operation ?? '')
-  if (activities[name]) return activities[name]
-  if (descriptions[name]) return descriptions[name]
+
+  if (activities[name]) {
+    return activities[name]
+  }
+
+  if (descriptions[name]) {
+    return descriptions[name]
+  }
+
   const match = Object.keys(activities).find((key) =>
     new RegExp(`(?:^|[-/])${key}(?:-\\d+)*$`).test(name)
   )
   return match ? activities[match] : 'Traitement du lien'
 }
+
 const statuses: Record<string, string> = {
   queued: 'en file d’attente',
   choose: 'choix du lien attendu',
@@ -187,63 +198,122 @@ const actions: Record<string, string> = {
   sources: 'affichage des sources',
   source: 'choix de la source',
 }
+
 function message(event: string, fields: Fields): string {
   const task = activity(fields)
   let text = descriptions[event] ?? event.replaceAll('.', ' ')
+
   if (event.startsWith('operation.')) {
     text = `${task} — ${event === 'operation.start' ? 'en cours' : event === 'operation.complete' ? 'terminé' : 'échec'}`
   } else if (event.startsWith('retry.')) {
     text = `${task} — ${event === 'retry.failed' ? 'tentative échouée' : event === 'retry.scheduled' ? 'nouvelle tentative prévue' : 'arrêt des tentatives'}`
   }
+
   // Only selected metadata: never interpolate raw SDK errors, URLs or content.
   const details: string[] = []
-  if (fields.itemId) details.push(`fiche ${String(fields.itemId)}`)
-  if (typeof fields.status === 'string' && statuses[fields.status])
+
+  if (fields.itemId) {
+    details.push(`fiche ${String(fields.itemId)}`)
+  }
+
+  if (typeof fields.status === 'string' && statuses[fields.status]) {
     details.push(statuses[fields.status])
-  if (typeof fields.action === 'string' && actions[fields.action])
+  }
+
+  if (typeof fields.action === 'string' && actions[fields.action]) {
     details.push(actions[fields.action])
-  if (typeof fields.durationMs === 'number')
+  }
+
+  if (typeof fields.durationMs === 'number') {
     details.push(`${(fields.durationMs / 1000).toFixed(1)} s`)
-  if (typeof fields.attempt === 'number')
+  }
+
+  if (typeof fields.attempt === 'number') {
     details.push(`tentative ${fields.attempt}`)
-  if (typeof fields.delayMs === 'number')
+  }
+
+  if (typeof fields.delayMs === 'number') {
     details.push(`dans ${Math.ceil(fields.delayMs / 1000)} s`)
-  if (typeof fields.httpStatus === 'number')
+  }
+
+  if (typeof fields.httpStatus === 'number') {
     details.push(`HTTP ${fields.httpStatus}`)
-  if (typeof fields.queueWaitMs === 'number')
+  }
+
+  if (typeof fields.queueWaitMs === 'number') {
     details.push(
       `attente en file : ${(fields.queueWaitMs / 1000).toFixed(1)} s`
     )
-  if (typeof fields.elapsedMs === 'number')
+  }
+
+  if (typeof fields.elapsedMs === 'number') {
     details.push(`depuis réception : ${(fields.elapsedMs / 1000).toFixed(1)} s`)
-  if (typeof fields.checks === 'number')
+  }
+
+  if (typeof fields.checks === 'number') {
     details.push(`${fields.checks} vérification(s)`)
-  if (typeof fields.pendingMs === 'number')
+  }
+
+  if (typeof fields.pendingMs === 'number') {
     details.push(`en attente depuis ${Math.floor(fields.pendingMs / 1000)} s`)
-  if (typeof fields.nextCheckAt === 'string')
+  }
+
+  if (typeof fields.nextCheckAt === 'string') {
     details.push(`prochaine vérification ${fields.nextCheckAt}`)
-  if (fields.partial === true) details.push('contenu extrait partiellement')
-  if (typeof fields.matchCount === 'number')
+  }
+
+  if (fields.partial === true) {
+    details.push('contenu extrait partiellement')
+  }
+
+  if (typeof fields.matchCount === 'number') {
     details.push(`${fields.matchCount} correspondance(s)`)
-  if (fields.mediaKind === 'image') details.push('image de l’article')
-  if (fields.mediaKind === 'icon') details.push('icône du site')
-  if (fields.available === true)
+  }
+
+  if (fields.mediaKind === 'image') {
+    details.push('image de l’article')
+  }
+
+  if (fields.mediaKind === 'icon') {
+    details.push('icône du site')
+  }
+
+  if (fields.available === true) {
     details.push('les deux versions sont disponibles')
-  if (fields.available === false)
+  }
+
+  if (fields.available === false) {
     details.push('les deux versions ne sont pas encore disponibles')
-  if (fields.replayed === true)
+  }
+
+  if (fields.replayed === true) {
     details.push('résultat déjà enregistré ; aucun nouvel appel')
-  if (typeof fields.inputTokens === 'number')
+  }
+
+  if (typeof fields.inputTokens === 'number') {
     details.push(`${fields.inputTokens} tokens en entrée`)
-  if (typeof fields.outputTokens === 'number')
+  }
+
+  if (typeof fields.outputTokens === 'number') {
     details.push(`${fields.outputTokens} tokens en sortie`)
+  }
+
   const code = reasonCode(fields.reasonCode)
-  if (code) details.push(reasons[code])
-  if (fields.timeout === true) details.push('délai de réponse dépassé')
-  if (fields.exhausted === true)
+
+  if (code) {
+    details.push(reasons[code])
+  }
+
+  if (fields.timeout === true) {
+    details.push('délai de réponse dépassé')
+  }
+
+  if (fields.exhausted === true) {
     details.push('nombre maximal de tentatives atteint')
-  else if (fields.retryable === false)
+  } else if (fields.retryable === false) {
     details.push('sans nouvelle tentative automatique')
+  }
+
   return [text, ...details].join(' | ')
 }
 
@@ -254,6 +324,7 @@ export function log(
 ) {
   const metadata: Fields = { ...context.getStore(), ...fields }
   const span = tracing.getActiveSpan()
+
   // Measurements go directly onto the native Cloudflare span; no metric store.
   for (const key of [
     'itemId',
@@ -280,13 +351,16 @@ export function log(
     'elapsedMs',
   ]) {
     const value = metadata[key]
+
     if (
       typeof value === 'number' ||
       typeof value === 'string' ||
       typeof value === 'boolean'
-    )
+    ) {
       span?.setAttribute(`curation.${key}`, value)
+    }
   }
+
   const entry = {
     ...metadata,
     timestamp: new Date().toISOString(),
@@ -301,9 +375,11 @@ export function log(
   // directly in Workers Logs and preserves native console severity.
   console[level === 'info' ? 'log' : level](entry)
 }
+
 export function withContext<T>(fields: Context, operation: () => T): T {
   return context.run({ ...context.getStore(), ...fields }, operation)
 }
+
 export async function observe<T>(
   operation: string,
   fields: Fields,
@@ -319,21 +395,27 @@ export async function observe<T>(
   return withContext({ traceId, spanId }, () =>
     tracing.enterSpan(activity({ ...fields, operation }), async (span) => {
       const attributes = { ...context.getStore(), ...fields, operation }
+
       for (const [key, value] of Object.entries(attributes)) {
         if (
           typeof value === 'string' ||
           typeof value === 'number' ||
           typeof value === 'boolean'
-        )
+        ) {
           span.setAttribute(`curation.${key}`, value)
+        }
       }
+
       const started = Date.now()
-      if (options.lifecycleLogs !== false)
+
+      if (options.lifecycleLogs !== false) {
         log('operation.start', {
           ...fields,
           operation,
           parentSpanId: parent?.spanId,
         })
+      }
+
       try {
         const result = await callback()
         // Retry callbacks return a durable failure envelope instead of throwing.
@@ -346,27 +428,35 @@ export async function observe<T>(
         span.setAttribute('curation.outcome', failed ? 'failed' : 'succeeded')
         span.setAttribute('curation.durationMs', Date.now() - started)
         span.setStatus({ code: failed ? 'error' : 'ok' })
-        if (failed)
+
+        if (failed) {
           span.recordException({
             name: 'AttemptFailed',
             message: 'Tentative échouée ; voir retry.failed',
           })
+        }
+
         const resultMetadata = options.resultFields?.(result) ?? {}
+
         for (const [key, value] of Object.entries(resultMetadata)) {
           if (
             typeof value === 'string' ||
             typeof value === 'number' ||
             typeof value === 'boolean'
-          )
+          ) {
             span.setAttribute(`curation.${key}`, value)
+          }
         }
-        if (!failed && options.lifecycleLogs !== false)
+
+        if (!failed && options.lifecycleLogs !== false) {
           log('operation.complete', {
             ...fields,
             operation,
             durationMs: Date.now() - started,
             ...resultMetadata,
           })
+        }
+
         return result
       } catch (error) {
         const details = errorFields(error)
@@ -392,6 +482,7 @@ export async function observe<T>(
     })
   )
 }
+
 export function observedSteps(step: Steps): Steps {
   return {
     do: (name, config, callback) =>

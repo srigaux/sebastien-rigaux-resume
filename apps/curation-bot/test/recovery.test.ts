@@ -7,9 +7,10 @@ import { beginRecovery, recoveryCallback, recoveryReply } from '@/recovery'
 import { Store } from '@/store'
 import { handleUpdate } from '@/telegram'
 
-let publishedDocs: Record<string, unknown>[] = []
+let publishedDocs: Array<Record<string, unknown>> = []
 let readFails = false
 const target = 'POST https://migration.prismic.io/documents'
+
 async function setup(endpoint = target) {
   publishedDocs = []
   readFails = false
@@ -18,9 +19,14 @@ async function setup(endpoint = target) {
     'fetch',
     vi.fn(async (input: unknown) => {
       if (!String(input).startsWith('https://api.telegram.org/')) {
-        if (readFails) throw new Error('Read unavailable')
-        if (!String(input).includes('/documents/search'))
+        if (readFails) {
+          throw new Error('Read unavailable')
+        }
+
+        if (!String(input).includes('/documents/search')) {
           return Response.json(repository)
+        }
+
         return Response.json({
           page: 1,
           results_per_page: 100,
@@ -31,7 +37,8 @@ async function setup(endpoint = target) {
           results: publishedDocs,
         })
       }
-      if (String(input).endsWith('getMe'))
+
+      if (String(input).endsWith('getMe')) {
         return Response.json({
           ok: true,
           result: {
@@ -41,6 +48,8 @@ async function setup(endpoint = target) {
             username: 'test_bot',
           },
         })
+      }
+
       return Response.json({
         ok: true,
         result: {
@@ -51,8 +60,8 @@ async function setup(endpoint = target) {
       })
     })
   )
-  const store = new Store(env.DB),
-    item = fixture('u950')
+  const store = new Store(env.DB)
+  const item = fixture('u950')
   item.state.publicationStarted = true
   item.state.approvedRevision = item.state.revision
   await store.enqueue(item.id, 950, '1', item.state, item.created_at)
@@ -69,12 +78,14 @@ async function setup(endpoint = target) {
   await store.parkPublication(item)
   return { store, item }
 }
+
 async function session() {
   const row = await env.DB.prepare(
     "SELECT value FROM cache WHERE key LIKE 'recovery:1:%' ORDER BY rowid DESC LIMIT 1"
   ).first<{ value: string }>()
   return JSON.parse(row!.value)
 }
+
 async function click(action: string, s?: Awaited<ReturnType<typeof session>>) {
   s ??= await session()
   return recoveryCallback(env, `recover:${s.token}:${action}`, s.messageId)

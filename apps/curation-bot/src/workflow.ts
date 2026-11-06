@@ -38,6 +38,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
       () => this.execute(event, nativeStep)
     )
   }
+
   private async execute(
     event: WorkflowEvent<{ id: string; generation: number }>,
     nativeStep: WorkflowStep
@@ -59,25 +60,36 @@ export class CurationWorkflow extends WorkflowEntrypoint<
           } catch (error) {
             log('telegram.retry_notice.failed', errorFields(error), 'warn')
           }
+
           return true
         }
-        if (notify)
+
+        if (notify) {
           await observed.do(`${name}-notify-wait`, stepConfig, () =>
             notice(duration)
           )
+        }
+
         await observed.sleep(name, duration)
-        if (notify)
+
+        if (notify) {
           await observed.do(`${name}-notify-resumed`, stepConfig, () =>
             notice()
           )
+        }
       },
     }
+
     for (let cycle = 0; cycle < 30; cycle++) {
       const prefix = `g${event.payload.generation}-c${cycle}`
       const item = await step.do(`${prefix}-load`, stepConfig, () =>
         store.get(event.payload.id)
       )
-      if (!item.active || item.generation !== event.payload.generation) return
+
+      if (!item.active || item.generation !== event.payload.generation) {
+        return
+      }
+
       // Cancellation has priority over extraction/media backoffs and generation.
       // Publication remains protected by the checkpoint written before any SDK write.
       const cancellation = !item.state.publicationStarted
@@ -85,43 +97,54 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             store.pendingCancellation(item).then((value) => value ?? null)
           )
         : null
+
       if (cancellation) {
         item.status = 'cancelled'
         delete item.state.error
         await this.finish(step, prefix, item, store)
         return
       }
+
       let cats = { topics: [], sources: [] } as Awaited<
         ReturnType<typeof catalog>
       >
+
       try {
         if (
           item.status === 'queued' &&
           !item.state.draft &&
           !item.state.choices?.length
-        )
+        ) {
           await step.do(`${prefix}-analysis-catalog`, stepConfig, async () => {
             await analysisNotice(this.env, item, 'catalog')
             return true
           })
+        }
+
         cats = await retry(step, `${prefix}-catalog`, () => catalog(this.env))
         await advance(this.env, step, prefix, item, cats)
       } catch (error) {
         item.status = 'error'
         item.state.error = errorText(error)
-        if (item.state.publicationStarted)
+
+        if (item.state.publicationStarted) {
           await publicationNotice(this.env, item, 'paused')
-        else await analysisNotice(this.env, item, 'paused')
+        } else {
+          await analysisNotice(this.env, item, 'paused')
+        }
+
         log(
           'workflow.failed',
           { phase: 'advance', ...errorFields(error) },
           'error'
         )
       }
+
       await step.do(`${prefix}-save`, stepConfig, async () => {
         await store.save(item)
         return true
       })
+
       if (
         item.status === 'done' ||
         item.status === 'cancelled' ||
@@ -130,6 +153,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         await this.finish(step, prefix, item, store)
         return
       }
+
       const previewImageKey = await step.do(
         `${prefix}-present`,
         stepConfig,
@@ -146,6 +170,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
           }
         }
       )
+
       if (
         item.status === 'waiting_publish_slot' ||
         (item.status === 'error' && item.state.publicationStarted)
@@ -162,10 +187,13 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         })
         return
       }
+
       // Restore presentation metadata even when this durable step was replayed.
       // Older executions returned true; retain compatibility across deployment.
-      if (typeof previewImageKey === 'string')
+      if (typeof previewImageKey === 'string') {
         item.state.previewImageKey = previewImageKey
+      }
+
       if (previewImageKey && typeof previewImageKey === 'object') {
         item.state.previewImageKey =
           previewImageKey.previewImageKey ?? undefined
@@ -174,16 +202,20 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         item.state.sourceEditMessageId =
           previewImageKey.sourceEditMessageId ?? undefined
       }
+
       // D1 is the durable inbox. Events only wake the workflow; even if a wakeup
       // races with a deployment or is delivered twice, the action remains in D1.
       let pending = await step.do(`${prefix}-pending`, stepConfig, () =>
         store.nextAction(item.id).then((v) => v ?? null)
       )
-      if (!pending)
+
+      if (!pending) {
         log('workflow.waiting', {
           status: item.status,
           revision: item.state.revision,
         })
+      }
+
       for (let wait = 0; !pending && wait < 30; wait++) {
         try {
           await nativeStep.waitForEvent(`${prefix}-wake-${wait}`, {
@@ -193,10 +225,12 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         } catch {
           /* A human wait expires without approval; check inbox and renew. */
         }
+
         pending = await step.do(`${prefix}-pending-${wait}`, stepConfig, () =>
           store.nextAction(item.id).then((v) => v ?? null)
         )
       }
+
       if (!pending) {
         await step.do(`${prefix}-rotate-idle`, stepConfig, async () => {
           await store.rotate(item)
@@ -204,7 +238,9 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         })
         return
       }
+
       let accepted = false
+
       try {
         log('workflow.action', {
           action: pending.action.kind,
@@ -219,22 +255,28 @@ export class CurationWorkflow extends WorkflowEntrypoint<
           pending.action
         )
         accepted = message === undefined
-        if (message)
+
+        if (message) {
           await step.do(`${prefix}-action-notice`, stepConfig, async () => {
             await sendActionNotice(this.env, item, pending.action, message)
             return true
           })
+        }
       } catch (error) {
         item.status = 'error'
         item.state.error = errorText(error)
-        if (item.state.publicationStarted)
+
+        if (item.state.publicationStarted) {
           await publicationNotice(this.env, item, 'paused')
+        }
+
         log(
           'workflow.failed',
           { phase: 'action', ...errorFields(error) },
           'error'
         )
       }
+
       await step.do(`${prefix}-commit-action`, stepConfig, async () => {
         // Save and consume together: a crash never loses an action nor applies a
         // correction twice. The worker only appends actions; this is sole writer.
@@ -248,7 +290,8 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         ])
         return true
       })
-      if (accepted)
+
+      if (accepted) {
         await step.do(
           `${prefix}-clear-action-buttons`,
           stepConfig,
@@ -257,22 +300,28 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             return true
           }
         )
+      }
+
       if ((item.status as Item['status']) === 'cancelled') {
         await this.finish(step, prefix, item, store)
         return
       }
     }
+
     await nativeStep.do('continue-workflow', async () => {
       const item = await store.get(event.payload.id)
       await store.rotate(item)
     })
   }
+
   private async finish(step: Steps, prefix: string, item: Item, store: Store) {
-    if (item.status === 'cancelled')
+    if (item.status === 'cancelled') {
       await step.do(`${prefix}-analysis-cancelled`, stepConfig, async () => {
         await analysisNotice(this.env, item, 'cancelled')
         return true
       })
+    }
+
     await step.do(`${prefix}-clear-finished-buttons`, stepConfig, async () => {
       await clearItemButtons(this.env, item)
       return true
@@ -283,18 +332,22 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         elapsedMs: Math.max(0, Date.now() - Date.parse(item.created_at)),
         documentIds: item.state.publishedIds,
       })
-      if (item.status === 'done') await publicationNotice(this.env, item, true)
-      else if (item.status === 'publication_pending')
+
+      if (item.status === 'done') {
+        await publicationNotice(this.env, item, true)
+      } else if (item.status === 'publication_pending') {
         await publicationNotice(
           this.env,
           item,
           item.state.publicationRequested ? 'accepted' : 'unconfirmed'
         )
-      else
+      } else {
         await sendText(
           this.env,
           '🗑️ C’est annulé ! On passe à la suite quand tu veux.'
         )
+      }
+
       return true
     })
     await step.do(`${prefix}-release-item`, stepConfig, async () => {

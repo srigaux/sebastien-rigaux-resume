@@ -43,16 +43,27 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
   const masterLocale = repository.languages.find(
     (locale) => locale.is_master
   )?.id
-  if (!masterLocale) throw new Error('Prismic repository has no master locale')
+
+  if (!masterLocale) {
+    throw new Error('Prismic repository has no master locale')
+  }
+
   const frenchLocale = repository.languages.find((locale) =>
     locale.id.startsWith('fr-')
   )?.id
-  if (!frenchLocale) throw new Error('Prismic repository has no French locale')
+
+  if (!frenchLocale) {
+    throw new Error('Prismic repository has no French locale')
+  }
+
   const englishLocale = repository.languages.find((locale) =>
     locale.id.startsWith('en-')
   )?.id
-  if (!englishLocale)
+
+  if (!englishLocale) {
     throw new Error('Prismic repository has no English locale')
+  }
+
   const [topicDocuments, sourceDocuments, linkDocuments, englishLinkDocuments] =
     await Promise.all([
       client.getAllByType<TopicDocument>('topic', { lang: masterLocale }),
@@ -126,5 +137,7 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
 }
 
 export async function getWatchData(locale: Locale): Promise<WatchData> {
-  return (await (cached ??= fetchWatchData()))[locale]
+  cached ??= fetchWatchData()
+
+  return (await cached)[locale]
 }
