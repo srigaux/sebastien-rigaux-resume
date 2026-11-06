@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://lefthook.dev/schema.json
+
+pre-commit:
+  jobs:
+    - name: lint-staged
+      run: pnpm exec lint-staged
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: prettier
+      run: pnpm format:check
+    - name: eslint
+      run: pnpm lint
+    - name: types
+      run: pnpm check

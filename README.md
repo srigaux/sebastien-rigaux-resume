@@ -125,6 +125,40 @@ d'un enregistrement explicite. `lint:fix` modifie les sources : vérifier son di
 L'ajout de la configuration ne corrige pas les diagnostics du code existant ;
 `pnpm lint` les signale et échoue tant que des erreurs restent présentes.
 
+## Validation avant push
+
+Lefthook installe le hook `pre-push` lors de l'installation de ses dépendances
+avec `pnpm install` (son script est autorisé dans `pnpm-workspace.yaml`). Pour
+installer ou réparer les hooks dans un checkout existant :
+
+```sh
+pnpm hooks:install
+```
+
+Avant chaque commit, Lefthook lance `lint-staged` sur les fichiers indexés.
+Les fichiers JavaScript, TypeScript et Astro passent par ESLint avec correction
+automatique, puis Prettier. Les autres formats reconnus passent par Prettier.
+Les exclusions propres à chaque outil restent appliquées, dont n8n pour ESLint.
+Les corrections sont remises dans l'index par lint-staged ; sa sauvegarde et sa
+gestion des fichiers partiellement indexés restent activées par défaut.
+Un diagnostic ESLint restant, même un avertissement, bloque le commit.
+Commande manuelle : `pnpm lint:staged`.
+
+Avant chaque push, `lefthook.yml` lance en parallèle `pnpm format:check`,
+`pnpm lint` et `pnpm check` sur tout le workspace concerné. Un échec bloque le
+push. Ces commandes ne corrigent ni ne mettent en staging les fichiers.
+Pour lancer les mêmes validations manuellement :
+
+```sh
+pnpm prepush
+```
+
+Les tests ne font pas partie du hook : le test `credit` du bot et deux tests
+d'exports n8n échouent actuellement. Ils restent disponibles via `pnpm test`.
+Le build n'est pas exécuté par le hook. En CI, le paquet Lefthook n'installe pas
+les hooks lorsque `CI=true` ; les validations doivent être lancées explicitement
+par le workflow pour protéger aussi les contributions sans hooks locaux.
+
 ## Publication
 
 Le workflow **🔎 Check website updates** (`.github/workflows/check-website-updates.yml`) compare la référence publiée de Prismic à l’empreinte disponible dans `/deployment-state.json` sur le site, deux fois par heure (minutes 17 et 47, selon le planning UTC de GitHub). Sans changement de contenu, de sources du site ou de période annuelle de rafraîchissement des PDF (1er février), il termine avec le résumé « ⏭️ No changes — publication skipped », sans créer de run de publication. Le contrôle reste marqué comme réussi dans GitHub, puisqu’il a bien été exécuté. Il peut également être lancé manuellement pour effectuer la même comparaison.

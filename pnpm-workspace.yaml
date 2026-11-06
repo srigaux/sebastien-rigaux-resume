@@ -3,6 +3,7 @@ packages:
 overrides:
   '@playform/inline>beasties': ^0.4.3
 allowBuilds:
+  lefthook: true
   esbuild: true
   workerd: true
   puppeteer: true

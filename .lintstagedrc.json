@@ -1,0 +1,7 @@
+{
+  "*.{js,mjs,cjs,ts,tsx,astro}": [
+    "eslint --fix --no-warn-ignored --max-warnings=0",
+    "prettier --write --ignore-unknown"
+  ],
+  "!(*.{js,mjs,cjs,ts,tsx,astro})": "prettier --write --ignore-unknown"
+}
