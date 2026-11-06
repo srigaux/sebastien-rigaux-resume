@@ -17,7 +17,7 @@ function urls(...values: unknown[]): string[] {
   return [
     ...new Set(
       values.flatMap((v) => {
-        if (Array.isArray(v)) return urls(...v)
+        if (Array.isArray(v)) return urls(...(v as unknown[]))
         const s = typeof v === 'string' ? v : record(v).url
         try {
           return typeof s === 'string' ? [webUrl(s)] : []
@@ -33,7 +33,8 @@ export function extractResult(raw: unknown): Extraction {
     md = record(page.markdown),
     metadata = record(page.metadata)
   if (md.success !== true || typeof md.data !== 'string' || !md.data.trim()) {
-    const code = String(md.error_code ?? 'EMPTY_MARKDOWN')
+    const code =
+      typeof md.error_code === 'string' ? md.error_code : 'EMPTY_MARKDOWN'
     throw new RemoteError(
       `Extraction impossible (${code}).`,
       ['REQUEST_TIMEOUT', 'INTERNAL_ERROR', 'WEBSITE_ACCESS_ERROR'].includes(

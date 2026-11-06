@@ -119,20 +119,12 @@ describe('journal des écritures Prismic', () => {
   })
   it('rejoue une réponse connue sans seconde écriture réseau', async () => {
     const remote = vi.fn(async () => Response.json({ id: 'fr-id' }))
-    const first = journaledFetch(
-      new Store(env.DB),
-      'u1',
-      remote
-    )!
+    const first = journaledFetch(new Store(env.DB), 'u1', remote)!
     const init = { method: 'POST', body: JSON.stringify({ uid: 'test' }) }
     expect(
       await (await first('https://migration.prismic.io/documents', init)).json()
     ).toEqual({ id: 'fr-id' })
-    const resumed = journaledFetch(
-      new Store(env.DB),
-      'u1',
-      remote
-    )!
+    const resumed = journaledFetch(new Store(env.DB), 'u1', remote)!
     expect(
       await (
         await resumed('https://migration.prismic.io/documents', init)
@@ -144,11 +136,7 @@ describe('journal des écritures Prismic', () => {
     const remote = vi.fn(async () => {
       throw new Error('connection lost after commit')
     })
-    const request = journaledFetch(
-      new Store(env.DB),
-      'u1',
-      remote
-    )!
+    const request = journaledFetch(new Store(env.DB), 'u1', remote)!
     const init = { method: 'POST', body: '{"uid":"lost"}' }
     await expect(
       request('https://migration.prismic.io/documents', init)
@@ -188,11 +176,7 @@ describe('journal des écritures Prismic', () => {
       new File(['image'], 'broken.ico', { type: 'image/x-icon' })
     )
     const rejected = vi.fn(async () => new Response('{}', { status: 415 }))
-    const asset = journaledFetch(
-      new Store(env.DB),
-      'u2',
-      rejected
-    )!
+    const asset = journaledFetch(new Store(env.DB), 'u2', rejected)!
     await expect(
       asset('https://asset-api.prismic.io/assets', {
         method: 'POST',

@@ -42,15 +42,23 @@ export async function handlePrismicWebhook(
   }
   let payload: unknown
   try {
-    payload = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    const bytes = new Uint8Array(size)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    payload = JSON.parse(
+      new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes)
+    )
   } catch {
     return new Response('Invalid JSON', { status: 400 })
   }
   if (!object(payload)) return new Response('Invalid payload', { status: 400 })
-  const secret = Buffer.from(
+  const secret = new TextEncoder().encode(
     typeof payload.secret === 'string' ? payload.secret : ''
   )
-  const expected = Buffer.from(env.PRISMIC_WEBHOOK_SECRET)
+  const expected = new TextEncoder().encode(env.PRISMIC_WEBHOOK_SECRET)
   if (secret.length !== expected.length || !timingSafeEqual(secret, expected))
     return new Response('Unauthorized', { status: 401 })
   if (payload.domain !== env.PRISMIC_REPOSITORY)

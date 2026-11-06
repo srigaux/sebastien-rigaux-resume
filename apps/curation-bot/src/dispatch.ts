@@ -28,7 +28,7 @@ export async function dispatchQueue(env: Env) {
         params: { id: item.id, generation: item.generation },
       })
       created = true
-    } catch (error) {
+    } catch {
       instance = await env.CURATION.get(id)
       await instance.status()
     }
@@ -67,7 +67,7 @@ export async function dispatchQueue(env: Env) {
         id: nextId,
         params: { id: next.id, generation: next.generation },
       })
-    } catch (error) {
+    } catch {
       // Concurrent cron/webhook dispatches may already have created it.
       const existing = await env.CURATION.get(nextId)
       await existing.status()

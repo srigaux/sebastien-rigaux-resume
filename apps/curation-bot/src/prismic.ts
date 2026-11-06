@@ -1,4 +1,9 @@
 import * as prismic from '@prismicio/client'
+import type {
+  AllDocumentTypes,
+  DiscoverySourceDocument,
+  TopicDocument,
+} from 'cms-prismic/types'
 
 import {
   AmbiguousWrite,
@@ -16,9 +21,17 @@ import { log, observe } from '@/observability'
 import { RemoteError, retryAfter } from '@/retry'
 import { Store } from '@/store'
 
+// Payloads produced by the SDK and persisted in our operation journal.
+type DocumentRequest = {
+  lang?: string
+  data?: { image?: { alt?: string }; site_icon?: { alt?: string } }
+}
+
 export function readClient(env: Env) {
-  return prismic.createClient(env.PRISMIC_REPOSITORY, {
-    accessToken: env.PRISMIC_ACCESS_TOKEN || undefined,
+  return prismic.createClient<AllDocumentTypes>(env.PRISMIC_REPOSITORY, {
+    accessToken: env.PRISMIC_ACCESS_TOKEN?.length
+      ? env.PRISMIC_ACCESS_TOKEN
+      : undefined,
     fetchOptions: { cache: 'no-store' },
     fetch: journaledFetch(new Store(env.DB), 'read'),
   })
@@ -33,11 +46,13 @@ export async function catalog(env: Env): Promise<Catalog> {
     client.getAllByType('topic', { lang: 'fr-be' }),
     client.getAllByType('discovery_source', { lang: 'fr-be' }),
   ])
-  const map = (doc: prismic.PrismicDocument) => ({
+  const map = (doc: TopicDocument | DiscoverySourceDocument) => ({
     id: doc.id,
-    uid: doc.uid!,
+    uid: doc.uid,
     name: String(doc.data.name ?? doc.uid),
-    ...(doc.data.url?.url ? { url: doc.data.url.url as string } : {}),
+    ...('url' in doc.data && 'url' in doc.data.url && doc.data.url.url
+      ? { url: doc.data.url.url }
+      : {}),
   })
   const value = { topics: topics.map(map), sources: sources.map(map) }
   if (!value.topics.length || !value.sources.length)
@@ -59,7 +74,11 @@ export async function publishedDuplicates(
   const found = new Map<string, { title: string; url?: string }>()
   for (const doc of docs) {
     try {
-      if (normalizeUrl(doc.data.url.url) !== normalizeUrl(url)) continue
+      if (
+        normalizeUrl(('url' in doc.data.url ? doc.data.url.url : '') ?? '') !==
+        normalizeUrl(url)
+      )
+        continue
       const group = [
         doc.id,
         ...doc.alternate_languages.map((d) => d.id),
@@ -101,9 +120,9 @@ async function digest(value: string | ArrayBuffer): Promise<string> {
 }
 async function requestKey(
   url: string,
-  init?: { method?: string; body?: unknown }
+  init?: { method?: string; body?: string | FormData }
 ) {
-  let body = ''
+  let body: string
   if (init?.body instanceof FormData) {
     const parts = []
     for (const [key, value] of init.body.entries())
@@ -119,7 +138,7 @@ async function requestKey(
 }
 function requestActivity(
   url: string,
-  init: { method?: string; body?: unknown } | undefined,
+  init: { method?: string; body?: string | FormData } | undefined,
   languages: Map<string, 'fr' | 'en'>
 ): string {
   const path = new URL(url).pathname
@@ -136,7 +155,7 @@ function requestActivity(
   }
   if (path.endsWith('/publish')) return 'prismic.publish'
   if (/\/documents(?:\/[^/]+)?$/.test(path) && typeof init.body === 'string') {
-    const body = JSON.parse(init.body)
+    const body = JSON.parse(init.body) as DocumentRequest
     const language =
       init.method === 'PUT'
         ? languages.get(path.split('/').pop()!)
@@ -166,7 +185,7 @@ export function journaledFetch(
       { provider: 'prismic', ...(itemId !== 'read' ? { itemId } : {}) },
       async () => {
         if (draft && init?.method === 'PUT' && typeof init.body === 'string') {
-          const body = JSON.parse(init.body)
+          const body = JSON.parse(init.body) as DocumentRequest
           const language = languages.get(
             new URL(url).pathname.split('/').pop()!
           )
@@ -184,7 +203,9 @@ export function journaledFetch(
         if (!write) {
           const res = await fetchImpl(url, {
             ...init,
-            signal: init?.signal ?? AbortSignal.timeout(30_000),
+            signal:
+              (init?.signal as AbortSignal | undefined) ??
+              AbortSignal.timeout(30_000),
           })
           if (!res.ok)
             throw new RemoteError(
@@ -224,19 +245,20 @@ export function journaledFetch(
             response.status === 201 &&
             typeof init.body === 'string'
           ) {
-            const created = (await response.clone().json()) as { id: string }
+            const created = await response.clone().json<{ id: string }>()
             languages.set(
               created.id,
-              JSON.parse(init.body).lang === 'en-us' ? 'en' : 'fr'
+              (JSON.parse(init.body) as DocumentRequest).lang === 'en-us'
+                ? 'en'
+                : 'fr'
             )
           }
           if (url.includes('asset') && init?.body instanceof FormData) {
             const file = init.body.get('file')
             if (response.ok) {
-              const asset = (await response.clone().json()) as {
-                width?: number
-                height?: number
-              }
+              const asset = await response
+                .clone()
+                .json<{ width?: number; height?: number }>()
               if (!asset.width || !asset.height)
                 throw new MediaRejected(
                   file instanceof File ? file.name : 'inconnu'
@@ -282,7 +304,7 @@ export function journaledFetch(
             itemId,
             `${init?.method ?? 'POST'} ${url}`,
             typeof init?.body === 'string'
-              ? JSON.parse(init.body)
+              ? (JSON.parse(init.body) as unknown)
               : {
                   filename:
                     init?.body instanceof FormData
@@ -304,7 +326,9 @@ export function journaledFetch(
         try {
           res = await fetchImpl(url, {
             ...init,
-            signal: init?.signal ?? AbortSignal.timeout(60_000),
+            signal:
+              (init?.signal as AbortSignal | undefined) ??
+              AbortSignal.timeout(60_000),
           })
         } catch {
           throw new AmbiguousWrite(key)
@@ -357,7 +381,7 @@ export function buildMigration(
   files: { image?: File; icon?: File }
 ) {
   const draft = item.state.draft!
-  const migration = prismic.createMigration()
+  const migration = prismic.createMigration<prismic.PrismicDocument>()
   const assets = new Map<string, ReturnType<typeof migration.createAsset>>()
   const register = (kind: 'image' | 'icon', file: File | undefined) => {
     const media = item.state.media?.[kind]
@@ -399,7 +423,7 @@ export function buildMigration(
     ...(icon ? { site_icon: icon } : {}),
   }
   const doc = (lang: 'fr' | 'en') => ({
-    type: 'curated_link',
+    type: 'curated_link' as const,
     lang: lang === 'fr' ? 'fr-be' : 'en-us',
     uid: slug(draft[lang].title, lang),
     data: {
@@ -436,56 +460,63 @@ export async function migrate(
   const store = new Store(env.DB)
   const transport = journaledFetch(store, item.id, fetch, item.state.draft)!
   const documentLanguages = new Map<string, 'fr' | 'en'>()
-  const client = prismic.createWriteClient(env.PRISMIC_REPOSITORY, {
-    writeToken: env.PRISMIC_WRITE_TOKEN,
-    accessToken: env.PRISMIC_ACCESS_TOKEN || undefined,
-    fetch: async (url, init) => {
-      let stage: PublicationStage | undefined
-      if (init?.method === 'POST' && String(url).includes('/assets')) {
-        const file =
-          init.body instanceof FormData ? init.body.get('file') : undefined
-        stage =
-          file instanceof File &&
-          file.name === item.state.media?.image?.filename
-            ? 'image'
-            : file instanceof File &&
-                file.name === item.state.media?.icon?.filename
-              ? 'icon'
-              : 'media'
-      } else if (
-        /\/documents(?:\/[^/]+)?$/.test(String(url)) &&
-        typeof init?.body === 'string'
-      ) {
-        const language =
-          init.method === 'PUT'
-            ? documentLanguages.get(
-                new URL(String(url)).pathname.split('/').pop()!
-              )
-            : JSON.parse(init.body).lang === 'en-us'
+  const client = prismic.createWriteClient<prismic.PrismicDocument>(
+    env.PRISMIC_REPOSITORY,
+    {
+      writeToken: env.PRISMIC_WRITE_TOKEN,
+      accessToken: env.PRISMIC_ACCESS_TOKEN?.length
+        ? env.PRISMIC_ACCESS_TOKEN
+        : undefined,
+      fetch: async (url, init) => {
+        let stage: PublicationStage | undefined
+        if (init?.method === 'POST' && String(url).includes('/assets')) {
+          const file =
+            init.body instanceof FormData ? init.body.get('file') : undefined
+          stage =
+            file instanceof File &&
+            file.name === item.state.media?.image?.filename
+              ? 'image'
+              : file instanceof File &&
+                  file.name === item.state.media?.icon?.filename
+                ? 'icon'
+                : 'media'
+        } else if (
+          /\/documents(?:\/[^/]+)?$/.test(String(url)) &&
+          typeof init?.body === 'string'
+        ) {
+          const language =
+            init.method === 'PUT'
+              ? documentLanguages.get(
+                  new URL(String(url)).pathname.split('/').pop()!
+                )
+              : (JSON.parse(init.body) as DocumentRequest).lang === 'en-us'
+                ? 'en'
+                : 'fr'
+          if (init.method === 'POST')
+            stage = language === 'fr' ? 'create-fr' : 'create-en'
+          if (init.method === 'PUT')
+            stage = language === 'fr' ? 'write-fr' : 'write-en'
+        }
+        if (stage && onProgress) await onProgress(stage)
+        const response = await transport(url, init)
+        if (
+          init?.method === 'POST' &&
+          String(url).endsWith('/documents') &&
+          response.ok &&
+          typeof init.body === 'string'
+        ) {
+          const created = (await response.clone().json()) as { id: string }
+          documentLanguages.set(
+            created.id,
+            (JSON.parse(init.body) as DocumentRequest).lang === 'en-us'
               ? 'en'
               : 'fr'
-        if (init.method === 'POST')
-          stage = language === 'fr' ? 'create-fr' : 'create-en'
-        if (init.method === 'PUT')
-          stage = language === 'fr' ? 'write-fr' : 'write-en'
-      }
-      if (stage && onProgress) await onProgress(stage)
-      const response = await transport(url, init)
-      if (
-        init?.method === 'POST' &&
-        String(url).endsWith('/documents') &&
-        response.ok &&
-        typeof init.body === 'string'
-      ) {
-        const created = (await response.clone().json()) as { id: string }
-        documentLanguages.set(
-          created.id,
-          JSON.parse(init.body).lang === 'en-us' ? 'en' : 'fr'
-        )
-      }
-      return response
-    },
-  })
+          )
+        }
+        return response
+      },
+    }
+  )
   const files = {
     image: await mediaFile(env, item.state.media?.image),
     icon: await mediaFile(env, item.state.media?.icon),
@@ -515,10 +546,13 @@ export async function publish(env: Env, item: Item) {
       'Publication désactivée : terminer la procédure d’activation de la release de migration réservée au bot.',
       'publication_disabled'
     )
-  const client = prismic.createWriteClient(env.PRISMIC_REPOSITORY, {
-    writeToken: env.PRISMIC_WRITE_TOKEN,
-    fetch: journaledFetch(new Store(env.DB), item.id),
-  })
+  const client = prismic.createWriteClient<prismic.PrismicDocument>(
+    env.PRISMIC_REPOSITORY,
+    {
+      writeToken: env.PRISMIC_WRITE_TOKEN,
+      fetch: journaledFetch(new Store(env.DB), item.id),
+    }
+  )
   const result = await client.publishMigrationRelease()
   if (result.totalItems !== 2)
     log(
@@ -534,7 +568,7 @@ export async function verifyPublication(
   item: Item
 ): Promise<boolean> {
   const ids = item.state.publishedIds
-  if (!ids || ids.length !== 2 || new Set(ids).size !== 2) return false
+  if (ids?.length !== 2 || new Set(ids).size !== 2) return false
   const { results } = await readClient(env).getByIDs(ids, {
     lang: '*',
     pageSize: 2,

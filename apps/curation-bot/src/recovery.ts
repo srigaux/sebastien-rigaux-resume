@@ -26,6 +26,13 @@ type Session = {
   mode: 'inspect' | 'existing' | 'absent' | 'retry' | 'skip' | 'done'
   documentId?: string
 }
+type SavedResponse = { status: number; body: string }
+type DocumentRequest = {
+  lang: string
+  uid: string
+  alternate_language_id?: string
+}
+
 const ttl = 60 * 60 * 1000
 const sessionKey = (env: Env, token: string) =>
   `recovery:${env.TELEGRAM_CHAT_ID}:${token}`
@@ -36,12 +43,12 @@ const creation = (op: Operation) =>
   op.target === 'POST https://migration.prismic.io/documents'
 function conflict(op: Operation) {
   try {
-    const saved = JSON.parse(op.response ?? 'null')
+    const saved = JSON.parse(op.response ?? 'null') as SavedResponse | null
     return (
       creation(op) &&
       op.status === 'done' &&
       saved?.status === 400 &&
-      JSON.parse(saved.body).message ===
+      (JSON.parse(saved.body) as { message?: string }).message ===
         "There is already an existing translation in this language for the document referenced in 'alternate_language_id'"
     )
   } catch {
@@ -113,8 +120,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
   const store = new Store(env.DB),
     item = await store.get(id).catch(() => undefined)
   if (
-    !item ||
-    item.chat_id !== env.TELEGRAM_CHAT_ID ||
+    item?.chat_id !== env.TELEGRAM_CHAT_ID ||
     item.active ||
     !['error', 'publication_pending'].includes(item.status)
   )
@@ -143,7 +149,8 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
       try {
         return (
           o.status === 'retryable' ||
-          JSON.parse(o.response ?? 'null')?.status >= 400
+          ((JSON.parse(o.response ?? 'null') as SavedResponse | null)?.status ??
+            0) >= 400
         )
       } catch {
         return false
@@ -152,7 +159,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
   if (!op) return false
   if (creation(op)) {
     try {
-      const request = JSON.parse(op.request)
+      const request = JSON.parse(op.request) as DocumentRequest
       if (
         !request ||
         !['fr-be', 'en-us'].includes(request.lang) ||
@@ -191,7 +198,7 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
         .text('⏭️ Continuer la file', callback(s, 'skip'))
     )
   } else if (creation(op)) {
-    const request = JSON.parse(op.request)
+    const request = JSON.parse(op.request) as DocumentRequest
     try {
       // Match the article URL too: a manually renamed UID is not evidence of absence.
       const docs = await readClient(env).getAllByType('curated_link', {
@@ -211,7 +218,10 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
           if (doc.uid === request.uid) return true
           try {
             return [item.state.url, ...(item.state.checked ?? [])].some(
-              (url) => normalizeUrl(doc.data.url?.url) === normalizeUrl(url)
+              (url) =>
+                normalizeUrl(
+                  ('url' in doc.data.url ? doc.data.url.url : '') ?? ''
+                ) === normalizeUrl(url)
             )
           } catch {
             return false
@@ -396,8 +406,7 @@ export async function recoveryCallback(
   if (!match) return false
   const s = await new Store(env.DB).cache<Session>(sessionKey(env, match[1]))
   if (
-    !s ||
-    s.messageId !== messageId ||
+    s?.messageId !== messageId ||
     s.mode === 'done' ||
     !(await current(env, s))
   ) {
@@ -661,7 +670,7 @@ export async function recoveryReply(
     )
     return true
   }
-  const request = JSON.parse(s.operation.request)
+  const request = JSON.parse(s.operation.request) as DocumentRequest
   if (id === request.alternate_language_id) {
     await apiFor(env).sendMessage(
       env.TELEGRAM_CHAT_ID,

@@ -34,7 +34,8 @@ const original =
   }))
 const width = widths.at(-1)!
 const height = media && Math.round((width * media.height) / media.width)
-const style = media?.placeholder
+// This is a CSS declaration, not a dynamically assembled Tailwind class.
+const placeholderStyle = media?.placeholder
   ? `background-image:url("${media.placeholder}");background-size:${detail ? 'contain' : 'cover'};background-position:center;background-repeat:no-repeat`
   : undefined
 const Wrapper = detail ? 'figure' : 'div'
@@ -71,7 +72,7 @@ const wrapperClass = detail
         loading={priority || eager ? 'eager' : 'lazy'}
         decoding={priority ? 'sync' : 'async'}
         class={className}
-        style={style}
+        style={placeholderStyle}
         data-watch-media="image"
       />
     )}

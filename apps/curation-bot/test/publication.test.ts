@@ -356,8 +356,9 @@ it('reports the duplicate decision without logging the matching titles or URLs',
 it.each(['missing', 'unauthorized'] as const)(
   'bounds %s checks, then pauses without blocking the queue or rewriting documents',
   async (mode) => {
-    const { item } = await pending()
+    await pending()
     const api = remote(mode)
+    const delays: number[] = []
     for (let attempt = 1; attempt <= 5; attempt++) {
       await env.DB.prepare(
         'UPDATE publication_checks SET next_check_at=0'
@@ -368,11 +369,12 @@ it.each(['missing', 'unauthorized'] as const)(
         'SELECT status,attempts,next_check_at FROM publication_checks'
       ).first<{ status: string; attempts: number; next_check_at: number }>()
       expect(row?.attempts).toBe(attempt)
-      if (attempt < 5)
-        expect(row!.next_check_at - before).toBeGreaterThanOrEqual(
-          [60_000, 120_000, 300_000, 600_000][attempt - 1]
-        )
+      if (attempt < 5) delays.push(row!.next_check_at - before)
     }
+    for (const [index, minimum] of [
+      60_000, 120_000, 300_000, 600_000,
+    ].entries())
+      expect(delays[index]).toBeGreaterThanOrEqual(minimum)
     expect(
       await env.DB.prepare('SELECT status FROM publication_checks').first()
     ).toEqual({ status: 'attention' })

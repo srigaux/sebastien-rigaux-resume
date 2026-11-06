@@ -1,4 +1,4 @@
-import type { LocalImageService } from 'astro'
+import type { ImageOutputFormat, LocalImageService } from 'astro'
 import { baseService } from 'astro/assets'
 import sharpService from 'astro/assets/services/sharp'
 
@@ -7,7 +7,7 @@ import sharpService from 'astro/assets/services/sharp'
 const service: LocalImageService = {
   ...sharpService,
   propertiesToHash: [
-    ...(baseService.propertiesToHash || []),
+    ...(baseService.propertiesToHash ?? []),
     'preserveOriginal',
   ],
   async getURL(options, config, logger) {
@@ -24,7 +24,10 @@ const service: LocalImageService = {
   },
   async transform(bytes, options, config, logger) {
     if (options.preserveOriginal)
-      return { data: bytes, format: options.format! }
+      return {
+        data: bytes,
+        format: options.format as ImageOutputFormat,
+      }
     return sharpService.transform(bytes, options, config, logger)
   },
 }

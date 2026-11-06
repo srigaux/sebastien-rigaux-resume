@@ -8,7 +8,7 @@ export class Store {
       .bind(id)
       .first<Omit<Item, 'state'> & { state: string }>()
     if (!row) throw new Error('Unknown item')
-    return { ...row, state: JSON.parse(row.state) }
+    return { ...row, state: JSON.parse(row.state) as State }
   }
   async active(chat: string) {
     const row = await this.db
@@ -197,7 +197,9 @@ export class Store {
       )
       .bind(id)
       .first<{ id: number; payload: string }>()
-    return row ? { id: row.id, action: JSON.parse(row.payload) } : undefined
+    return row
+      ? { id: row.id, action: JSON.parse(row.payload) as Action }
+      : undefined
   }
   async consume(id: number) {
     await this.db
@@ -255,7 +257,7 @@ export class Store {
       .prepare('SELECT value FROM cache WHERE key=? AND expires_at>?')
       .bind(key, Date.now())
       .first<{ value: string }>()
-    return row ? JSON.parse(row.value) : undefined
+    return row ? (JSON.parse(row.value) as T) : undefined
   }
   async putCache(key: string, value: unknown, ttl: number) {
     await this.db

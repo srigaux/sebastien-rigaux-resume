@@ -27,7 +27,7 @@ it('attend une action persistée dans un véritable Workflow Cloudflare et rejet
   let messages = 0
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_url: unknown, init?: RequestInit) =>
+    vi.fn(async (_url: unknown, _init?: RequestInit) =>
       Response.json({
         ok: true,
         result: {
@@ -127,6 +127,8 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
           url.endsWith('/editMessageText') &&
           body.text?.includes('C’est publié')
         ) {
+          // The assertion checks this specific mocked provider request.
+          // eslint-disable-next-line vitest/no-conditional-expect
           expect(body.message_id).toBe(publicationMessageId)
           publicationConfirmed = true
         }
@@ -167,6 +169,8 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
         return Response.json({})
       }
       if (url.includes('migration-release/publish')) {
+        // Ordering assertions belong to the mocked publish endpoint.
+        // eslint-disable-next-line vitest/no-conditional-expect
         expect(
           vi
             .mocked(fetch)
@@ -174,6 +178,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
               String(url).endsWith('/editMessageReplyMarkup')
             )
         ).toBe(true)
+        // eslint-disable-next-line vitest/no-conditional-expect
         expect(publicationMessageId).toBeDefined()
         published = true
         publishCalls++

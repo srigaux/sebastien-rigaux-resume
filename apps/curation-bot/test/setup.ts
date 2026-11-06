@@ -5,7 +5,10 @@ import { afterEach, beforeEach, vi } from 'vitest'
 import type { Env as AppEnv } from '@/domain'
 
 declare global {
+  // Cloudflare requires namespace/interface merging for test bindings.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cloudflare {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
     interface Env extends AppEnv {
       TEST_MIGRATIONS: D1Migration[]
     }

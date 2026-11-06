@@ -158,13 +158,11 @@ describe('URL, éditorial et attributions', () => {
     expect(() =>
       extractResult({ markdown: { success: false, error_code: 'NOT_FOUND' } })
     ).toThrow('NOT_FOUND')
-    try {
+    expect(() =>
       extractResult({
         markdown: { success: false, error_code: 'REQUEST_TIMEOUT' },
       })
-    } catch (e) {
-      expect(e).toMatchObject({ retryable: true, timeout: true })
-    }
+    ).toThrow(expect.objectContaining({ retryable: true, timeout: true }))
   })
   it('ne déduit une source fournie que depuis une indication explicite', () => {
     expect(explicitSource('Article React', cats)).toBeUndefined()
@@ -349,10 +347,8 @@ it('autorise un à trois paragraphes et les micro-exemples inline, sans listes n
     'Premier paragraphe.\n\nDeuxième paragraphe.\n\nTroisième paragraphe.\n\nQuatrième paragraphe.',
   ]
   for (const value of invalid)
-    expect(
-      () =>
-        assertDraft({ ...draft, fr: { ...draft.fr, summary: value } }, cats),
-      value
+    expect(() =>
+      assertDraft({ ...draft, fr: { ...draft.fr, summary: value } }, cats)
     ).toThrow()
 })
 

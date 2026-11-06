@@ -30,7 +30,7 @@ export type WatchSearchHit = {
 
 function webUrl(value?: string): string | undefined {
   try {
-    const url = new URL(value || '')
+    const url = new URL(value ?? '')
     return ['https:', 'http:'].includes(url.protocol) ? url.href : undefined
   } catch {
     return undefined
@@ -125,7 +125,7 @@ function FormatIcon({ format }: { format: string }) {
       className="size-3.5 shrink-0"
       aria-hidden="true"
     >
-      {paths[format] || paths.Other}
+      {paths[format] ?? paths.Other}
     </svg>
   )
 }
@@ -161,7 +161,9 @@ export default function WatchSearchCard({
       : ''
   const external =
     locale === 'fr' ? 'Ouvrir le lien original' : 'Open original link'
-  const contentLanguage = hit.textLanguage || hit.locale
+  const contentLanguage = hit.textLanguage?.length
+    ? hit.textLanguage
+    : hit.locale
   const language = hit.sourceLanguage?.toUpperCase()
   const sourceLanguageTitle =
     locale === 'fr'
@@ -234,7 +236,7 @@ export default function WatchSearchCard({
           <div className="pointer-events-none float-left mt-1.5 mr-4 mb-1 aspect-1200/630 w-41.5 overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-57.5">
             <img
               src={image}
-              alt={hit.image?.alt || ''}
+              alt={hit.image?.alt ?? ''}
               width={hit.image?.width}
               height={hit.image?.height}
               loading="lazy"
@@ -270,7 +272,7 @@ export default function WatchSearchCard({
               </span>
             ))}
       </div>
-      {(hit.credit || hit.source) && (
+      {(Boolean(hit.credit) || Boolean(hit.source)) && (
         <p className="pointer-events-none relative z-10 mt-4 text-xs text-muted">
           {hit.credit && <span lang="en">{hit.credit}</span>}
           {hit.credit && hit.source && <span aria-hidden="true"> · </span>}

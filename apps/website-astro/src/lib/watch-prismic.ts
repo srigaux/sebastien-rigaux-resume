@@ -71,7 +71,9 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
     id: doc.id,
     uid: doc.uid,
     name: doc.data.name ?? '',
-    description: doc.data.description || undefined,
+    description: doc.data.description?.length
+      ? doc.data.description
+      : undefined,
   }))
   const sources: WatchSource[] = sourceDocuments.map((doc) => ({
     id: doc.id,
@@ -100,12 +102,16 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
     summary: prismic.asText(doc.data.summary),
     url: webUrl(doc.data.url),
     selectedOn: doc.data.selected_on ?? '',
-    publishedOn: doc.data.published_on || undefined,
+    publishedOn: doc.data.published_on?.length
+      ? doc.data.published_on
+      : undefined,
     firstPublishedAt: doc.first_publication_date,
     format: doc.data.format!,
-    sourceLanguage: doc.data.source_language || undefined,
+    sourceLanguage: doc.data.source_language?.length
+      ? doc.data.source_language
+      : undefined,
     textLanguage: locale,
-    credit: doc.data.credit || undefined,
+    credit: doc.data.credit?.length ? doc.data.credit : undefined,
     sourceId: relationId(doc.data.discovered_via),
     topicIds: doc.data.topics
       .map(({ topic }) => relationId(topic))

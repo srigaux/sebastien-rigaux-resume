@@ -40,11 +40,11 @@ it('stops refreshing on a generation error without changing that error', async (
   const error = new Error('Generation failed')
   try {
     const running = withTyping(env, '1', () => operation)
-    const rejection = await expect(running).rejects.toBe(error)
+    const rejection = running.catch((caught: unknown) => caught)
     await vi.advanceTimersByTimeAsync(4000)
     expect(fetcher).toHaveBeenCalledTimes(2)
     fail(error)
-    await rejection
+    expect(await rejection).toBe(error)
     await vi.advanceTimersByTimeAsync(8000)
     expect(fetcher).toHaveBeenCalledTimes(2)
   } finally {

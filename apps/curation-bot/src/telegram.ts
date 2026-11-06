@@ -138,6 +138,7 @@ export async function sendText(env: Env, text: string, kb?: InlineKeyboard) {
       link_preview_options: { is_disabled: true },
       reply_markup: i === chunks.length - 1 ? kb : undefined,
     })
+  if (!last) throw new Error('Telegram returned no message')
   return last
 }
 async function remember(store: Store, item: Item, messageId: number) {
@@ -312,19 +313,20 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
         log('telegram.photo.fallback', { itemId: item.id })
       }
     }
-    if (messageId === undefined)
-      messageId = (
-        await api.sendDocument(
-          item.chat_id,
-          new InputFile(bytes, media.filename),
-          { caption, parse_mode: 'HTML' }
-        )
-      ).message_id
+    messageId ??= (
+      await api.sendDocument(
+        item.chat_id,
+        new InputFile(bytes, media.filename),
+        { caption, parse_mode: 'HTML' }
+      )
+    ).message_id
   }
   if (replace || !receipt) {
-    await ensureReceipt(store, key, item.id, async () => ({
-      message_id: messageId,
-    }))
+    await ensureReceipt(store, key, item.id, () =>
+      Promise.resolve({
+        message_id: messageId,
+      })
+    )
     await store.completed(key, {
       messageId,
       kind: 'media',
@@ -651,7 +653,7 @@ async function sendProposal(
   // A missing/deleted receipt gets a replacement; subsequent revisions remain
   // separate messages, so replying to an older proposal stays version-safe.
   if (editable || !receipt) {
-    await ensureReceipt(store, key, item.id, async () => message)
+    await ensureReceipt(store, key, item.id, () => Promise.resolve(message))
     await store.completed(key, {
       messageId: message.message_id,
       revision: item.state.revision,
@@ -874,7 +876,7 @@ export function createBot(env: Env) {
     }
     const store = new Store(env.DB),
       item = await store.active(env.TELEGRAM_CHAT_ID)
-    if (!item || item.id !== id || item.state.revision !== Number(rev)) {
+    if (item?.id !== id || item.state.revision !== Number(rev)) {
       await ctx.answerCallbackQuery({
         text: '⏳ Cette proposition n’est plus active. Utilise la dernière version.',
       })
@@ -1125,7 +1127,7 @@ export function createBot(env: Env) {
       }
       return
     }
-    if (text.startsWith("/")) {
+    if (text.startsWith('/')) {
       await ctx.reply(
         '🤔 Je ne connais pas cette commande. Tape /help pour voir les commandes disponibles.'
       )
@@ -1141,9 +1143,7 @@ export function createBot(env: Env) {
         .first<{ item_id: string; revision: number }>())
     if (
       reply &&
-      (!item ||
-        item.id !== reply.item_id ||
-        item.state.revision !== reply.revision)
+      (item?.id !== reply.item_id || item.state.revision !== reply.revision)
     ) {
       await ctx.reply(
         '⏳ Cette proposition n’est plus active. Réponds à la dernière version pour continuer.'

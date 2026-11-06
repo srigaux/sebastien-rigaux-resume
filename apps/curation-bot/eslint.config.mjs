@@ -12,6 +12,11 @@ export default defineConfig([
     files: ['test/**/*.ts'],
     extends: [vitest.configs.recommended],
     rules: {
+      // Fetch/DB mocks deliberately accept partial, untyped fixtures and retain
+      // their async contract even when the response is immediately available.
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-base-to-string': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',

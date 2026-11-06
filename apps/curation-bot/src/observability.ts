@@ -197,7 +197,7 @@ function message(event: string, fields: Fields): string {
   }
   // Only selected metadata: never interpolate raw SDK errors, URLs or content.
   const details: string[] = []
-  if (fields.itemId) details.push(`fiche ${fields.itemId}`)
+  if (fields.itemId) details.push(`fiche ${String(fields.itemId)}`)
   if (typeof fields.status === 'string' && statuses[fields.status])
     details.push(statuses[fields.status])
   if (typeof fields.action === 'string' && actions[fields.action])

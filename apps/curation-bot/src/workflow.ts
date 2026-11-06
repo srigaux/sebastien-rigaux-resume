@@ -45,7 +45,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
     const observed = observedSteps(nativeStep as unknown as Steps)
     const store = new Store(this.env.DB)
     const step: Steps = {
-      do: observed.do,
+      do: (name, config, callback) => observed.do(name, config, callback),
       sleep: async (name, duration) => {
         const notify = duration >= 30_000 && name.includes('-backoff-')
         const notice = async (delay?: number) => {
@@ -257,7 +257,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             return true
           }
         )
-      if ((item).status === 'cancelled') {
+      if ((item.status as Item['status']) === 'cancelled') {
         await this.finish(step, prefix, item, store)
         return
       }

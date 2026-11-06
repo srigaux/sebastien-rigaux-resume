@@ -1,3 +1,4 @@
+import type { SearchResponse, liteClient } from 'algoliasearch/lite'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -94,9 +95,7 @@ type Results = {
   nbHits: number
   nbPages: number
 }
-let clientPromise:
-  | Promise<ReturnType<typeof import('algoliasearch/lite').liteClient>>
-  | undefined
+let clientPromise: Promise<ReturnType<typeof liteClient>> | undefined
 function getClient() {
   return (clientPromise ??= import('algoliasearch/lite')
     .then(({ liteClient }) =>
@@ -159,14 +158,16 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
   useEffect(() => {
     const restore = () => {
       const params = new URLSearchParams(location.search)
-      setQuery((params.get('q') || '').slice(0, 200))
-      const selected = params.get('format') || ''
+      setQuery((params.get('q') ?? '').slice(0, 200))
+      const selected = params.get('format') ?? ''
       setFormat(formats.includes(selected) ? selected : '')
       setExpanded(
-        Boolean(params.get('q')?.trim() || formats.includes(selected))
+        Boolean(params.get('q')?.trim()) || formats.includes(selected)
       )
       setPage(0)
     }
+    // Mount this portal into Astro's server-rendered trigger slot.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTriggerTarget(
       document.querySelector<HTMLElement>('[data-watch-search-trigger]')
     )
@@ -194,21 +195,24 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (!initialized) return
     const url = new URL(location.href)
-    query.trim()
-      ? url.searchParams.set('q', query.trim())
-      : url.searchParams.delete('q')
-    format
-      ? url.searchParams.set('format', format)
-      : url.searchParams.delete('format')
+    if (query.trim()) url.searchParams.set('q', query.trim())
+    else url.searchParams.delete('q')
+    if (format) url.searchParams.set('format', format)
+    else url.searchParams.delete('format')
     history.replaceState(history.state, '', url)
     if (!expanded) {
+      // Reset results when the URL-synchronized panel closes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState('idle')
       setResults(null)
       return
     }
     let cancelled = false
     setState('loading')
-    const timer = window.setTimeout(async () => {
+    const timer = window.setTimeout(() => {
+      void search()
+    }, 250)
+    async function search() {
       try {
         const [client, { renderSummaryMarkdown }] = await Promise.all([
           getClient(),
@@ -276,7 +280,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
             formatCounts: facetResult.facets?.format ?? {},
             totalBeforeFormat: facetResult.nbHits ?? 0,
             query: query.trim(),
-            hits: result.hits.map((hit: WatchHit) => ({
+            hits: (result as SearchResponse<WatchHit>).hits.map((hit) => ({
               ...hit,
               summaryHtml: renderSummaryMarkdown(hit.summary, query.trim()),
             })),
@@ -288,7 +292,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
       } catch {
         if (!cancelled) setState('error')
       }
-    }, 250)
+    }
     return () => {
       cancelled = true
       clearTimeout(timer)

@@ -25,6 +25,7 @@
     "@ai-sdk/openai": "^4.0.96",
     "@prismicio/client": "7.22.3",
     "ai": "^7.0.143",
+    "cms-prismic": "workspace:*",
     "context.dev": "^3.10.0",
     "grammy": "^1.38.3",
     "markdown-it": "^15.0.3",

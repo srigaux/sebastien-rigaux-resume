@@ -748,10 +748,10 @@ it.each([false, true])(
       await sendPreview(env, item)
       item.state.previewImageKey = undefined
       await sendPreview(env, item) // Replay must not send the image twice.
-      expect(calls.filter((call) => call.method === 'sendPhoto')).toHaveLength(
-        1
-      )
     }
+    expect(calls.filter((call) => call.method === 'sendPhoto')).toHaveLength(
+      withImage ? 1 : 0
+    )
     await present(env, item, cats)
     expect(calls.filter((call) => call.method === 'sendMessage')).toHaveLength(
       2

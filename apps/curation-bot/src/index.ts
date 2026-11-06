@@ -72,7 +72,7 @@ export default {
     if (body.length > 64_000) return new Response('Too large', { status: 413 })
     let update: Update
     try {
-      update = JSON.parse(body)
+      update = JSON.parse(body) as Update
       if (!Number.isSafeInteger(update.update_id)) throw new Error()
     } catch {
       return new Response('Invalid update', { status: 400 })
