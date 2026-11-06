@@ -104,7 +104,7 @@ describe('journal des écritures Prismic', () => {
     const request = journaledFetch(
       new Store(env.DB),
       'u-translation-conflict',
-      remote as typeof fetch
+      remote
     )!
     const args = [
       'https://migration.prismic.io/documents',
@@ -122,7 +122,7 @@ describe('journal des écritures Prismic', () => {
     const first = journaledFetch(
       new Store(env.DB),
       'u1',
-      remote as typeof fetch
+      remote
     )!
     const init = { method: 'POST', body: JSON.stringify({ uid: 'test' }) }
     expect(
@@ -131,7 +131,7 @@ describe('journal des écritures Prismic', () => {
     const resumed = journaledFetch(
       new Store(env.DB),
       'u1',
-      remote as typeof fetch
+      remote
     )!
     expect(
       await (
@@ -147,7 +147,7 @@ describe('journal des écritures Prismic', () => {
     const request = journaledFetch(
       new Store(env.DB),
       'u1',
-      remote as typeof fetch
+      remote
     )!
     const init = { method: 'POST', body: '{"uid":"lost"}' }
     await expect(
@@ -191,7 +191,7 @@ describe('journal des écritures Prismic', () => {
     const asset = journaledFetch(
       new Store(env.DB),
       'u2',
-      rejected as typeof fetch
+      rejected
     )!
     await expect(
       asset('https://asset-api.prismic.io/assets', {

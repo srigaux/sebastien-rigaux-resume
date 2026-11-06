@@ -190,7 +190,7 @@ const dateFormatter = new Intl.DateTimeFormat(
     {page === 1 ? (
       <section
         no-intersect
-        class="intersect-once intersect-[0.2] pt-14 motion-duration-500 motion-reduce:animate-none sm:pt-20 lg:pt-24 intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once pt-14 motion-duration-500 motion-reduce:animate-none sm:pt-20 lg:pt-24 intersect:motion-preset-blur-up"
       >
         <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent" />
         <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
@@ -206,7 +206,7 @@ const dateFormatter = new Intl.DateTimeFormat(
             </a>
           )}
         </div>
-        <h1 class="max-w-5xl font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] break-words text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
+        <h1 class="max-w-5xl font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] wrap-break-word text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
           {topic ? topic.name : t.title}
         </h1>
         <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
@@ -225,7 +225,7 @@ const dateFormatter = new Intl.DateTimeFormat(
     ) : (
       <header
         no-intersect
-        class="intersect-once intersect-[0.2] pt-10 motion-duration-500 motion-reduce:animate-none sm:pt-12 lg:pt-14 intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once pt-10 motion-duration-500 motion-reduce:animate-none sm:pt-12 lg:pt-14 intersect:motion-preset-blur-up"
       >
         {topic && (
           <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
@@ -241,7 +241,7 @@ const dateFormatter = new Intl.DateTimeFormat(
           </div>
         )}
         <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-          <h1 class="font-display text-2xl font-semibold tracking-tight break-words text-ink sm:text-3xl">
+          <h1 class="font-display text-2xl font-semibold tracking-tight wrap-break-word text-ink sm:text-3xl">
             {topic?.name || t.title}
           </h1>
           <p class="shrink-0 text-sm text-muted">
@@ -268,7 +268,7 @@ const dateFormatter = new Intl.DateTimeFormat(
     <div
       data-watch-browse
       class:list={[
-        'mt-8 grid gap-12 sm:mt-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16 [&[hidden]]:hidden',
+        'mt-8 grid gap-12 sm:mt-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16 [[hidden]]:hidden',
       ]}
     >
       <section aria-label={topic?.name || t.all} class="min-w-0">
@@ -290,7 +290,7 @@ const dateFormatter = new Intl.DateTimeFormat(
               <article
                 no-intersect
                 class:list={[
-                  'intersect-once intersect-[0.2] relative isolate py-8 motion-duration-500 motion-reduce:animate-none sm:py-10 intersect:motion-preset-blur-up',
+                  'intersect-[0.2] intersect-once relative isolate py-8 motion-duration-500 motion-reduce:animate-none sm:py-10 intersect:motion-preset-blur-up',
                   linkDelays[index],
                 ]}
               >
@@ -332,7 +332,7 @@ const dateFormatter = new Intl.DateTimeFormat(
                           )}
                       </div>
                       <h2
-                        class="pr-8 font-display text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
+                        class="pr-8 font-display text-xl/snug font-semibold tracking-tight sm:text-2xl"
                         lang={link.textLanguage}
                       >
                         <WatchSiteIcon
@@ -372,11 +372,11 @@ const dateFormatter = new Intl.DateTimeFormat(
                       <WatchImage
                         image={link.image}
                         eager={index === 0}
-                        class="h-full w-full object-cover"
+                        class="size-full object-cover"
                       />
                     )}
                     <div
-                      class="pointer-events-none text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
+                      class="pointer-events-none text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_code]:rounded-sm [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
                       lang={link.textLanguage}
                       set:html={renderSummaryMarkdown(link.summary)}
                     />
@@ -421,7 +421,7 @@ const dateFormatter = new Intl.DateTimeFormat(
           <nav
             no-intersect
             aria-label="Pagination"
-            class="intersect-once intersect-[0.2] mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
+            class="intersect-[0.2] intersect-once mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
           >
             {previousPath ? (
               <a

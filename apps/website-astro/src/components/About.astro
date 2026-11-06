@@ -62,7 +62,7 @@ const paragraphDelays = [
 <section
   id="about"
   aria-labelledby="name"
-  class="pt-14 pb-16 sm:pt-20 sm:pb-20 lg:pt-24 lg:pb-24"
+  class="pt-14 pb-16 sm:py-20 lg:py-24"
 >
   <div data-cv-hero class="relative isolate">
     <HeroShader />
@@ -119,7 +119,7 @@ const paragraphDelays = [
           aria-hidden="true"
         />
       </div>
-      <p class="mt-7 text-lg leading-relaxed text-muted sm:text-xl">
+      <p class="mt-7 text-lg/relaxed text-muted sm:text-xl">
         {rolePoints.map((point, index) => (
           <span
             class:list={[
@@ -134,7 +134,7 @@ const paragraphDelays = [
       </p>
       <div
         data-cv-screen-only
-        class="mt-8 flex motion-preset-blur-up flex-row flex-wrap items-center gap-3 motion-duration-500 motion-reduce:animate-none sm:gap-4 sm:motion-delay-[420ms]"
+        class="mt-8 flex motion-preset-blur-up flex-row flex-wrap items-center gap-3 motion-duration-500 motion-reduce:animate-none sm:gap-4 sm:motion-delay-420"
       >
         <a
           href={watchPath(locale)}
@@ -204,7 +204,7 @@ const paragraphDelays = [
         <h2 class="mb-4 text-sm font-semibold text-ink">
           {about.contactTitle}
         </h2>
-        <address class="space-y-2 text-sm leading-relaxed text-muted not-italic">
+        <address class="space-y-2 text-sm/relaxed text-muted not-italic">
           <p>{person.address.formatted[locale]}</p>
           <p>
             <ExternalLink

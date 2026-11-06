@@ -471,7 +471,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
                     setFormat(event.target.value)
                     setPage(0)
                   }}
-                  className="min-h-12 w-full cursor-pointer appearance-none rounded-sm border border-muted bg-paper py-3 pr-12 pl-4 text-base leading-normal text-ink"
+                  className="min-h-12 w-full cursor-pointer appearance-none rounded-sm border border-muted bg-paper py-3 pr-12 pl-4 text-base/normal text-ink"
                 >
                   <option value="">
                     {t.all}
@@ -521,7 +521,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
               <h2
                 ref={heading}
                 tabIndex={-1}
-                className="min-w-0 font-display text-xl font-semibold break-words text-ink"
+                className="min-w-0 font-display text-xl font-semibold wrap-break-word text-ink"
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -565,7 +565,7 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
                 </div>
               ) : results ? (
                 <>
-                  <div className="divide-y divide-rule border-b border-rule lg:mr-[20rem]">
+                  <div className="divide-y divide-rule border-b border-rule lg:mr-80">
                     {results.hits.map((hit) => (
                       <WatchSearchCard
                         key={hit.objectID}

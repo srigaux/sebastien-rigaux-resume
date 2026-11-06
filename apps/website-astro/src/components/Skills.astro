@@ -129,7 +129,7 @@ const topicTagClass =
       <h2
         id="skills-title"
         no-intersect
-        class="intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink motion-duration-500 sm:text-4xl intersect:motion-preset-blur-up"
+        class="intersect-half intersect-once font-display text-3xl/tight font-semibold tracking-tight text-ink motion-duration-500 sm:text-4xl intersect:motion-preset-blur-up"
       >
         {copy.title}
       </h2>
@@ -143,7 +143,7 @@ const topicTagClass =
     <div data-cv-skills-content class="grid gap-14 xl:grid-cols-2 xl:gap-20">
       <div
         no-intersect
-        class="intersect-once intersect-[0.2] motion-duration-500 intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once motion-duration-500 intersect:motion-preset-blur-up"
       >
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">
           {copy.languagesTitle}
@@ -161,7 +161,7 @@ const topicTagClass =
 
       <div
         no-intersect
-        class="intersect-once intersect-[0.2] motion-duration-500 intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once motion-duration-500 intersect:motion-preset-blur-up"
       >
         <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">
           {copy.expertiseTitle}
@@ -170,7 +170,7 @@ const topicTagClass =
           {copy.expertise.map((area) => (
             <li class="py-4 first:pt-0">
               <h4 class="font-semibold text-ink">{area.title}</h4>
-              <p class="mt-1 text-sm leading-relaxed text-muted">
+              <p class="mt-1 text-sm/relaxed text-muted">
                 {area.description}
               </p>
             </li>

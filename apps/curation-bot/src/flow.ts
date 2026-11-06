@@ -246,13 +246,13 @@ export async function advance(
             (kind) => s.media?.[kind]?.filename === error.filename
           )
           for (const kind of affected) {
-            const media = s.media![kind]!
-            s.media!.failures.push({
+            const media = s.media[kind]!
+            s.media.failures.push({
               kind,
               url: media.url,
               reason: error.message,
             })
-            delete s.media![kind]
+            delete s.media[kind]
           }
           await step.do(
             `${prefix}-release-media-lock`,

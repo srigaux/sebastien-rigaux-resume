@@ -138,7 +138,7 @@ export async function sendText(env: Env, text: string, kb?: InlineKeyboard) {
       link_preview_options: { is_disabled: true },
       reply_markup: i === chunks.length - 1 ? kb : undefined,
     })
-  return last!
+  return last
 }
 async function remember(store: Store, item: Item, messageId: number) {
   await store.db
@@ -323,7 +323,7 @@ async function replaceReceiptWithPreview(env: Env, item: Item) {
   }
   if (replace || !receipt) {
     await ensureReceipt(store, key, item.id, async () => ({
-      message_id: messageId!,
+      message_id: messageId,
     }))
     await store.completed(key, {
       messageId,
@@ -919,7 +919,7 @@ export function createBot(env: Env) {
   bot.on(['message:text', 'message:caption'], async (ctx) => {
     const store = new Store(env.DB),
       item = await store.active(env.TELEGRAM_CHAT_ID)
-    const message = ctx.message!
+    const message = ctx.message
     const text = message.text ?? message.caption ?? ''
     const legacy =
       /^\/(aide|statut|file|vider|annuler|reprendre)(?:@\w+)?(?:\s|$)/i.exec(
@@ -1125,7 +1125,7 @@ export function createBot(env: Env) {
       }
       return
     }
-    if (/^\//.test(text)) {
+    if (text.startsWith("/")) {
       await ctx.reply(
         '🤔 Je ne connais pas cette commande. Tape /help pour voir les commandes disponibles.'
       )

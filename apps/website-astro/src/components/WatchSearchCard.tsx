@@ -199,7 +199,7 @@ export default function WatchSearchCard({
         </div>
         <h2
           lang={contentLanguage}
-          className="pr-8 font-display text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
+          className="pr-8 font-display text-xl/snug font-semibold tracking-tight sm:text-2xl"
         >
           <SiteIcon hit={hit} monogram={domain.charAt(0).toUpperCase()} />
           {original ? (
@@ -231,7 +231,7 @@ export default function WatchSearchCard({
       </header>
       <div className="flow-root">
         {image && !failedImage && (
-          <div className="pointer-events-none float-left mt-1.5 mr-4 mb-1 aspect-[1200/630] w-[10.375rem] overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-[14.375rem]">
+          <div className="pointer-events-none float-left mt-1.5 mr-4 mb-1 aspect-1200/630 w-41.5 overflow-hidden rounded-xl bg-ink/5 sm:mr-6 sm:w-57.5">
             <img
               src={image}
               alt={hit.image?.alt || ''}
@@ -240,13 +240,13 @@ export default function WatchSearchCard({
               loading="lazy"
               decoding="async"
               onError={() => setFailedImage(true)}
-              className="h-full w-full object-cover"
+              className="size-full object-cover"
             />
           </div>
         )}
         <div
           lang={contentLanguage}
-          className="pointer-events-none text-base leading-[1.75] break-words text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
+          className="pointer-events-none text-base leading-[1.75] wrap-break-word text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_code]:rounded-sm [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
           dangerouslySetInnerHTML={{ __html: hit.summaryHtml }}
         />
       </div>

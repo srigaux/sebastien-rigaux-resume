@@ -221,7 +221,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         accepted = message === undefined
         if (message)
           await step.do(`${prefix}-action-notice`, stepConfig, async () => {
-            await sendActionNotice(this.env, item, pending!.action, message)
+            await sendActionNotice(this.env, item, pending.action, message)
             return true
           })
       } catch (error) {
@@ -244,7 +244,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             .bind(JSON.stringify(item.state), item.status, item.id),
           store.db
             .prepare('UPDATE actions SET consumed=1 WHERE id=?')
-            .bind(pending!.id),
+            .bind(pending.id),
         ])
         return true
       })
@@ -257,7 +257,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
             return true
           }
         )
-      if ((item as Item).status === 'cancelled') {
+      if ((item).status === 'cancelled') {
         await this.finish(step, prefix, item, store)
         return
       }

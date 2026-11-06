@@ -58,7 +58,7 @@ const languageLabel = locale === 'fr' ? 'Choisir la langue' : 'Choose language'
 <header
   data-watch-header={isWatch ? '' : undefined}
   data-scrolled={isWatch ? '' : undefined}
-  class="sticky top-0 z-50 border-b border-transparent bg-transparent data-[scrolled]:border-rule data-[scrolled]:bg-paper/95 data-[scrolled]:backdrop-blur-md motion-safe:transition-[background-color,border-color,backdrop-filter] motion-safe:duration-300"
+  class="sticky top-0 z-50 border-b border-transparent bg-transparent data-scrolled:border-rule data-scrolled:bg-paper/95 data-scrolled:backdrop-blur-md motion-safe:transition-[background-color,border-color,backdrop-filter] motion-safe:duration-300"
 >
   <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
     <a
@@ -71,7 +71,7 @@ const languageLabel = locale === 'fr' ? 'Choisir la langue' : 'Choose language'
         data-header-brand-logo
         data-brand-pending={isWatch ? undefined : ''}
         data-brand-hidden={isWatch ? undefined : ''}
-        class="size-6 shrink-0 motion-preset-blur-up text-accent motion-duration-500 motion-reduce:animate-none min-[360px]:size-8 sm:size-10"
+        class="size-6 shrink-0 motion-preset-blur-up text-accent motion-duration-500 motion-reduce:animate-none sm:size-10 min-[360px]:size-8"
         aria-hidden="true"
       />
       <span
@@ -182,7 +182,7 @@ const languageLabel = locale === 'fr' ? 'Choisir la langue' : 'Choose language'
                 isWatch && href === watchPath(locale) ? 'page' : undefined
               }
               class:list={[
-                'block rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10',
+                'block rounded-sm p-3 text-sm font-medium hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10',
                 isWatch && href === watchPath(locale)
                   ? 'text-accent'
                   : 'text-ink',

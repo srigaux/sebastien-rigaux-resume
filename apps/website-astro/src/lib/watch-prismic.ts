@@ -102,7 +102,7 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
     selectedOn: doc.data.selected_on ?? '',
     publishedOn: doc.data.published_on || undefined,
     firstPublishedAt: doc.first_publication_date,
-    format: doc.data.format as WatchTranslationDraft['format'],
+    format: doc.data.format!,
     sourceLanguage: doc.data.source_language || undefined,
     textLanguage: locale,
     credit: doc.data.credit || undefined,

@@ -2,7 +2,7 @@ import { BotError, MediaRejected } from '@/domain'
 import type { ReasonCode } from '@/error-reasons'
 import { errorFields, log } from '@/observability'
 
-export interface Steps {
+export type Steps = {
   do<T>(
     name: string,
     config: { retries: { limit: number; delay: string }; timeout?: string },

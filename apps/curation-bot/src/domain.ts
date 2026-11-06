@@ -232,7 +232,7 @@ export type Action = {
   receiptKey?: string
   value?: string
 }
-export interface Env {
+export type Env = {
   DB: D1Database
   BUCKET: R2Bucket
   CURATION: Workflow<{ id: string; generation: number }>
