@@ -20,7 +20,9 @@
     "astro": "astro",
     "test:watch": "node --test tests/*.test.mjs",
     "check:watch-build": "node scripts/check-watch-build.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@4hse/astro-llms-txt": "^1.0.5",

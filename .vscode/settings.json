@@ -12,5 +12,30 @@
     "**.gitignore": false,
     "**.prettierrc": false,
     "**yarn.lock": false
-  }
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "astro"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.workingDirectories": [
+    {
+      "directory": ".",
+      "!cwd": true
+    },
+    {
+      "directory": "apps/website-astro"
+    },
+    {
+      "directory": "apps/curation-bot"
+    },
+    {
+      "directory": "apps/cms-prismic"
+    }
+  ]
 }

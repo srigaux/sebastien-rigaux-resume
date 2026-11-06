@@ -9,5 +9,9 @@
   "exports": {
     "./config": "./prismic.config.json",
     "./types": "./prismicio-types.d.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   }
 }

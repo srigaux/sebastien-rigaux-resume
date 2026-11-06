@@ -17,7 +17,9 @@
     "telegram:webhook": "node --env-file=.dev.vars scripts/webhook.mjs",
     "reconcile": "node scripts/reconcile.mjs",
     "format": "pnpm -w exec prettier --write apps/curation-bot",
-    "format:check": "pnpm -w exec prettier --check apps/curation-bot"
+    "format:check": "pnpm -w exec prettier --check apps/curation-bot",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.96",

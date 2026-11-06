@@ -41,6 +41,51 @@ Astro. Les clés JSON conservent leur ordre, notamment pour les exports conditio
 Les sorties générées, caches et états privés sont exclus dans `.prettierignore`.
 VS Code recommande Prettier et active le formatage à l'enregistrement.
 
+## Lint
+
+Chaque projet possède sa flat config `eslint.config.mjs` :
+
+- `apps/website-astro/` : Astro, React Hooks et Better Tailwind.
+- `apps/curation-bot/` : Cloudflare, TypeScript et Vitest.
+- `apps/cms-prismic/` : JavaScript, avec exclusion des types générés.
+- La configuration racine couvre uniquement les scripts, tests et outils communs.
+
+Le socle JavaScript/TypeScript est partagé dans `tools/eslint/base.mjs`.
+Chaque projet peut ajouter ou remplacer ses règles. Les dépendances ESLint restent
+centralisées à la racine du workspace.
+
+Les commandes racine exécutent le lint des outils communs puis celui des projets :
+
+```sh
+pnpm lint
+pnpm lint:fix
+pnpm --filter website-astro lint
+pnpm --filter curation-bot lint
+pnpm --filter cms-prismic lint
+```
+
+Les règles couvrent JavaScript, TypeScript, Astro, React Hooks et les imports
+inutilisés. L'analyse avec informations de types est activée sur les sources
+TypeScript du site, les sources et tests du bot et sa configuration Vitest.
+Les fichiers Astro utilisent le parser Astro avec prise en charge de TypeScript ;
+leur vérification de types reste assurée par `astro check`. Le preset Vitest
+s'applique uniquement aux tests du bot, les autres suites utilisant `node:test`.
+
+Better Tailwind vérifie les classes dans les composants Astro et React avec le
+thème de `apps/website-astro/src/styles/global.css` et impose le tri `strict`.
+Les marqueurs de l'observateur d'intersection et les hooks JavaScript connus
+sont exclus de la détection des classes inconnues. Prettier garde la gestion
+des retours à la ligne ; le retour à la ligne des classes par ESLint est désactivé
+pour éviter des corrections contradictoires.
+
+Les sorties générées, caches, fichiers publics, outils de `.agents/` et toute
+l’application `apps/n8n-curation/` sont exclus du lint. n8n ne possède pas de script
+`lint` et ne participe pas aux commandes récursives. VS Code sélectionne le répertoire de travail de chaque app, recommande
+l'extension ESLint et applique ses corrections lors
+d'un enregistrement explicite. `lint:fix` modifie les sources : vérifier son diff.
+L'ajout de la configuration ne corrige pas les diagnostics du code existant ;
+`pnpm lint` les signale et échoue tant que des erreurs restent présentes.
+
 ## Publication
 
 Le workflow **🔎 Check website updates** (`.github/workflows/check-website-updates.yml`) compare la référence publiée de Prismic à l’empreinte disponible dans `/deployment-state.json` sur le site, deux fois par heure (minutes 17 et 47, selon le planning UTC de GitHub). Sans changement de contenu, de sources du site ou de période annuelle de rafraîchissement des PDF (1er février), il termine avec le résumé « ⏭️ No changes — publication skipped », sans créer de run de publication. Le contrôle reste marqué comme réussi dans GitHub, puisqu’il a bien été exécuté. Il peut également être lancé manuellement pour effectuer la même comparaison.
