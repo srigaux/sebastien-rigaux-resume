@@ -1,23 +1,24 @@
-import { errorFields, log, observedSteps, withContext } from "@/observability";
 import {
   WorkflowEntrypoint,
   type WorkflowEvent,
   type WorkflowStep,
-} from "cloudflare:workers";
-import type { Env, Item } from "@/domain";
-import { advance, applyAction, catalog, errorText, stepConfig } from "@/flow";
-import { retry, type Steps } from "@/retry";
-import { Store } from "@/store";
-import { dispatchQueue } from "@/dispatch";
+} from 'cloudflare:workers'
+
+import { dispatchQueue } from '@/dispatch'
+import type { Env, Item } from '@/domain'
+import { advance, applyAction, catalog, errorText, stepConfig } from '@/flow'
+import { errorFields, log, observedSteps, withContext } from '@/observability'
+import { type Steps, retry } from '@/retry'
+import { Store } from '@/store'
 import {
-  present,
-  sendText,
-  sendActionNotice,
+  analysisNotice,
   clearItemButtons,
+  present,
   publicationNotice,
   retryWaitNotice,
-  analysisNotice,
-} from "@/telegram";
+  sendActionNotice,
+  sendText,
+} from '@/telegram'
 
 export class CurationWorkflow extends WorkflowEntrypoint<
   Env,
@@ -25,7 +26,7 @@ export class CurationWorkflow extends WorkflowEntrypoint<
 > {
   async run(
     event: WorkflowEvent<{ id: string; generation: number }>,
-    nativeStep: WorkflowStep,
+    nativeStep: WorkflowStep
   ) {
     return withContext(
       {
@@ -34,290 +35,290 @@ export class CurationWorkflow extends WorkflowEntrypoint<
         workflowId: `${event.payload.id}-g${event.payload.generation}`,
         traceId: `${event.payload.id}-g${event.payload.generation}`,
       },
-      () => this.execute(event, nativeStep),
-    );
+      () => this.execute(event, nativeStep)
+    )
   }
   private async execute(
     event: WorkflowEvent<{ id: string; generation: number }>,
-    nativeStep: WorkflowStep,
+    nativeStep: WorkflowStep
   ) {
-    const observed = observedSteps(nativeStep as unknown as Steps);
-    const store = new Store(this.env.DB);
+    const observed = observedSteps(nativeStep as unknown as Steps)
+    const store = new Store(this.env.DB)
     const step: Steps = {
       do: observed.do,
       sleep: async (name, duration) => {
-        const notify = duration >= 30_000 && name.includes("-backoff-");
+        const notify = duration >= 30_000 && name.includes('-backoff-')
         const notice = async (delay?: number) => {
           try {
             await retryWaitNotice(
               this.env,
               await store.get(event.payload.id),
               name,
-              delay,
-            );
+              delay
+            )
           } catch (error) {
-            log("telegram.retry_notice.failed", errorFields(error), "warn");
+            log('telegram.retry_notice.failed', errorFields(error), 'warn')
           }
-          return true;
-        };
+          return true
+        }
         if (notify)
           await observed.do(`${name}-notify-wait`, stepConfig, () =>
-            notice(duration),
-          );
-        await observed.sleep(name, duration);
+            notice(duration)
+          )
+        await observed.sleep(name, duration)
         if (notify)
           await observed.do(`${name}-notify-resumed`, stepConfig, () =>
-            notice(),
-          );
+            notice()
+          )
       },
-    };
+    }
     for (let cycle = 0; cycle < 30; cycle++) {
-      const prefix = `g${event.payload.generation}-c${cycle}`;
+      const prefix = `g${event.payload.generation}-c${cycle}`
       const item = await step.do(`${prefix}-load`, stepConfig, () =>
-        store.get(event.payload.id),
-      );
-      if (!item.active || item.generation !== event.payload.generation) return;
+        store.get(event.payload.id)
+      )
+      if (!item.active || item.generation !== event.payload.generation) return
       // Cancellation has priority over extraction/media backoffs and generation.
       // Publication remains protected by the checkpoint written before any SDK write.
       const cancellation = !item.state.publicationStarted
         ? await step.do(`${prefix}-cancel-before-work`, stepConfig, () =>
-            store.pendingCancellation(item).then((value) => value ?? null),
+            store.pendingCancellation(item).then((value) => value ?? null)
           )
-        : null;
+        : null
       if (cancellation) {
-        item.status = "cancelled";
-        delete item.state.error;
-        await this.finish(step, prefix, item, store);
-        return;
+        item.status = 'cancelled'
+        delete item.state.error
+        await this.finish(step, prefix, item, store)
+        return
       }
       let cats = { topics: [], sources: [] } as Awaited<
         ReturnType<typeof catalog>
-      >;
+      >
       try {
         if (
-          item.status === "queued" &&
+          item.status === 'queued' &&
           !item.state.draft &&
           !item.state.choices?.length
         )
           await step.do(`${prefix}-analysis-catalog`, stepConfig, async () => {
-            await analysisNotice(this.env, item, "catalog");
-            return true;
-          });
-        cats = await retry(step, `${prefix}-catalog`, () => catalog(this.env));
-        await advance(this.env, step, prefix, item, cats);
+            await analysisNotice(this.env, item, 'catalog')
+            return true
+          })
+        cats = await retry(step, `${prefix}-catalog`, () => catalog(this.env))
+        await advance(this.env, step, prefix, item, cats)
       } catch (error) {
-        item.status = "error";
-        item.state.error = errorText(error);
+        item.status = 'error'
+        item.state.error = errorText(error)
         if (item.state.publicationStarted)
-          await publicationNotice(this.env, item, "paused");
-        else await analysisNotice(this.env, item, "paused");
+          await publicationNotice(this.env, item, 'paused')
+        else await analysisNotice(this.env, item, 'paused')
         log(
-          "workflow.failed",
-          { phase: "advance", ...errorFields(error) },
-          "error",
-        );
+          'workflow.failed',
+          { phase: 'advance', ...errorFields(error) },
+          'error'
+        )
       }
       await step.do(`${prefix}-save`, stepConfig, async () => {
-        await store.save(item);
-        return true;
-      });
+        await store.save(item)
+        return true
+      })
       if (
-        item.status === "done" ||
-        item.status === "cancelled" ||
-        item.status === "publication_pending"
+        item.status === 'done' ||
+        item.status === 'cancelled' ||
+        item.status === 'publication_pending'
       ) {
-        await this.finish(step, prefix, item, store);
-        return;
+        await this.finish(step, prefix, item, store)
+        return
       }
       const previewImageKey = await step.do(
         `${prefix}-present`,
         stepConfig,
         async () => {
-          log("workflow.state", {
+          log('workflow.state', {
             status: item.status,
             revision: item.state.revision,
-          });
-          await present(this.env, item, cats, prefix);
+          })
+          await present(this.env, item, cats, prefix)
           return {
             previewImageKey: item.state.previewImageKey ?? null,
             proposalMessageId: item.state.proposalMessageId ?? null,
             sourceEditMessageId: item.state.sourceEditMessageId ?? null,
-          };
-        },
-      );
+          }
+        }
+      )
       if (
-        item.status === "waiting_publish_slot" ||
-        (item.status === "error" && item.state.publicationStarted)
+        item.status === 'waiting_publish_slot' ||
+        (item.status === 'error' && item.state.publicationStarted)
       ) {
         // An approved draft waiting for the publisher must not monopolize the
         // single conversational slot. Claim it in a new generation once safe.
         await step.do(`${prefix}-park-publication`, stepConfig, async () => {
-          await store.parkPublication(item);
-          return true;
-        });
+          await store.parkPublication(item)
+          return true
+        })
         await step.do(`${prefix}-prepare-next-item`, stepConfig, async () => {
-          await dispatchQueue(this.env);
-          return true;
-        });
-        return;
+          await dispatchQueue(this.env)
+          return true
+        })
+        return
       }
       // Restore presentation metadata even when this durable step was replayed.
       // Older executions returned true; retain compatibility across deployment.
-      if (typeof previewImageKey === "string")
-        item.state.previewImageKey = previewImageKey;
-      if (previewImageKey && typeof previewImageKey === "object") {
+      if (typeof previewImageKey === 'string')
+        item.state.previewImageKey = previewImageKey
+      if (previewImageKey && typeof previewImageKey === 'object') {
         item.state.previewImageKey =
-          previewImageKey.previewImageKey ?? undefined;
+          previewImageKey.previewImageKey ?? undefined
         item.state.proposalMessageId =
-          previewImageKey.proposalMessageId ?? undefined;
+          previewImageKey.proposalMessageId ?? undefined
         item.state.sourceEditMessageId =
-          previewImageKey.sourceEditMessageId ?? undefined;
+          previewImageKey.sourceEditMessageId ?? undefined
       }
       // D1 is the durable inbox. Events only wake the workflow; even if a wakeup
       // races with a deployment or is delivered twice, the action remains in D1.
       let pending = await step.do(`${prefix}-pending`, stepConfig, () =>
-        store.nextAction(item.id).then((v) => v ?? null),
-      );
+        store.nextAction(item.id).then((v) => v ?? null)
+      )
       if (!pending)
-        log("workflow.waiting", {
+        log('workflow.waiting', {
           status: item.status,
           revision: item.state.revision,
-        });
+        })
       for (let wait = 0; !pending && wait < 30; wait++) {
         try {
           await nativeStep.waitForEvent(`${prefix}-wake-${wait}`, {
-            type: "input",
-            timeout: "1 day",
-          });
+            type: 'input',
+            timeout: '1 day',
+          })
         } catch {
           /* A human wait expires without approval; check inbox and renew. */
         }
         pending = await step.do(`${prefix}-pending-${wait}`, stepConfig, () =>
-          store.nextAction(item.id).then((v) => v ?? null),
-        );
+          store.nextAction(item.id).then((v) => v ?? null)
+        )
       }
       if (!pending) {
         await step.do(`${prefix}-rotate-idle`, stepConfig, async () => {
-          await store.rotate(item);
-          return true;
-        });
-        return;
+          await store.rotate(item)
+          return true
+        })
+        return
       }
-      let accepted = false;
+      let accepted = false
       try {
-        log("workflow.action", {
+        log('workflow.action', {
           action: pending.action.kind,
           revision: item.state.revision,
-        });
+        })
         const message = await applyAction(
           this.env,
           step,
           `${prefix}-action-${pending.id}`,
           item,
           cats,
-          pending.action,
-        );
-        accepted = message === undefined;
+          pending.action
+        )
+        accepted = message === undefined
         if (message)
           await step.do(`${prefix}-action-notice`, stepConfig, async () => {
-            await sendActionNotice(this.env, item, pending!.action, message);
-            return true;
-          });
+            await sendActionNotice(this.env, item, pending!.action, message)
+            return true
+          })
       } catch (error) {
-        item.status = "error";
-        item.state.error = errorText(error);
+        item.status = 'error'
+        item.state.error = errorText(error)
         if (item.state.publicationStarted)
-          await publicationNotice(this.env, item, "paused");
+          await publicationNotice(this.env, item, 'paused')
         log(
-          "workflow.failed",
-          { phase: "action", ...errorFields(error) },
-          "error",
-        );
+          'workflow.failed',
+          { phase: 'action', ...errorFields(error) },
+          'error'
+        )
       }
       await step.do(`${prefix}-commit-action`, stepConfig, async () => {
         // Save and consume together: a crash never loses an action nor applies a
         // correction twice. The worker only appends actions; this is sole writer.
         await store.db.batch([
           store.db
-            .prepare("UPDATE items SET state=?,status=? WHERE id=?")
+            .prepare('UPDATE items SET state=?,status=? WHERE id=?')
             .bind(JSON.stringify(item.state), item.status, item.id),
           store.db
-            .prepare("UPDATE actions SET consumed=1 WHERE id=?")
+            .prepare('UPDATE actions SET consumed=1 WHERE id=?')
             .bind(pending!.id),
-        ]);
-        return true;
-      });
+        ])
+        return true
+      })
       if (accepted)
         await step.do(
           `${prefix}-clear-action-buttons`,
           stepConfig,
           async () => {
-            await clearItemButtons(this.env, item);
-            return true;
-          },
-        );
-      if ((item as Item).status === "cancelled") {
-        await this.finish(step, prefix, item, store);
-        return;
+            await clearItemButtons(this.env, item)
+            return true
+          }
+        )
+      if ((item as Item).status === 'cancelled') {
+        await this.finish(step, prefix, item, store)
+        return
       }
     }
-    await nativeStep.do("continue-workflow", async () => {
-      const item = await store.get(event.payload.id);
-      await store.rotate(item);
-    });
+    await nativeStep.do('continue-workflow', async () => {
+      const item = await store.get(event.payload.id)
+      await store.rotate(item)
+    })
   }
   private async finish(step: Steps, prefix: string, item: Item, store: Store) {
-    if (item.status === "cancelled")
+    if (item.status === 'cancelled')
       await step.do(`${prefix}-analysis-cancelled`, stepConfig, async () => {
-        await analysisNotice(this.env, item, "cancelled");
-        return true;
-      });
+        await analysisNotice(this.env, item, 'cancelled')
+        return true
+      })
     await step.do(`${prefix}-clear-finished-buttons`, stepConfig, async () => {
-      await clearItemButtons(this.env, item);
-      return true;
-    });
+      await clearItemButtons(this.env, item)
+      return true
+    })
     await step.do(`${prefix}-notify-finished`, stepConfig, async () => {
-      log("workflow.finished", {
+      log('workflow.finished', {
         status: item.status,
         elapsedMs: Math.max(0, Date.now() - Date.parse(item.created_at)),
         documentIds: item.state.publishedIds,
-      });
-      if (item.status === "done") await publicationNotice(this.env, item, true);
-      else if (item.status === "publication_pending")
+      })
+      if (item.status === 'done') await publicationNotice(this.env, item, true)
+      else if (item.status === 'publication_pending')
         await publicationNotice(
           this.env,
           item,
-          item.state.publicationRequested ? "accepted" : "unconfirmed",
-        );
+          item.state.publicationRequested ? 'accepted' : 'unconfirmed'
+        )
       else
         await sendText(
           this.env,
-          "🗑️ C’est annulé ! On passe à la suite quand tu veux.",
-        );
-      return true;
-    });
+          '🗑️ C’est annulé ! On passe à la suite quand tu veux.'
+        )
+      return true
+    })
     await step.do(`${prefix}-release-item`, stepConfig, async () => {
       await store.finish(
         item,
-        item.status === "publication_pending"
-          ? "publication_pending"
-          : item.status === "done"
-            ? "done"
-            : "cancelled",
-        this.env.PRISMIC_REPOSITORY,
-      );
-      return true;
-    });
+        item.status === 'publication_pending'
+          ? 'publication_pending'
+          : item.status === 'done'
+            ? 'done'
+            : 'cancelled',
+        this.env.PRISMIC_REPOSITORY
+      )
+      return true
+    })
     await step.do(
       `${prefix}-start-next-item`,
       {
         ...stepConfig,
-        retries: { limit: 2, delay: "1 second" },
+        retries: { limit: 2, delay: '1 second' },
       },
       async () => {
-        await dispatchQueue(this.env);
-        return true;
-      },
-    );
+        await dispatchQueue(this.env)
+        return true
+      }
+    )
   }
 }

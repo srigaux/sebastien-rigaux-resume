@@ -1,32 +1,32 @@
-import { beginRecovery } from "@/recovery";
-import type { Env, Item } from "@/domain";
-import { errorFields, log, observe, withContext } from "@/observability";
-import { verifyPublication } from "@/prismic";
-import { publicationNotice } from "@/telegram";
-import { Store } from "@/store";
+import type { Env, Item } from '@/domain'
+import { errorFields, log, observe, withContext } from '@/observability'
+import { verifyPublication } from '@/prismic'
+import { beginRecovery } from '@/recovery'
+import { Store } from '@/store'
+import { publicationNotice } from '@/telegram'
 
 // Keep ordinary propagation asynchronous, but stop presenting hours of missing
 // documents as a normal publication delay. No write is retried by this checker.
-export const MAX_PUBLICATION_CHECKS = 5;
-export const PUBLICATION_FALLBACK_DELAY_MS = 60_000;
-const RECHECK_DELAYS_MS = [180_000, 600_000, 1800_000, 3600_000];
+export const MAX_PUBLICATION_CHECKS = 5
+export const PUBLICATION_FALLBACK_DELAY_MS = 60_000
+const RECHECK_DELAYS_MS = [180_000, 600_000, 1800_000, 3600_000]
 function nextCheck(attempts: number, createdAt = 0) {
   return (
     (createdAt || Date.now()) +
     RECHECK_DELAYS_MS[
       Math.min(Math.max(0, attempts - 1), RECHECK_DELAYS_MS.length - 1)
     ]
-  );
+  )
 }
 
-type CheckStatus = "requesting" | "accepted" | "unknown" | "attention";
+type CheckStatus = 'requesting' | 'accepted' | 'unknown' | 'attention'
 
 export async function schedulePublicationCheck(
   env: Env,
   item: Item,
-  status: CheckStatus,
+  status: CheckStatus
 ) {
-  const now = Date.now();
+  const now = Date.now()
   await env.DB.prepare(
     `INSERT INTO publication_checks(item_id,status,created_at,next_check_at)
     VALUES(?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET
@@ -34,10 +34,10 @@ export async function schedulePublicationCheck(
       WHEN publication_checks.status='attention' THEN 'attention'
       WHEN publication_checks.status='accepted' AND excluded.status='requesting' THEN 'accepted'
       ELSE excluded.status END,
-    next_check_at=MIN(publication_checks.next_check_at,excluded.next_check_at)`,
+    next_check_at=MIN(publication_checks.next_check_at,excluded.next_check_at)`
   )
     .bind(item.id, status, now, now + PUBLICATION_FALLBACK_DELAY_MS)
-    .run();
+    .run()
 }
 
 // IDs are checkpointed before requesting publication. Persist the wake-up even
@@ -47,7 +47,7 @@ export async function recordPublicationWebhook(
   env: Env,
   masterRef: string,
   documentIds: string[],
-  releaseDeleted: boolean,
+  releaseDeleted: boolean
 ): Promise<boolean> {
   const result = await env.DB.prepare(
     `UPDATE publication_checks SET webhook_ref=?,next_check_at=MIN(next_check_at,?)
@@ -58,7 +58,7 @@ export async function recordPublicationWebhook(
          SELECT 1 FROM json_each(i.state,'$.publishedIds') ids
          WHERE ids.value IN (SELECT value FROM json_each(?))
        ) OR (?=1 AND i.status='publication_pending' AND ? IS NOT NULL)
-     )`,
+     )`
   )
     .bind(
       masterRef,
@@ -66,25 +66,25 @@ export async function recordPublicationWebhook(
       masterRef,
       JSON.stringify(documentIds),
       releaseDeleted && documentIds.length === 0 ? 1 : 0,
-      env.PRISMIC_REPOSITORY,
+      env.PRISMIC_REPOSITORY
     )
-    .run();
-  return result.meta.changes > 0;
+    .run()
+  return result.meta.changes > 0
 }
 
 // One pending release at most: this bounded pass performs no sleeps and no writes
 // to Prismic. A lease makes overlapping cron invocations harmless.
 export async function reconcilePublications(env: Env) {
   const now = Date.now(),
-    store = new Store(env.DB);
+    store = new Store(env.DB)
   // Compatibility: accepted publications from older deployments must not retain
   // the repository lock while waiting for Content API propagation.
   await env.DB.prepare(
     `DELETE FROM publication_lock WHERE item_id IN (
     SELECT i.id FROM items i JOIN publication_checks p ON p.item_id=i.id
     WHERE i.active=0 AND i.status='publication_pending'
-      AND (p.status='accepted' OR json_extract(i.state,'$.publicationRequested')=1))`,
-  ).run();
+      AND (p.status='accepted' OR json_extract(i.state,'$.publicationRequested')=1))`
+  ).run()
   const intervention = await env.DB.prepare(
     `SELECT i.id FROM items i
     LEFT JOIN publication_checks p ON p.item_id=i.id
@@ -92,161 +92,161 @@ export async function reconcilePublications(env: Env) {
       AND ((i.status='publication_pending' AND p.status IN ('unknown','attention') AND p.notified=0 AND p.lease_until<=?)
         OR (i.status='error' AND EXISTS(SELECT 1 FROM publication_lock l WHERE l.item_id=i.id)))
       AND NOT EXISTS(SELECT 1 FROM cache c WHERE c.key='recovery-current:' || i.id AND c.expires_at>?)
-    ORDER BY i.created_at LIMIT 1`,
+    ORDER BY i.created_at LIMIT 1`
   )
     .bind(env.TELEGRAM_CHAT_ID, now, now)
-    .first<{ id: string }>();
+    .first<{ id: string }>()
   if (intervention && (await beginRecovery(env, intervention.id)))
     await env.DB.prepare(
-      "UPDATE publication_checks SET notified=1 WHERE item_id=?",
+      'UPDATE publication_checks SET notified=1 WHERE item_id=?'
     )
       .bind(intervention.id)
-      .run();
+      .run()
   const row = await env.DB.prepare(
     `SELECT p.item_id,p.status,p.attempts,p.created_at FROM publication_checks p
     JOIN items i ON i.id=p.item_id WHERE p.lease_until<=? AND p.next_check_at<=?
     AND ((p.status IN ('requesting','accepted','unknown') AND i.status='publication_pending' AND i.active=0)
       OR (p.status='confirmed' AND p.notified=0))
-    ORDER BY CASE WHEN p.status='confirmed' THEN 1 ELSE 0 END,p.created_at,p.item_id LIMIT 1`,
+    ORDER BY CASE WHEN p.status='confirmed' THEN 1 ELSE 0 END,p.created_at,p.item_id LIMIT 1`
   )
     .bind(now, now)
     .first<{
-      item_id: string;
-      status: string;
-      attempts: number;
-      created_at: number;
-    }>();
+      item_id: string
+      status: string
+      attempts: number
+      created_at: number
+    }>()
   if (row) {
     const claim = await env.DB.prepare(
-      "UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=?",
+      'UPDATE publication_checks SET lease_until=? WHERE item_id=? AND lease_until<=? AND next_check_at<=? AND status=?'
     )
       .bind(now + 120_000, row.item_id, now, now, row.status)
-      .run();
+      .run()
     if (claim.meta.changes) {
-      let checks = row.attempts;
+      let checks = row.attempts
       try {
-        let item = await store.get(row.item_id);
-        if (row.status !== "confirmed") {
+        let item = await store.get(row.item_id)
+        if (row.status !== 'confirmed') {
           // Old deployments may already have exceeded the budget. Do not issue
           // hundreds more reads just because the state survived a deployment.
           if (checks >= MAX_PUBLICATION_CHECKS) {
             await env.DB.prepare(
-              "UPDATE publication_checks SET status='attention',notified=0,lease_until=0 WHERE item_id=?",
+              "UPDATE publication_checks SET status='attention',notified=0,lease_until=0 WHERE item_id=?"
             )
               .bind(item.id)
-              .run();
-            log("publication.attention", { itemId: item.id, checks }, "warn");
-            await publicationNotice(env, item, "attention");
-            return;
+              .run()
+            log('publication.attention', { itemId: item.id, checks }, 'warn')
+            await publicationNotice(env, item, 'attention')
+            return
           }
-          checks++;
+          checks++
           const available = await withContext({ itemId: item.id }, () =>
             observe(
-              "publication.verify",
-              { checks, provider: "prismic" },
+              'publication.verify',
+              { checks, provider: 'prismic' },
               () => verifyPublication(env, item),
-              { resultFields: (available) => ({ available }) },
-            ),
-          );
+              { resultFields: (available) => ({ available }) }
+            )
+          )
           if (!available) {
-            const needsAttention = checks >= MAX_PUBLICATION_CHECKS;
-            const nextCheckAt = nextCheck(checks, row.created_at);
+            const needsAttention = checks >= MAX_PUBLICATION_CHECKS
+            const nextCheckAt = nextCheck(checks, row.created_at)
             await env.DB.prepare(
-              "UPDATE publication_checks SET status=?,notified=0,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?",
+              "UPDATE publication_checks SET status=?,notified=0,attempts=attempts+1,last_error='documents_not_available',next_check_at=?,lease_until=0 WHERE item_id=?"
             )
               .bind(
-                needsAttention ? "attention" : row.status,
+                needsAttention ? 'attention' : row.status,
                 nextCheckAt,
-                item.id,
+                item.id
               )
-              .run();
+              .run()
             if (needsAttention) {
-              if (row.status !== "attention")
+              if (row.status !== 'attention')
                 log(
-                  "publication.attention",
+                  'publication.attention',
                   {
                     itemId: item.id,
                     checks,
                     pendingMs: Math.max(0, Date.now() - row.created_at),
                   },
-                  "warn",
-                );
+                  'warn'
+                )
               // Stop remote reads. The user can re-arm this check explicitly
               // after resolving the migration release; no write is replayed.
-              await publicationNotice(env, item, "attention");
+              await publicationNotice(env, item, 'attention')
             }
-            log("publication.availability.pending", {
+            log('publication.availability.pending', {
               itemId: item.id,
               checks,
               pendingMs: Math.max(0, Date.now() - row.created_at),
               ...(needsAttention
                 ? {}
                 : { nextCheckAt: new Date(nextCheckAt).toISOString() }),
-            });
+            })
           } else {
             await env.DB.batch([
               env.DB.prepare(
-                "UPDATE publication_checks SET status='confirmed',attempts=attempts+1,last_error=NULL WHERE item_id=?",
+                "UPDATE publication_checks SET status='confirmed',attempts=attempts+1,last_error=NULL WHERE item_id=?"
               ).bind(item.id),
               env.DB.prepare(
-                "UPDATE items SET status='done',state=json_set(state,'$.publicationRequested',1,'$.publicationUnknown',0) WHERE id=? AND status='publication_pending' AND active=0",
+                "UPDATE items SET status='done',state=json_set(state,'$.publicationRequested',1,'$.publicationUnknown',0) WHERE id=? AND status='publication_pending' AND active=0"
               ).bind(item.id),
               env.DB.prepare(
-                "DELETE FROM publication_lock WHERE repository=? AND item_id=?",
+                'DELETE FROM publication_lock WHERE repository=? AND item_id=?'
               ).bind(env.PRISMIC_REPOSITORY, item.id),
-            ]);
-            row.status = "confirmed";
-            log("publication.availability.confirmed", {
+            ])
+            row.status = 'confirmed'
+            log('publication.availability.confirmed', {
               itemId: item.id,
               checks,
               pendingMs: Math.max(0, Date.now() - row.created_at),
-            });
+            })
           }
         }
-        if (row.status === "confirmed") {
-          item = await store.get(row.item_id);
-          await publicationNotice(env, item, true);
+        if (row.status === 'confirmed') {
+          item = await store.get(row.item_id)
+          await publicationNotice(env, item, true)
           await env.DB.prepare(
-            "UPDATE publication_checks SET notified=1,lease_until=0,last_error=NULL WHERE item_id=?",
+            'UPDATE publication_checks SET notified=1,lease_until=0,last_error=NULL WHERE item_id=?'
           )
             .bind(item.id)
-            .run();
+            .run()
         }
       } catch (error) {
-        const fields = errorFields(error);
+        const fields = errorFields(error)
         const nextCheckAt = nextCheck(
           checks,
-          row.status === "confirmed" ? 0 : row.created_at,
-        );
+          row.status === 'confirmed' ? 0 : row.created_at
+        )
         const needsAttention =
-          row.status !== "confirmed" && checks >= MAX_PUBLICATION_CHECKS;
+          row.status !== 'confirmed' && checks >= MAX_PUBLICATION_CHECKS
         await env.DB.prepare(
-          "UPDATE publication_checks SET status=?,notified=0,attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?",
+          'UPDATE publication_checks SET status=?,notified=0,attempts=attempts+?,last_error=?,next_check_at=?,lease_until=0 WHERE item_id=?'
         )
           .bind(
-            needsAttention ? "attention" : row.status,
-            row.status === "confirmed" ? 0 : 1,
-            fields.reasonCode ?? fields.errorType ?? "read_failed",
+            needsAttention ? 'attention' : row.status,
+            row.status === 'confirmed' ? 0 : 1,
+            fields.reasonCode ?? fields.errorType ?? 'read_failed',
             nextCheckAt,
-            row.item_id,
+            row.item_id
           )
-          .run();
+          .run()
         if (needsAttention) {
           log(
-            "publication.attention",
+            'publication.attention',
             { itemId: row.item_id, checks, ...fields },
-            "warn",
-          );
+            'warn'
+          )
           await publicationNotice(
             env,
             await store.get(row.item_id),
-            "attention",
-          );
+            'attention'
+          )
         }
         log(
-          row.status === "confirmed"
-            ? "publication.notification.failed"
-            : "publication.availability.failed",
+          row.status === 'confirmed'
+            ? 'publication.notification.failed'
+            : 'publication.availability.failed',
           {
             itemId: row.item_id,
             checks,
@@ -256,32 +256,32 @@ export async function reconcilePublications(env: Env) {
               : { nextCheckAt: new Date(nextCheckAt).toISOString() }),
             ...fields,
           },
-          "warn",
-        );
+          'warn'
+        )
       }
     }
   }
   // Wake only an already-approved selection waiting for the publication lock.
   // Human review is never auto-approved by cron.
-  const waiting = await store.active(env.TELEGRAM_CHAT_ID);
+  const waiting = await store.active(env.TELEGRAM_CHAT_ID)
   if (
-    waiting?.status === "waiting_publish_slot" &&
+    waiting?.status === 'waiting_publish_slot' &&
     waiting.state.approvedRevision === waiting.state.revision
   ) {
     const held = await env.DB.prepare(
-      "SELECT item_id FROM publication_lock WHERE repository=?",
+      'SELECT item_id FROM publication_lock WHERE repository=?'
     )
       .bind(env.PRISMIC_REPOSITORY)
-      .first();
+      .first()
     if (!held) {
       await store.addAction(
         -(waiting.update_id * 1000 + waiting.state.revision),
         waiting,
         {
-          kind: "resume",
+          kind: 'resume',
           revision: waiting.state.revision,
-        },
-      );
+        }
+      )
     }
   }
 }

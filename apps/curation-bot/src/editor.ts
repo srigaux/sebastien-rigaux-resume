@@ -1,18 +1,19 @@
-import { Store } from "@/store";
-import { log } from "@/observability";
-import { generateText, Output } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAI } from '@ai-sdk/openai'
+import { Output, generateText } from 'ai'
+
 import {
-  assertDraft,
   BotError,
-  editorialSchema,
-  draftSchema,
   type Catalog,
   type Draft,
   type Env,
   type Extraction,
   type Item,
-} from "@/domain";
+  assertDraft,
+  draftSchema,
+  editorialSchema,
+} from '@/domain'
+import { log } from '@/observability'
+import { Store } from '@/store'
 
 export const EDITORIAL = `# Mission éditoriale
 
@@ -118,53 +119,53 @@ Pour une correction, garde les faits et les choix explicites de l'utilisateur ; 
 # Vérification finale et sortie
 
 Avant de répondre, vérifie que chaque paragraphe apporte un fait ou un éclairage distinct, qu'aucune réserve n'est ajoutée par réflexe et que FR/EN conservent les mêmes faits et conditions. Vérifie les limites de longueur dans chaque langue.
-Respecte le schéma de sortie fourni par l'API. Les titres et sections de ce prompt organisent les instructions : ils ne doivent pas apparaître dans les descriptions. Renvoie uniquement l'objet attendu, sans commentaire autour.`;
+Respecte le schéma de sortie fourni par l'API. Les titres et sections de ce prompt organisent les instructions : ils ne doivent pas apparaître dans les descriptions. Renvoie uniquement l'objet attendu, sans commentaire autour.`
 
 export async function generateDraft(
   env: Env,
   item: Item,
   extraction: Extraction,
-  cats: Catalog,
+  cats: Catalog
 ): Promise<Draft> {
-  const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
+  const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
   const lastDiscoverySource = await new Store(env.DB).cache<{
-    uid: string | null;
-  }>(`last-source:${item.chat_id}`);
-  const image = item.state.media?.image;
+    uid: string | null
+  }>(`last-source:${item.chat_id}`)
+  const image = item.state.media?.image
   const imageObject =
     image &&
-    ["image/png", "image/jpeg", "image/webp", "image/gif"].includes(image.mime)
+    ['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(image.mime)
       ? await env.BUCKET.get(image.key)
-      : undefined;
+      : undefined
   const imageBytes = imageObject
     ? new Uint8Array(await imageObject.arrayBuffer())
-    : undefined;
-  const started = Date.now();
-  log("editorial.start", {
-    provider: "openai",
+    : undefined
+  const started = Date.now()
+  log('editorial.start', {
+    provider: 'openai',
     itemId: item.id,
-    model: env.OPENAI_MODEL || "gpt-6-luna",
+    model: env.OPENAI_MODEL || 'gpt-6-luna',
     topicsCount: cats.topics.length,
     sourcesCount: cats.sources.length,
-  });
+  })
   const result = await generateText({
-    model: openai(env.OPENAI_MODEL || "gpt-6-luna"),
+    model: openai(env.OPENAI_MODEL || 'gpt-6-luna'),
     maxRetries: 0,
     abortSignal: AbortSignal.timeout(120_000),
     maxOutputTokens: 5000,
     output: Output.object({
-      name: "editorial_draft",
+      name: 'editorial_draft',
       description:
-        "Proposition de veille technique bilingue FR/EN, avec métadonnées et classements issus des catalogues fournis.",
+        'Proposition de veille technique bilingue FR/EN, avec métadonnées et classements issus des catalogues fournis.',
       schema: editorialSchema(cats),
     }),
     system: EDITORIAL,
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify({
               user: {
                 note: item.state.note,
@@ -183,7 +184,7 @@ export async function generateDraft(
           ...(imageBytes
             ? [
                 {
-                  type: "image" as const,
+                  type: 'image' as const,
                   image: imageBytes,
                   mediaType: image!.mime,
                 },
@@ -192,27 +193,27 @@ export async function generateDraft(
         ],
       },
     ],
-    providerOptions: { openai: { store: false, reasoningEffort: "none" } },
-  });
-  const usage = result.totalUsage;
-  log("editorial.usage", {
-    provider: "openai",
+    providerOptions: { openai: { store: false, reasoningEffort: 'none' } },
+  })
+  const usage = result.totalUsage
+  log('editorial.usage', {
+    provider: 'openai',
     itemId: item.id,
-    model: env.OPENAI_MODEL || "gpt-6-luna",
+    model: env.OPENAI_MODEL || 'gpt-6-luna',
     revision: item.state.revision,
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
     totalTokens: usage.totalTokens,
-  });
-  const draft = assertDraft(result.output, cats);
-  if (item.state.confirmedFormat) draft.format = item.state.confirmedFormat;
-  log("editorial.complete", {
-    provider: "openai",
+  })
+  const draft = assertDraft(result.output, cats)
+  if (item.state.confirmedFormat) draft.format = item.state.confirmedFormat
+  log('editorial.complete', {
+    provider: 'openai',
     itemId: item.id,
     durationMs: Date.now() - started,
     topics: draft.topics,
     rankedSourcesCount: draft.sourceRanking?.length ?? 0,
-  });
+  })
   // Attribution must have evidence in the original material or an explicit user
   // correction. A model's unsupported name is never promoted into a credit.
   if (
@@ -220,27 +221,27 @@ export async function generateDraft(
     draftSchema.shape.credit.safeParse(extraction.author.name).success &&
     !item.state.instructions.length
   ) {
-    draft.credit = extraction.author.name.slice(0, 120);
-    draft.creditEvidence = extraction.author.evidence;
+    draft.credit = extraction.author.name.slice(0, 120)
+    draft.creditEvidence = extraction.author.evidence
   } else if (draft.credit) {
-    const evidence = draft.creditEvidence;
+    const evidence = draft.creditEvidence
     const material = [
       extraction.markdown,
       item.state.note,
       ...item.state.instructions,
-    ];
-    const metadataMatch = extraction.author?.name === draft.credit;
+    ]
+    const metadataMatch = extraction.author?.name === draft.credit
     if (
       !metadataMatch &&
       (!evidence ||
         !evidence.includes(draft.credit) ||
         !material.some((s) => s.includes(evidence)))
     ) {
-      draft.credit = null;
-      draft.creditEvidence = null;
+      draft.credit = null
+      draft.creditEvidence = null
     }
   }
   if (!draft.fr.summary.trim() || !draft.en.summary.trim())
-    throw new BotError("Proposition éditoriale vide.", "draft_invalid");
-  return draft;
+    throw new BotError('Proposition éditoriale vide.', 'draft_invalid')
+  return draft
 }

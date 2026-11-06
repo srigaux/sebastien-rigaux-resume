@@ -65,9 +65,7 @@
       },
       "discovered_via": {
         "config": {
-          "customtypes": [
-            "discovery_source"
-          ],
+          "customtypes": ["discovery_source"],
           "label": "Discovered Via",
           "select": "document"
         },
@@ -78,9 +76,7 @@
           "fields": {
             "topic": {
               "config": {
-                "customtypes": [
-                  "topic"
-                ],
+                "customtypes": ["topic"],
                 "label": "Topic",
                 "select": "document"
               },
@@ -106,10 +102,7 @@
       "source_language": {
         "config": {
           "label": "Source Language",
-          "options": [
-            "EN",
-            "FR"
-          ]
+          "options": ["EN", "FR"]
         },
         "type": "Select"
       }

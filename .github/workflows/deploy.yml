@@ -5,13 +5,13 @@ on:
   push:
     branches: [master]
     paths:
-      - "apps/website-astro/**"
-      - "apps/cms-prismic/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".github/workflows/deploy.yml"
-      - ".github/workflows/check-website-updates.yml"
+      - 'apps/website-astro/**'
+      - 'apps/cms-prismic/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/check-website-updates.yml'
   workflow_dispatch:
     inputs:
       run_title:

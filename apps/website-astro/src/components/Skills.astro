@@ -1,92 +1,153 @@
 ---
-import type { Locale } from "@/types";
-import { watchPath, type WatchTopic } from "@/lib/watch-model";
+import type { Locale } from '@/types'
+import { watchPath, type WatchTopic } from '@/lib/watch-model'
 
 interface Props {
-  locale: Locale;
-  topics: WatchTopic[];
+  locale: Locale
+  topics: WatchTopic[]
 }
 
-const { locale, topics } = Astro.props;
-const content: Record<Locale, {
-  title: string;
-  languagesTitle: string;
-  expertiseTitle: string;
-  watchTitle: string;
-  languages: readonly { label: string; level: string }[];
-  expertise: readonly { title: string; description: string }[];
-  watch: readonly { label: string; topicUid?: string }[];
-}> = {
+const { locale, topics } = Astro.props
+const content: Record<
+  Locale,
+  {
+    title: string
+    languagesTitle: string
+    expertiseTitle: string
+    watchTitle: string
+    languages: readonly { label: string; level: string }[]
+    expertise: readonly { title: string; description: string }[]
+    watch: readonly { label: string; topicUid?: string }[]
+  }
+> = {
   fr: {
-    title: "Compétences",
-    languagesTitle: "Langues",
-    expertiseTitle: "Expertise technique",
-    watchTitle: "Veille technologique",
+    title: 'Compétences',
+    languagesTitle: 'Langues',
+    expertiseTitle: 'Expertise technique',
+    watchTitle: 'Veille technologique',
     languages: [
-      { label: "Français", level: "Natif" },
-      { label: "Anglais", level: "Bon" },
-      { label: "Néerlandais", level: "Bases" },
+      { label: 'Français', level: 'Natif' },
+      { label: 'Anglais', level: 'Bon' },
+      { label: 'Néerlandais', level: 'Bases' },
     ],
     expertise: [
-      { title: "Leadership technique & CTO as a Service", description: "Architecture, audits, analyse des risques, conseil et accompagnement d’équipes." },
-      { title: "Développement web & mobile", description: "Frontend, backend, API et applications iOS natives." },
-      { title: "Transition IA & automatisation", description: "Cadrage des usages, choix d’outils, formation, intégration produit et agents conversationnels téléphoniques." },
-      { title: "Communication à grande échelle", description: "Messagerie vocale de Microsoft Teams et Skype for Business, à plusieurs millions de messages par jour." },
-      { title: "Technologies vocales & IA appliquée", description: "TTS à voix neuronales, STT, IVR et traduction automatique." },
+      {
+        title: 'Leadership technique & CTO as a Service',
+        description:
+          'Architecture, audits, analyse des risques, conseil et accompagnement d’équipes.',
+      },
+      {
+        title: 'Développement web & mobile',
+        description: 'Frontend, backend, API et applications iOS natives.',
+      },
+      {
+        title: 'Transition IA & automatisation',
+        description:
+          'Cadrage des usages, choix d’outils, formation, intégration produit et agents conversationnels téléphoniques.',
+      },
+      {
+        title: 'Communication à grande échelle',
+        description:
+          'Messagerie vocale de Microsoft Teams et Skype for Business, à plusieurs millions de messages par jour.',
+      },
+      {
+        title: 'Technologies vocales & IA appliquée',
+        description:
+          'TTS à voix neuronales, STT, IVR et traduction automatique.',
+      },
     ],
     watch: [
-      { label: "Évolutions de l’IA", topicUid: "ai" },
-      { label: "React", topicUid: "react" },
-      { label: "Développement frontend" },
-      { label: "C#", topicUid: "c-sharp" },
-      { label: "Pratiques de tech lead" },
-      { label: "Kubernetes", topicUid: "kubernetes" },
+      { label: 'Évolutions de l’IA', topicUid: 'ai' },
+      { label: 'React', topicUid: 'react' },
+      { label: 'Développement frontend' },
+      { label: 'C#', topicUid: 'c-sharp' },
+      { label: 'Pratiques de tech lead' },
+      { label: 'Kubernetes', topicUid: 'kubernetes' },
     ],
   },
   en: {
-    title: "Skills",
-    languagesTitle: "Languages",
-    expertiseTitle: "Technical expertise",
-    watchTitle: "Topics I follow",
+    title: 'Skills',
+    languagesTitle: 'Languages',
+    expertiseTitle: 'Technical expertise',
+    watchTitle: 'Topics I follow',
     languages: [
-      { label: "French", level: "Native" },
-      { label: "English", level: "Good working level" },
-      { label: "Dutch", level: "Basic" },
+      { label: 'French', level: 'Native' },
+      { label: 'English', level: 'Good working level' },
+      { label: 'Dutch', level: 'Basic' },
     ],
     expertise: [
-      { title: "Technical leadership & CTO as a Service", description: "Architecture, audits, risk assessment, technical advice and team support." },
-      { title: "Web & mobile engineering", description: "Frontend, backend, APIs and native iOS applications." },
-      { title: "AI transition & automation", description: "Use-case discovery, tool selection, training, product integration and AI-powered telephone agents." },
-      { title: "Communication at scale", description: "Microsoft Teams and Skype for Business voicemail services processing millions of messages a day." },
-      { title: "Speech technology & applied AI", description: "Neural-voice TTS, STT, IVR and automatic translation." },
+      {
+        title: 'Technical leadership & CTO as a Service',
+        description:
+          'Architecture, audits, risk assessment, technical advice and team support.',
+      },
+      {
+        title: 'Web & mobile engineering',
+        description: 'Frontend, backend, APIs and native iOS applications.',
+      },
+      {
+        title: 'AI transition & automation',
+        description:
+          'Use-case discovery, tool selection, training, product integration and AI-powered telephone agents.',
+      },
+      {
+        title: 'Communication at scale',
+        description:
+          'Microsoft Teams and Skype for Business voicemail services processing millions of messages a day.',
+      },
+      {
+        title: 'Speech technology & applied AI',
+        description: 'Neural-voice TTS, STT, IVR and automatic translation.',
+      },
     ],
     watch: [
-      { label: "AI developments", topicUid: "ai" },
-      { label: "React", topicUid: "react" },
-      { label: "Frontend development" },
-      { label: "C#", topicUid: "c-sharp" },
-      { label: "Engineering leadership" },
-      { label: "Kubernetes", topicUid: "kubernetes" },
+      { label: 'AI developments', topicUid: 'ai' },
+      { label: 'React', topicUid: 'react' },
+      { label: 'Frontend development' },
+      { label: 'C#', topicUid: 'c-sharp' },
+      { label: 'Engineering leadership' },
+      { label: 'Kubernetes', topicUid: 'kubernetes' },
     ],
   },
-};
-const copy = content[locale];
-const availableTopicUids = new Set(topics.map(({ uid }) => uid));
-const topicTagClass = "inline-flex min-h-11 items-center border border-rule px-3 text-sm text-muted";
+}
+const copy = content[locale]
+const availableTopicUids = new Set(topics.map(({ uid }) => uid))
+const topicTagClass =
+  'inline-flex min-h-11 items-center border border-rule px-3 text-sm text-muted'
 ---
 
-<section id="skills" aria-labelledby="skills-title" class="border-t border-rule py-16 sm:py-20 lg:py-24">
-  <div data-cv-skills-layout class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14">
+<section
+  id="skills"
+  aria-labelledby="skills-title"
+  class="border-t border-rule py-16 sm:py-20 lg:py-24"
+>
+  <div
+    data-cv-skills-layout
+    class="grid gap-10 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-14"
+  >
     <div data-cv-section-heading class="h-fit lg:sticky lg:top-28">
-      <h2 id="skills-title" no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl">
+      <h2
+        id="skills-title"
+        no-intersect
+        class="intersect-once intersect-half font-display text-3xl leading-tight font-semibold tracking-tight text-ink motion-duration-500 sm:text-4xl intersect:motion-preset-blur-up"
+      >
         {copy.title}
       </h2>
-      <div data-cv-decoration aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"></div>
+      <div
+        data-cv-decoration
+        aria-hidden="true"
+        class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"
+      ></div>
     </div>
 
     <div data-cv-skills-content class="grid gap-14 xl:grid-cols-2 xl:gap-20">
-      <div no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2]">
-        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.languagesTitle}</h3>
+      <div
+        no-intersect
+        class="intersect-once intersect-[0.2] motion-duration-500 intersect:motion-preset-blur-up"
+      >
+        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">
+          {copy.languagesTitle}
+        </h3>
         <ul class="divide-y divide-rule">
           {copy.languages.map((language) => (
             <li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 first:pt-0">
@@ -98,17 +159,29 @@ const topicTagClass = "inline-flex min-h-11 items-center border border-rule px-3
         </ul>
       </div>
 
-      <div no-intersect class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2]">
-        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">{copy.expertiseTitle}</h3>
+      <div
+        no-intersect
+        class="intersect-once intersect-[0.2] motion-duration-500 intersect:motion-preset-blur-up"
+      >
+        <h3 class="mb-5 text-xl font-semibold tracking-tight text-ink">
+          {copy.expertiseTitle}
+        </h3>
         <ul class="divide-y divide-rule">
           {copy.expertise.map((area) => (
             <li class="py-4 first:pt-0">
               <h4 class="font-semibold text-ink">{area.title}</h4>
-              <p class="mt-1 text-sm leading-relaxed text-muted">{area.description}</p>
+              <p class="mt-1 text-sm leading-relaxed text-muted">
+                {area.description}
+              </p>
             </li>
           ))}
         </ul>
-        <h3 data-cv-screen-only class="mb-4 mt-10 text-base font-semibold text-ink">{copy.watchTitle}</h3>
+        <h3
+          data-cv-screen-only
+          class="mt-10 mb-4 text-base font-semibold text-ink"
+        >
+          {copy.watchTitle}
+        </h3>
         <ul data-cv-screen-only class="flex flex-wrap gap-2">
           {copy.watch.map((topic) => (
             <li>

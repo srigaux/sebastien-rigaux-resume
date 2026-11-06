@@ -1,91 +1,99 @@
 ---
-import { localeHomePath } from "@/lib/urls";
-import { EllipsisVertical } from "@lucide/astro";
-import Logo from "@/assets/logo-animated.svg";
-import ThemeToggle from "@/components/ThemeToggle.astro";
-import { watchPath } from "@/lib/watch-model";
-import type { Locale } from "@/types";
+import { localeHomePath } from '@/lib/urls'
+import { EllipsisVertical } from '@lucide/astro'
+import Logo from '@/assets/logo-animated.svg'
+import ThemeToggle from '@/components/ThemeToggle.astro'
+import { watchPath } from '@/lib/watch-model'
+import type { Locale } from '@/types'
 
 interface Props {
-  locale: Locale;
-  firstName: string;
-  lastName: string;
-  page?: "cv" | "watch";
-  languagePaths?: Record<Locale, string>;
+  locale: Locale
+  firstName: string
+  lastName: string
+  page?: 'cv' | 'watch'
+  languagePaths?: Record<Locale, string>
 }
 
-const { locale, firstName, lastName, page = "cv", languagePaths } = Astro.props;
-const isWatch = page === "watch";
-const homePath = localeHomePath(locale);
-const frenchPath = languagePaths?.fr ?? localeHomePath("fr");
-const englishPath = languagePaths?.en ?? localeHomePath("en");
+const { locale, firstName, lastName, page = 'cv', languagePaths } = Astro.props
+const isWatch = page === 'watch'
+const homePath = localeHomePath(locale)
+const frenchPath = languagePaths?.fr ?? localeHomePath('fr')
+const englishPath = languagePaths?.en ?? localeHomePath('en')
 const nav = {
   fr: {
-    about: "À propos",
-    experience: "Expérience",
-    education: "Études",
-    skills: "Compétences",
-    watch: "Veille tech",
-    menu: "Menu",
+    about: 'À propos',
+    experience: 'Expérience',
+    education: 'Études',
+    skills: 'Compétences',
+    watch: 'Veille tech',
+    menu: 'Menu',
   },
   en: {
-    about: "About",
-    experience: "Experience",
-    education: "Education",
-    skills: "Skills",
-    watch: "Tech watch",
-    menu: "Menu",
+    about: 'About',
+    experience: 'Experience',
+    education: 'Education',
+    skills: 'Skills',
+    watch: 'Tech watch',
+    menu: 'Menu',
   },
-}[locale];
+}[locale]
 const sections = [
-  { href: isWatch ? `${homePath}#about` : "#about", label: nav.about },
-  { href: isWatch ? `${homePath}#experience` : "#experience", label: nav.experience },
-  { href: isWatch ? `${homePath}#education` : "#education", label: nav.education },
-  { href: isWatch ? `${homePath}#skills` : "#skills", label: nav.skills },
+  { href: isWatch ? `${homePath}#about` : '#about', label: nav.about },
+  {
+    href: isWatch ? `${homePath}#experience` : '#experience',
+    label: nav.experience,
+  },
+  {
+    href: isWatch ? `${homePath}#education` : '#education',
+    label: nav.education,
+  },
+  { href: isWatch ? `${homePath}#skills` : '#skills', label: nav.skills },
   { href: watchPath(locale), label: nav.watch },
-];
+]
 const navigationLabel =
-  locale === "fr" ? "Navigation principale" : "Main navigation";
-const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
+  locale === 'fr' ? 'Navigation principale' : 'Main navigation'
+const languageLabel = locale === 'fr' ? 'Choisir la langue' : 'Choose language'
 ---
 
 <header
-  data-watch-header={isWatch ? "" : undefined}
-  data-scrolled={isWatch ? "" : undefined}
+  data-watch-header={isWatch ? '' : undefined}
+  data-scrolled={isWatch ? '' : undefined}
   class="sticky top-0 z-50 border-b border-transparent bg-transparent data-[scrolled]:border-rule data-[scrolled]:bg-paper/95 data-[scrolled]:backdrop-blur-md motion-safe:transition-[background-color,border-color,backdrop-filter] motion-safe:duration-300"
 >
-  <div
-    class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12"
-  >
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
     <a
       data-header-brand
-      href={isWatch ? homePath : "#about"}
+      href={isWatch ? homePath : '#about'}
       class="group flex min-w-0 shrink-0 items-center gap-2 rounded-sm py-3 text-ink no-underline sm:gap-3"
       aria-label={`${firstName} ${lastName} — ${nav.about}`}
     >
       <Logo
         data-header-brand-logo
-        data-brand-pending={isWatch ? undefined : ""}
-        data-brand-hidden={isWatch ? undefined : ""}
-        class="size-6 shrink-0 text-accent min-[360px]:size-8 sm:size-10 motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
+        data-brand-pending={isWatch ? undefined : ''}
+        data-brand-hidden={isWatch ? undefined : ''}
+        class="size-6 shrink-0 motion-preset-blur-up text-accent motion-duration-500 motion-reduce:animate-none min-[360px]:size-8 sm:size-10"
         aria-hidden="true"
       />
       <span
         data-header-brand-name
-        class="whitespace-nowrap font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em]"
+        class="font-display text-[clamp(0.875rem,2.5vw,1.5625rem)] font-bold tracking-[-0.03em] whitespace-nowrap"
       >
         <span
           data-header-first-name
-          data-brand-pending={isWatch ? undefined : ""}
-          data-brand-hidden={isWatch ? undefined : ""}
+          data-brand-pending={isWatch ? undefined : ''}
+          data-brand-hidden={isWatch ? undefined : ''}
           class="inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none"
-          >{firstName}</span
-        >{" "}<span
-          data-header-last-name
-          data-brand-pending={isWatch ? undefined : ""}
-          data-brand-hidden={isWatch ? undefined : ""}
-          class="ml-[0.125em] inline-block text-accent motion-preset-blur-up motion-duration-500 motion-reduce:animate-none">{lastName}</span
         >
+          {firstName}
+        </span>{' '}
+        <span
+          data-header-last-name
+          data-brand-pending={isWatch ? undefined : ''}
+          data-brand-hidden={isWatch ? undefined : ''}
+          class="ml-[0.125em] inline-block motion-preset-blur-up text-accent motion-duration-500 motion-reduce:animate-none"
+        >
+          {lastName}
+        </span>
       </span>
     </a>
 
@@ -93,19 +101,24 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       aria-label={navigationLabel}
       class="hidden items-stretch self-stretch lg:flex"
     >
-      {
-        sections.map(({ href, label }) => (
-          <a
-            href={href}
-            aria-current={isWatch && href === watchPath(locale) ? "page" : undefined}
-            class:list={["group flex items-center px-3 text-sm font-medium no-underline transition-colors hover:text-accent focus-visible:text-accent", isWatch && href === watchPath(locale) ? "text-accent" : "text-muted"]}
-          >
-            <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:content-[''] before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
-              {label}
-            </span>
-          </a>
-        ))
-      }
+      {sections.map(({ href, label }) => (
+        <a
+          href={href}
+          aria-current={
+            isWatch && href === watchPath(locale) ? 'page' : undefined
+          }
+          class:list={[
+            'group flex items-center px-3 text-sm font-medium no-underline transition-colors hover:text-accent focus-visible:text-accent',
+            isWatch && href === watchPath(locale)
+              ? 'text-accent'
+              : 'text-muted',
+          ]}
+        >
+          <span class="relative before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-[max(1px,0.05em)] before:origin-right before:scale-x-0 before:bg-current before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.23,1,0.32,1)] before:content-[''] group-hover:before:origin-left group-hover:before:scale-x-100 group-focus-visible:before:origin-left group-focus-visible:before:scale-x-100 motion-reduce:before:transition-none">
+            {label}
+          </span>
+        </a>
+      ))}
     </nav>
 
     <div class="flex items-center gap-2 py-3 sm:gap-4">
@@ -118,28 +131,34 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
           href={frenchPath}
           lang="fr"
           hreflang="fr"
-          aria-current={locale === "fr" ? "page" : undefined}
+          aria-current={locale === 'fr' ? 'page' : undefined}
           class:list={[
-            "rounded-sm px-2 py-1 transition-colors hover:text-accent",
-            locale === "fr"
-              ? "text-accent underline decoration-2"
-              : "text-muted",
-          ]}>FR</a
+            'rounded-sm px-2 py-1 transition-colors hover:text-accent',
+            locale === 'fr'
+              ? 'text-accent underline decoration-2'
+              : 'text-muted',
+          ]}
         >
-        <span aria-hidden="true" class="text-rule">/</span>
+          FR
+        </a>
+        <span aria-hidden="true" class="text-rule">
+          /
+        </span>
         <a
           data-locale-link
           href={englishPath}
           lang="en"
           hreflang="en"
-          aria-current={locale === "en" ? "page" : undefined}
+          aria-current={locale === 'en' ? 'page' : undefined}
           class:list={[
-            "rounded-sm px-2 py-1 transition-colors hover:text-accent",
-            locale === "en"
-              ? "text-accent underline decoration-2"
-              : "text-muted",
-          ]}>EN</a
+            'rounded-sm px-2 py-1 transition-colors hover:text-accent',
+            locale === 'en'
+              ? 'text-accent underline decoration-2'
+              : 'text-muted',
+          ]}
         >
+          EN
+        </a>
       </nav>
 
       <ThemeToggle locale={locale} />
@@ -147,26 +166,31 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       <details id="mobile-menu" class="group relative lg:hidden">
         <summary
           title={nav.menu}
-          class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-sm border border-rule text-ink transition-colors hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10 marker:hidden"
+          class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-sm border border-rule text-ink transition-colors marker:hidden hover:border-accent hover:bg-ink/5 dark:hover:bg-ink/10"
         >
           <EllipsisVertical class="size-5" aria-hidden="true" />
           <span class="sr-only">{nav.menu}</span>
         </summary>
         <nav
           aria-label={navigationLabel}
-          class="absolute right-0 top-[calc(100%+0.75rem)] w-56 border border-rule bg-paper p-2 shadow-lg shadow-ink/10"
+          class="absolute top-[calc(100%+0.75rem)] right-0 w-56 border border-rule bg-paper p-2 shadow-lg shadow-ink/10"
         >
-          {
-            sections.map(({ href, label }) => (
-              <a
-                href={href}
-                aria-current={isWatch && href === watchPath(locale) ? "page" : undefined}
-                class:list={["block rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10", isWatch && href === watchPath(locale) ? "text-accent" : "text-ink"]}
-              >
-                {label}
-              </a>
-            ))
-          }
+          {sections.map(({ href, label }) => (
+            <a
+              href={href}
+              aria-current={
+                isWatch && href === watchPath(locale) ? 'page' : undefined
+              }
+              class:list={[
+                'block rounded-sm px-3 py-3 text-sm font-medium hover:bg-ink/5 hover:text-accent dark:hover:bg-ink/10',
+                isWatch && href === watchPath(locale)
+                  ? 'text-accent'
+                  : 'text-ink',
+              ]}
+            >
+              {label}
+            </a>
+          ))}
           <div
             role="group"
             aria-label={languageLabel}
@@ -181,23 +205,27 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
                 href={frenchPath}
                 lang="fr"
                 hreflang="fr"
-                aria-current={locale === "fr" ? "page" : undefined}
+                aria-current={locale === 'fr' ? 'page' : undefined}
                 class:list={[
-                  "rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10",
-                  locale === "fr" ? "text-accent" : "text-ink",
-                ]}>Français</a
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10',
+                  locale === 'fr' ? 'text-accent' : 'text-ink',
+                ]}
               >
+                Français
+              </a>
               <a
                 data-locale-link
                 href={englishPath}
                 lang="en"
                 hreflang="en"
-                aria-current={locale === "en" ? "page" : undefined}
+                aria-current={locale === 'en' ? 'page' : undefined}
                 class:list={[
-                  "rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10",
-                  locale === "en" ? "text-accent" : "text-ink",
-                ]}>English</a
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:bg-ink/5 dark:hover:bg-ink/10',
+                  locale === 'en' ? 'text-accent' : 'text-ink',
+                ]}
               >
+                English
+              </a>
             </div>
           </div>
         </nav>
@@ -207,31 +235,34 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
 </header>
 
 <script>
-  const root = document.documentElement;
-  const header = document.querySelector<HTMLElement>("header");
+  const root = document.documentElement
+  const header = document.querySelector<HTMLElement>('header')
   const headerBrand = document.querySelector<HTMLAnchorElement>(
-    "[data-header-brand]",
-  );
-  const heroLogo = document.querySelector<SVGElement>("[data-hero-logo]");
+    '[data-header-brand]'
+  )
+  const heroLogo = document.querySelector<SVGElement>('[data-hero-logo]')
   const heroFirstName = document.querySelector<HTMLElement>(
-    "[data-hero-first-name]",
-  );
+    '[data-hero-first-name]'
+  )
   const heroLastName = document.querySelector<HTMLElement>(
-    "[data-hero-last-name]",
-  );
+    '[data-hero-last-name]'
+  )
   const headerLogo = document.querySelector<SVGElement>(
-    "[data-header-brand-logo]",
-  );
+    '[data-header-brand-logo]'
+  )
   const headerFirstName = document.querySelector<HTMLElement>(
-    "[data-header-first-name]",
-  );
+    '[data-header-first-name]'
+  )
   const headerLastName = document.querySelector<HTMLElement>(
-    "[data-header-last-name]",
-  );
+    '[data-header-last-name]'
+  )
   const syncHeader = () =>
-    header?.toggleAttribute("data-scrolled", header.hasAttribute("data-watch-header") || window.scrollY > 96);
-  syncHeader();
-  window.addEventListener("scroll", syncHeader, { passive: true });
+    header?.toggleAttribute(
+      'data-scrolled',
+      header.hasAttribute('data-watch-header') || window.scrollY > 96
+    )
+  syncHeader()
+  window.addEventListener('scroll', syncHeader, { passive: true })
 
   if (
     header &&
@@ -247,71 +278,71 @@ const languageLabel = locale === "fr" ? "Choisir la langue" : "Choose language";
       { hero: heroLogo, nav: headerLogo, shown: false },
       { hero: heroFirstName, nav: headerFirstName, shown: false },
       { hero: heroLastName, nav: headerLastName, shown: false },
-    ];
+    ]
     const byHero = new Map<Element, (typeof items)[number]>(
-      items.map((item) => [item.hero, item]),
-    );
-    const visibleThreshold = 0.9;
-    headerBrand.inert = true;
+      items.map((item) => [item.hero, item])
+    )
+    const visibleThreshold = 0.9
+    headerBrand.inert = true
 
     const updateBrand = (entries: IntersectionObserverEntry[]) => {
       for (const entry of entries) {
-        const item = byHero.get(entry.target);
-        if (!item) continue;
-        const shown = entry.intersectionRatio < visibleThreshold;
-        if (shown === item.shown) continue;
+        const item = byHero.get(entry.target)
+        if (!item) continue
+        const shown = entry.intersectionRatio < visibleThreshold
+        if (shown === item.shown) continue
 
-        item.shown = shown;
-        item.nav.toggleAttribute("data-brand-hidden", !shown);
-        if (item.nav.hasAttribute("data-brand-pending")) {
-          if (shown) item.nav.removeAttribute("data-brand-pending");
+        item.shown = shown
+        item.nav.toggleAttribute('data-brand-hidden', !shown)
+        if (item.nav.hasAttribute('data-brand-pending')) {
+          if (shown) item.nav.removeAttribute('data-brand-pending')
         } else {
           // Keep the entrance pacing, but retreat quickly when returning to the hero.
           for (const animation of item.nav.getAnimations()) {
-            animation.reverse();
-            animation.updatePlaybackRate(shown ? 1 : -4);
+            animation.reverse()
+            animation.updatePlaybackRate(shown ? 1 : -4)
           }
         }
       }
-      headerBrand.inert = !items.some((item) => item.shown);
-    };
+      headerBrand.inert = !items.some((item) => item.shown)
+    }
 
-    let observedHeaderHeight = -1;
-    let observer: IntersectionObserver | undefined;
+    let observedHeaderHeight = -1
+    let observer: IntersectionObserver | undefined
     const observeBrand = () => {
-      const headerHeight = Math.ceil(header.getBoundingClientRect().height);
-      if (headerHeight === observedHeaderHeight) return;
-      observedHeaderHeight = headerHeight;
-      observer?.disconnect();
+      const headerHeight = Math.ceil(header.getBoundingClientRect().height)
+      if (headerHeight === observedHeaderHeight) return
+      observedHeaderHeight = headerHeight
+      observer?.disconnect()
       observer = new IntersectionObserver(updateBrand, {
         rootMargin: `-${headerHeight}px 0px 0px 0px`,
         threshold: visibleThreshold,
-      });
-      for (const { hero } of items) observer.observe(hero);
-    };
+      })
+      for (const { hero } of items) observer.observe(hero)
+    }
 
-    observeBrand();
-    new ResizeObserver(observeBrand).observe(header);
-    root.dataset.brandObserving = "";
+    observeBrand()
+    new ResizeObserver(observeBrand).observe(header)
+    root.dataset.brandObserving = ''
   }
 
   const updateLanguageLinks = () => {
     document
-      .querySelectorAll<HTMLAnchorElement>("[data-locale-link]")
+      .querySelectorAll<HTMLAnchorElement>('[data-locale-link]')
       .forEach((link) => {
-        const url = new URL(link.href);
-        url.hash = window.location.hash;
-        link.href = url.href;
-      });
-  };
+        const url = new URL(link.href)
+        url.hash = window.location.hash
+        link.href = url.href
+      })
+  }
 
-  updateLanguageLinks();
-  window.addEventListener("hashchange", updateLanguageLinks);
+  updateLanguageLinks()
+  window.addEventListener('hashchange', updateLanguageLinks)
 
-  const menu = document.querySelector<HTMLDetailsElement>("#mobile-menu");
+  const menu = document.querySelector<HTMLDetailsElement>('#mobile-menu')
   menu?.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
-    link.addEventListener("click", () => {
-      menu.open = false;
-    });
-  });
+    link.addEventListener('click', () => {
+      menu.open = false
+    })
+  })
 </script>

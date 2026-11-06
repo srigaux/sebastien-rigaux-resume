@@ -14,7 +14,7 @@ Cette veille est le carnet de sélection d'un développeur expérimenté : déve
 
 **Résumé** : un seul paragraphe de 2–3 phrases, généralement 50–100 mots, au maximum 800 caractères et 140 mots. Commence directement par l'idée ou l'apport de la ressource ; donne ensuite un détail vérifié et, si utile, son application ou sa limite. Ne dresse pas l'inventaire de toutes les rubriques. Choisis un angle principal plutôt que d'essayer de tout couvrir. Si la source est mince, écris plus court : aucune phrase de remplissage. Ne recopie ni sa meta-description ni ses passages.
 
-Utilise du Markdown inline avec retenue : **gras** pour un point saillant, *italique*, `code` pour un identifiant, lien HTTPS exceptionnellement utile. Le gras est facultatif, jamais posé mécaniquement sur les premiers mots. Aucun titre, liste même à un seul élément, HTML, image, retour à la ligne ou backlink redondant vers la source. Les deux langues présentent les mêmes faits et le même niveau de certitude.
+Utilise du Markdown inline avec retenue : **gras** pour un point saillant, _italique_, `code` pour un identifiant, lien HTTPS exceptionnellement utile. Le gras est facultatif, jamais posé mécaniquement sur les premiers mots. Aucun titre, liste même à un seul élément, HTML, image, retour à la ligne ou backlink redondant vers la source. Les deux langues présentent les mêmes faits et le même niveau de certitude.
 
 Adapte l'angle au format : article → idée et exemple ; documentation → tâche ou API documentée ; outil/dépôt → usage, mécanisme et contrainte éventuelle ; release → changements et impact ; vidéo → sujet et enseignement. Pour la sécurité, conserve exactement les versions, niveaux de gravité et conditions attestés. Pour les benchmarks, attribue le résultat à sa source et garde son contexte. Distingue stable, preview, bêta et release candidate ; ne transforme pas une annonce en disponibilité effective. Préfère les dates explicites à « aujourd'hui » ou « vient de sortir » dans le texte publié.
 
@@ -140,20 +140,92 @@ Construis `content` avec les formes ci-dessous. Les marqueurs entre `<...>` sont
 
 ```json
 {
-  "uid": {"__TYPE__":"UIDContent","value":"<slug-du-titre-localise>"},
-  "title": {"__TYPE__":"StructuredTextContent","value":[{"type":"heading1","direction":"ltr","content":{"text":"<titre>","spans":[]}}]},
-  "summary": {"__TYPE__":"StructuredTextContent","value":[{"type":"paragraph","direction":"ltr","content":{"text":"<paragraphe en Markdown inline>","spans":[]}}]},
-  "url": {"__TYPE__":"LinkContent","value":{"__TYPE__":"ExternalLink","url":"<url-source>"}},
-  "source_language": {"__TYPE__":"FieldContent","type":"Select","value":"<EN ou FR>"},
-  "selected_on": {"__TYPE__":"FieldContent","type":"Date","value":"<selectedOn>"},
-  "published_on": {"__TYPE__":"FieldContent","type":"Date","value":"<date fiable facultative>"},
-  "format": {"__TYPE__":"FieldContent","type":"Select","value":"<format autorise>"},
-  "credit": {"__TYPE__":"FieldContent","type":"Text","value":"<auteur connu facultatif>"},
-  "topics": {"__TYPE__":"GroupContentType","value":[
-    {"__TYPE__":"GroupItemContent","value":[["topic",{"__TYPE__":"LinkContent","value":{"__TYPE__":"DocumentLink","id":"<ID categorie 1>"}}]]},
-    {"__TYPE__":"GroupItemContent","value":[["topic",{"__TYPE__":"LinkContent","value":{"__TYPE__":"DocumentLink","id":"<ID categorie 2>"}}]]}
-  ]},
-  "discovered_via": {"__TYPE__":"LinkContent","value":{"__TYPE__":"DocumentLink","id":"<ID source explicitement citee, facultatif>"}}
+  "uid": { "__TYPE__": "UIDContent", "value": "<slug-du-titre-localise>" },
+  "title": {
+    "__TYPE__": "StructuredTextContent",
+    "value": [
+      {
+        "type": "heading1",
+        "direction": "ltr",
+        "content": { "text": "<titre>", "spans": [] }
+      }
+    ]
+  },
+  "summary": {
+    "__TYPE__": "StructuredTextContent",
+    "value": [
+      {
+        "type": "paragraph",
+        "direction": "ltr",
+        "content": { "text": "<paragraphe en Markdown inline>", "spans": [] }
+      }
+    ]
+  },
+  "url": {
+    "__TYPE__": "LinkContent",
+    "value": { "__TYPE__": "ExternalLink", "url": "<url-source>" }
+  },
+  "source_language": {
+    "__TYPE__": "FieldContent",
+    "type": "Select",
+    "value": "<EN ou FR>"
+  },
+  "selected_on": {
+    "__TYPE__": "FieldContent",
+    "type": "Date",
+    "value": "<selectedOn>"
+  },
+  "published_on": {
+    "__TYPE__": "FieldContent",
+    "type": "Date",
+    "value": "<date fiable facultative>"
+  },
+  "format": {
+    "__TYPE__": "FieldContent",
+    "type": "Select",
+    "value": "<format autorise>"
+  },
+  "credit": {
+    "__TYPE__": "FieldContent",
+    "type": "Text",
+    "value": "<auteur connu facultatif>"
+  },
+  "topics": {
+    "__TYPE__": "GroupContentType",
+    "value": [
+      {
+        "__TYPE__": "GroupItemContent",
+        "value": [
+          [
+            "topic",
+            {
+              "__TYPE__": "LinkContent",
+              "value": { "__TYPE__": "DocumentLink", "id": "<ID categorie 1>" }
+            }
+          ]
+        ]
+      },
+      {
+        "__TYPE__": "GroupItemContent",
+        "value": [
+          [
+            "topic",
+            {
+              "__TYPE__": "LinkContent",
+              "value": { "__TYPE__": "DocumentLink", "id": "<ID categorie 2>" }
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  "discovered_via": {
+    "__TYPE__": "LinkContent",
+    "value": {
+      "__TYPE__": "DocumentLink",
+      "id": "<ID source explicitement citee, facultatif>"
+    }
+  }
 }
 ```
 
@@ -165,13 +237,18 @@ Pour `image` et `site_icon`, utilise ce modèle complet avec la réponse effecti
 
 ```json
 {
-  "__TYPE__":"ImageContent",
-  "origin":{"id":"<asset.id>","url":"<asset.url>","width":1200,"height":630},
-  "url":"<asset.url>",
-  "width":1200,
-  "height":630,
-  "alt":"<description factuelle localisee>",
-  "edit":{"zoom":1,"crop":{"x":0,"y":0},"background":"transparent"}
+  "__TYPE__": "ImageContent",
+  "origin": {
+    "id": "<asset.id>",
+    "url": "<asset.url>",
+    "width": 1200,
+    "height": 630
+  },
+  "url": "<asset.url>",
+  "width": 1200,
+  "height": 630,
+  "alt": "<description factuelle localisee>",
+  "edit": { "zoom": 1, "crop": { "x": 0, "y": 0 }, "background": "transparent" }
 }
 ```
 
@@ -187,6 +264,7 @@ Les nombres illustrent la structure : remplace-les par les dimensions retournée
    **Programmation souhaitée** : tous les jours à **18 h, Europe/Brussels**. La prochaine échéance est aujourd'hui avant 18 h, demain à partir de 18 h ; applique le fuseau Europe/Brussels et ses changements d'heure, pas un décalage UTC fixe. Utilise l'instant `nowBrussels` fourni par n8n, jamais `selectedOn` seul pour décider si 18 h est passé. Le MCP actuel n'offre PAS de champ de programmation dans `create_release` ni d'outil pour modifier cet horaire. N'invente pas de paramètre `scheduledAt` ou `publishAt`. Si la release possède déjà une programmation future, conserve-la et rapporte son heure réelle ; signale si elle diffère de 18 h. Si elle n'est pas programmée, indique « À programmer dans Prismic : <prochaine date> à 18 h (Europe/Brussels) ». Cette indication n'est pas une programmation exécutée. Ne tente pas de remplacer une programmation par une attente longue ou un appel immédiat à `publish_release`.
 
    **Concurrence et limites** : le parcours lister-puis-créer n'est pas atomique. Lancer les imports successivement pour maximiser la réutilisation. Si Prismic refuse l'ajout car la release est déjà publiée ou pleine, ne recrée pas les documents dont la création est confirmée ; rapporte le cas et les IDs connus pour reprise.
+
 5. **Créer FR** : `create_document(repository="bd7d5fa0", customTypeId="curated_link", locale="fr-be", title=<titre FR>, content=<champs FR>, releaseId=<ID release>)`. Conserve l'ID du document réussi.
 6. **Créer EN** : même appel avec `locale="en-us"`, le titre/contenu anglais et **`translationOfDocumentId=<ID FR>`**. Même URL, catégories, dates, langue source et assets que FR ; titres, résumés, slugs et textes alternatifs localisés. N'essaie pas de relier les traductions après leur création.
 7. **Présenter** : appelle `present_release` une fois après les écritures réussies seulement si tu as créé cette release pendant cet import ; pour une release réutilisée, fournis directement son lien, avec un `publicationIntent` court décrivant les fiches préparées. Termine par le bilan ci-dessous. Ne publie jamais immédiatement.

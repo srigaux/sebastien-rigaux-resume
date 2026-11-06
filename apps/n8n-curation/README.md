@@ -21,16 +21,15 @@ Les nœuds sont natifs, sans paquet communautaire, serveur intermédiaire ou acc
 
 ## Connexions
 
-| Nœud | Credential n8n | Valeur à renseigner |
-| --- | --- | --- |
-| OpenAI Chat Model | OpenAI | Votre clé API OpenAI ; modèle préconfiguré `gpt-4.1`, modifiable dans le nœud |
-| context_dev | Header Auth | Name : `Authorization` ; Value : `Bearer VOTRE_CLE_CONTEXT_DEV` |
-| Prismic MCP | Bearer Auth | Votre **write token** du repository `bd7d5fa0`, sans le préfixe `Bearer` |
+| Nœud              | Credential n8n | Valeur à renseigner                                                           |
+| ----------------- | -------------- | ----------------------------------------------------------------------------- |
+| OpenAI Chat Model | OpenAI         | Votre clé API OpenAI ; modèle préconfiguré `gpt-4.1`, modifiable dans le nœud |
+| context_dev       | Header Auth    | Name : `Authorization` ; Value : `Bearer VOTRE_CLE_CONTEXT_DEV`               |
+| Prismic MCP       | Bearer Auth    | Votre **write token** du repository `bd7d5fa0`, sans le préfixe `Bearer`      |
 
 L'adresse MCP est déjà renseignée : `https://mcp.prismic.io/mcp`. Le MCP doit être activé pour le repository dans Prismic. Le write token est documenté comme méthode d'authentification du MCP ; ce n'est pas un token de lecture Content API.
 
 Le MCP expose seulement `list_releases`, `create_release`, `create_document`, `upload_asset` et `present_release`. Les locales, les 67 catégories, les 12 sources de découverte et les formes de champs sont préchargées dans `agent-prompt.md` (référence du 15 octobre 2026). Seule la liste des releases est consultée à chaque import pour réutiliser une release de veille. Si le catalogue ou le modèle change, actualiser ce fichier puis régénérer les exports.
-
 
 ## Règles éditoriales intégrées
 

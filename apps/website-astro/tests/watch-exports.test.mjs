@@ -1,96 +1,188 @@
-import { pageMarkdownPath, localeHomePath } from "#site-urls";
-import assert from "node:assert/strict";
-import test from "node:test";
-import { sitemapMetadata } from "#site-sitemap";
-import { markdownResponse, renderSummaryMarkdown, summaryText, watchIndexMarkdown, watchLinkMarkdown, watchArchiveMarkdown } from "#watch-markdown";
+import assert from 'node:assert/strict'
+import test from 'node:test'
 
-const site = new URL("https://sebastien.rigaux.be");
-const fr = "/veille/liens/un-outil";
-const en = "/en/tech-watch/links/a-tool";
+import { sitemapMetadata } from '#site-sitemap'
+import { localeHomePath, pageMarkdownPath } from '#site-urls'
+import {
+  markdownResponse,
+  renderSummaryMarkdown,
+  summaryText,
+  watchArchiveMarkdown,
+  watchIndexMarkdown,
+  watchLinkMarkdown,
+} from '#watch-markdown'
+
+const site = new URL('https://sebastien.rigaux.be')
+const fr = '/veille/liens/un-outil'
+const en = '/en/tech-watch/links/a-tool'
 const link = {
-  id: "doc-fr", uid: "un-outil", locale: "fr", textLanguage: "fr", title: "Un outil [utile]",
-  summary: "Un **outil** pour [React](https://react.dev/) et `TypeScript`.",
-  url: "https://example.com/tool", selectedOn: "2026-10-13", publishedOn: "2026-10-10",
-  firstPublishedAt: "2026-10-13T10:00:00Z", updatedAt: "2026-10-14T12:00:00Z", format: "Tool",
-  alternatePaths: { fr, en }, credit: "Alice", sourceLanguage: "EN",
-  topics: [{ id: "react", uid: "react", name: "React" }],
-  discoveredVia: { id: "newsletter", uid: "newsletter", name: "Newsletter", url: "https://example.com/newsletter" },
-};
-
-test("Markdown exports preserve the summary, metadata, canonical and actual translation slugs", () => {
-  const text = watchLinkMarkdown(link, site);
-  assert.ok(text.includes(link.summary));
-  for (const value of [link.url, link.selectedOn, link.publishedOn, link.updatedAt, link.credit, link.discoveredVia.url, `${site.origin}${fr}`, `${site.origin}${en}`]) assert.ok(text.includes(value), value);
-  assert.ok(text.startsWith("# Un outil \\[utile\\]"));
-  assert.equal(summaryText(link.summary), "Un outil pour React et TypeScript.");
-  assert.equal(markdownResponse(text).headers.get("Content-Type"), "text/markdown; charset=utf-8");
-});
-
-test("Markdown indexes link to the available page and export when translation is absent", () => {
-  const onlyFrench = { ...link, alternatePaths: { fr } };
-  const text = watchIndexMarkdown("en", [onlyFrench], site);
-  assert.ok(text.includes(`${site.origin}${fr}.md`));
-  assert.ok(!text.includes(en));
-  assert.ok(!watchLinkMarkdown(onlyFrench, site).includes(en));
-});
-
-function html(extra = "", translations = `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}"><link href="${site.origin}${en}" hreflang="en" rel="alternate">`) {
-  return `<html><head><link rel="canonical" href="${site.origin}${fr}">${translations}<link rel="alternate" type="text/markdown" href="${site.origin}${fr}.md"><meta name="last-modified" content="${link.updatedAt}">${extra}</head><body></body></html>`;
+  id: 'doc-fr',
+  uid: 'un-outil',
+  locale: 'fr',
+  textLanguage: 'fr',
+  title: 'Un outil [utile]',
+  summary: 'Un **outil** pour [React](https://react.dev/) et `TypeScript`.',
+  url: 'https://example.com/tool',
+  selectedOn: '2026-10-13',
+  publishedOn: '2026-10-10',
+  firstPublishedAt: '2026-10-13T10:00:00Z',
+  updatedAt: '2026-10-14T12:00:00Z',
+  format: 'Tool',
+  alternatePaths: { fr, en },
+  credit: 'Alice',
+  sourceLanguage: 'EN',
+  topics: [{ id: 'react', uid: 'react', name: 'React' }],
+  discoveredVia: {
+    id: 'newsletter',
+    uid: 'newsletter',
+    name: 'Newsletter',
+    url: 'https://example.com/newsletter',
+  },
 }
 
-test("sitemap reuses actual HTML language links and modification date, excluding Markdown alternates", () => {
+test('Markdown exports preserve the summary, metadata, canonical and actual translation slugs', () => {
+  const text = watchLinkMarkdown(link, site)
+  assert.ok(text.includes(link.summary))
+  for (const value of [
+    link.url,
+    link.selectedOn,
+    link.publishedOn,
+    link.updatedAt,
+    link.credit,
+    link.discoveredVia.url,
+    `${site.origin}${fr}`,
+    `${site.origin}${en}`,
+  ])
+    assert.ok(text.includes(value), value)
+  assert.ok(text.startsWith('# Un outil \\[utile\\]'))
+  assert.equal(summaryText(link.summary), 'Un outil pour React et TypeScript.')
+  assert.equal(
+    markdownResponse(text).headers.get('Content-Type'),
+    'text/markdown; charset=utf-8'
+  )
+})
+
+test('Markdown indexes link to the available page and export when translation is absent', () => {
+  const onlyFrench = { ...link, alternatePaths: { fr } }
+  const text = watchIndexMarkdown('en', [onlyFrench], site)
+  assert.ok(text.includes(`${site.origin}${fr}.md`))
+  assert.ok(!text.includes(en))
+  assert.ok(!watchLinkMarkdown(onlyFrench, site).includes(en))
+})
+
+function html(
+  extra = '',
+  translations = `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}"><link href="${site.origin}${en}" hreflang="en" rel="alternate">`
+) {
+  return `<html><head><link rel="canonical" href="${site.origin}${fr}">${translations}<link rel="alternate" type="text/markdown" href="${site.origin}${fr}.md"><meta name="last-modified" content="${link.updatedAt}">${extra}</head><body></body></html>`
+}
+
+test('sitemap reuses actual HTML language links and modification date, excluding Markdown alternates', () => {
   assert.deepEqual(sitemapMetadata(html(), `${site.origin}${fr}`), {
-    url: `${site.origin}${fr}`, links: [{ lang: "fr", url: `${site.origin}${fr}` }, { lang: "en", url: `${site.origin}${en}` }], lastmod: link.updatedAt,
-  });
-  const metadata = sitemapMetadata(html("", `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}">`), `${site.origin}${fr}`);
-  assert.equal(metadata.links.length, 1);
-});
+    url: `${site.origin}${fr}`,
+    links: [
+      { lang: 'fr', url: `${site.origin}${fr}` },
+      { lang: 'en', url: `${site.origin}${en}` },
+    ],
+    lastmod: link.updatedAt,
+  })
+  const metadata = sitemapMetadata(
+    html('', `<link rel="alternate" hreflang="fr" href="${site.origin}${fr}">`),
+    `${site.origin}${fr}`
+  )
+  assert.equal(metadata.links.length, 1)
+})
 
-test("sitemap excludes redirects, noindex pages and noncanonical URLs", () => {
-  assert.equal(sitemapMetadata(html('<meta name="robots" content="noindex, follow">'), `${site.origin}${fr}`), undefined);
-  assert.equal(sitemapMetadata(html('<meta http-equiv="refresh" content="0; url=/">'), `${site.origin}${fr}`), undefined);
-  assert.equal(sitemapMetadata(html(), `${site.origin}/other/`), undefined);
-});
+test('sitemap excludes redirects, noindex pages and noncanonical URLs', () => {
+  assert.equal(
+    sitemapMetadata(
+      html('<meta name="robots" content="noindex, follow">'),
+      `${site.origin}${fr}`
+    ),
+    undefined
+  )
+  assert.equal(
+    sitemapMetadata(
+      html('<meta http-equiv="refresh" content="0; url=/">'),
+      `${site.origin}${fr}`
+    ),
+    undefined
+  )
+  assert.equal(sitemapMetadata(html(), `${site.origin}/other/`), undefined)
+})
 
-test("every watch URL has a direct .md counterpart, including archives and pagination", () => {
-  const text = watchArchiveMarkdown({ locale: "fr", links: [link], topics: link.topics, topic: link.topics[0], page: 2, totalPages: 3 }, site);
-  assert.ok(text.includes("https://sebastien.rigaux.be/veille/tags/react/page/2"));
-  assert.ok(text.includes("https://sebastien.rigaux.be/veille/tags/react/page/3"));
-  assert.ok(text.includes(`${site.origin}${fr}.md`));
-  assert.ok(!text.includes("/index.md"));
-});
+test('every watch URL has a direct .md counterpart, including archives and pagination', () => {
+  const text = watchArchiveMarkdown(
+    {
+      locale: 'fr',
+      links: [link],
+      topics: link.topics,
+      topic: link.topics[0],
+      page: 2,
+      totalPages: 3,
+    },
+    site
+  )
+  assert.ok(
+    text.includes('https://sebastien.rigaux.be/veille/tags/react/page/2')
+  )
+  assert.ok(
+    text.includes('https://sebastien.rigaux.be/veille/tags/react/page/3')
+  )
+  assert.ok(text.includes(`${site.origin}${fr}.md`))
+  assert.ok(!text.includes('/index.md'))
+})
 
-test("Markdown URLs append .md, with the existing French root export", () => {
-  assert.equal(localeHomePath("fr"), "/");
-  assert.equal(localeHomePath("en"), "/en");
-  assert.equal(pageMarkdownPath("/"), "/fr.md");
-  assert.equal(pageMarkdownPath("/en"), "/en.md");
-  assert.equal(pageMarkdownPath("/veille/liens/mon-lien"), "/veille/liens/mon-lien.md");
-  assert.equal(pageMarkdownPath("/veille/liens/mon-lien/"), "/veille/liens/mon-lien.md");
-});
+test('Markdown URLs append .md, with the existing French root export', () => {
+  assert.equal(localeHomePath('fr'), '/')
+  assert.equal(localeHomePath('en'), '/en')
+  assert.equal(pageMarkdownPath('/'), '/fr.md')
+  assert.equal(pageMarkdownPath('/en'), '/en.md')
+  assert.equal(
+    pageMarkdownPath('/veille/liens/mon-lien'),
+    '/veille/liens/mon-lien.md'
+  )
+  assert.equal(
+    pageMarkdownPath('/veille/liens/mon-lien/'),
+    '/veille/liens/mon-lien.md'
+  )
+})
 
-test("watch summaries preserve paragraphs and micro-examples in HTML and Markdown, with plain SEO text", () => {
-  const summary = "Un **repository GitHub** pour clarifier les composants.\n\nLa classe `flex items-center gap-2` sert d'exemple concret.";
-  assert.equal(renderSummaryMarkdown(summary), "<p>Un <strong>repository GitHub</strong> pour clarifier les composants.</p>\n<p>La classe <code>flex items-center gap-2</code> sert d'exemple concret.</p>");
-  assert.equal(summaryText(summary), "Un repository GitHub pour clarifier les composants. La classe flex items-center gap-2 sert d'exemple concret.");
-  assert.ok(watchLinkMarkdown({ ...link, summary }, site).includes(summary));
-});
+test('watch summaries preserve paragraphs and micro-examples in HTML and Markdown, with plain SEO text', () => {
+  const summary =
+    "Un **repository GitHub** pour clarifier les composants.\n\nLa classe `flex items-center gap-2` sert d'exemple concret."
+  assert.equal(
+    renderSummaryMarkdown(summary),
+    "<p>Un <strong>repository GitHub</strong> pour clarifier les composants.</p>\n<p>La classe <code>flex items-center gap-2</code> sert d'exemple concret.</p>"
+  )
+  assert.equal(
+    summaryText(summary),
+    "Un repository GitHub pour clarifier les composants. La classe flex items-center gap-2 sert d'exemple concret."
+  )
+  assert.ok(watchLinkMarkdown({ ...link, summary }, site).includes(summary))
+})
 
-test("search highlights summary text while preserving Markdown and link destinations", () => {
-  const html = renderSummaryMarkdown("**React** et [React docs](https://react.dev).\n\nExemple : `React.createElement`.", "react");
-  assert.equal((html.match(/<mark /g) ?? []).length, 3);
-  assert.match(html, /<strong><mark [^>]+>React<\/mark><\/strong>/);
-  assert.match(html, /href="https:\/\/react.dev"/);
-  assert.match(html, /<code><mark [^>]+>React<\/mark>\.createElement<\/code>/);
-  assert.ok(html.includes("</p>\n<p>"));
-  assert.ok(!html.includes('href="https://<mark'));
-});
+test('search highlights summary text while preserving Markdown and link destinations', () => {
+  const html = renderSummaryMarkdown(
+    '**React** et [React docs](https://react.dev).\n\nExemple : `React.createElement`.',
+    'react'
+  )
+  assert.equal((html.match(/<mark /g) ?? []).length, 3)
+  assert.match(html, /<strong><mark [^>]+>React<\/mark><\/strong>/)
+  assert.match(html, /href="https:\/\/react.dev"/)
+  assert.match(html, /<code><mark [^>]+>React<\/mark>\.createElement<\/code>/)
+  assert.ok(html.includes('</p>\n<p>'))
+  assert.ok(!html.includes('href="https://<mark'))
+})
 
-test("summary highlighting escapes HTML and treats regex punctuation literally", () => {
-  const html = renderSummaryMarkdown("C++ et <script>alert(1)</script>", "C++ script");
-  assert.equal((html.match(/<mark /g) ?? []).length, 3);
-  assert.match(html, /<mark [^>]+>C\+\+<\/mark>/);
-  assert.ok(!html.includes("<script>"));
-  assert.ok(html.includes("&lt;"));
-  assert.ok(!renderSummaryMarkdown("Un résumé", "  ").includes("<mark"));
-});
+test('summary highlighting escapes HTML and treats regex punctuation literally', () => {
+  const html = renderSummaryMarkdown(
+    'C++ et <script>alert(1)</script>',
+    'C++ script'
+  )
+  assert.equal((html.match(/<mark /g) ?? []).length, 3)
+  assert.match(html, /<mark [^>]+>C\+\+<\/mark>/)
+  assert.ok(!html.includes('<script>'))
+  assert.ok(html.includes('&lt;'))
+  assert.ok(!renderSummaryMarkdown('Un résumé', '  ').includes('<mark'))
+})

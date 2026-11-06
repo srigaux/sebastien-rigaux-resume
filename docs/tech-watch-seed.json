@@ -57,33 +57,120 @@
     { "uid": "open-source", "name": "Open Source" },
     { "uid": "tooling", "name": "Tooling" },
     { "uid": "releases", "name": "Releases" },
-    { "uid": "github-actions", "name": "GitHub Actions" }
-,
-    { "uid": "forms", "name": "Forms", "description": "Conception, validation et intégration de formulaires, questionnaires et parcours de saisie." },
-    { "uid": "vue", "name": "Vue", "description": "Framework Vue, bibliothèques et pratiques de développement de son écosystème." },
-    { "uid": "self-hosting", "name": "Self-hosting", "description": "Déploiement et exploitation de services sur une infrastructure sous son contrôle." },
-    { "uid": "seo", "name": "SEO", "description": "Indexation, métadonnées, données structurées et outils d’audit du référencement." },
-    { "uid": "ui-ux", "name": "UI/UX", "description": "Conception d’interfaces, interactions, prototypage et expérience utilisateur." },
-    { "uid": "maps", "name": "Maps", "description": "Cartes web, géolocalisation et génération de représentations cartographiques." },
-    { "uid": "local-first", "name": "Local-first", "description": "Applications réactives conservant les données localement avec persistance et synchronisation." },
-    { "uid": "i18n", "name": "Internationalization", "description": "Traduction, localisation et gestion des langues dans les applications." },
-    { "uid": "tailwind-css", "name": "Tailwind CSS", "description": "Styles utilitaires, plugins et composants utilisant Tailwind CSS." }
+    { "uid": "github-actions", "name": "GitHub Actions" },
+    {
+      "uid": "forms",
+      "name": "Forms",
+      "description": "Conception, validation et intégration de formulaires, questionnaires et parcours de saisie."
+    },
+    {
+      "uid": "vue",
+      "name": "Vue",
+      "description": "Framework Vue, bibliothèques et pratiques de développement de son écosystème."
+    },
+    {
+      "uid": "self-hosting",
+      "name": "Self-hosting",
+      "description": "Déploiement et exploitation de services sur une infrastructure sous son contrôle."
+    },
+    {
+      "uid": "seo",
+      "name": "SEO",
+      "description": "Indexation, métadonnées, données structurées et outils d’audit du référencement."
+    },
+    {
+      "uid": "ui-ux",
+      "name": "UI/UX",
+      "description": "Conception d’interfaces, interactions, prototypage et expérience utilisateur."
+    },
+    {
+      "uid": "maps",
+      "name": "Maps",
+      "description": "Cartes web, géolocalisation et génération de représentations cartographiques."
+    },
+    {
+      "uid": "local-first",
+      "name": "Local-first",
+      "description": "Applications réactives conservant les données localement avec persistance et synchronisation."
+    },
+    {
+      "uid": "i18n",
+      "name": "Internationalization",
+      "description": "Traduction, localisation et gestion des langues dans les applications."
+    },
+    {
+      "uid": "tailwind-css",
+      "name": "Tailwind CSS",
+      "description": "Styles utilitaires, plugins et composants utilisant Tailwind CSS."
+    }
   ],
   "discoverySources": [
-    { "uid": "the-ai-report", "name": "The AI Report", "url": "https://newsletter.theaireport.ai/subscribe?ref=Grq6dx6Wxk" },
-    { "uid": "tldr-ai", "name": "TLDR AI", "url": "https://refer.tldr.tech/57571c42/2" },
-    { "uid": "c-sharp-digest", "name": "C# Digest", "url": "https://csharpdigest.net/" },
-    { "uid": "dotnet-blog", "name": ".NET Blog", "url": "https://devblogs.microsoft.com/dotnet/" },
+    {
+      "uid": "the-ai-report",
+      "name": "The AI Report",
+      "url": "https://newsletter.theaireport.ai/subscribe?ref=Grq6dx6Wxk"
+    },
+    {
+      "uid": "tldr-ai",
+      "name": "TLDR AI",
+      "url": "https://refer.tldr.tech/57571c42/2"
+    },
+    {
+      "uid": "c-sharp-digest",
+      "name": "C# Digest",
+      "url": "https://csharpdigest.net/"
+    },
+    {
+      "uid": "dotnet-blog",
+      "name": ".NET Blog",
+      "url": "https://devblogs.microsoft.com/dotnet/"
+    },
     { "uid": "kube-today", "name": "Kube Today", "url": "https://kube.today/" },
-    { "uid": "learnkube", "name": "LearnKube", "url": "https://learnkube.com/newsletter" },
-    { "uid": "programming-digest", "name": "Programming Digest", "url": "https://programmingdigest.net/" },
-    { "uid": "tldr-dev", "name": "TLDR Dev", "url": "https://refer.tldr.tech/d318b36c/3" },
-    { "uid": "tldr", "name": "TLDR", "url": "https://refer.tldr.tech/0335be35/" },
+    {
+      "uid": "learnkube",
+      "name": "LearnKube",
+      "url": "https://learnkube.com/newsletter"
+    },
+    {
+      "uid": "programming-digest",
+      "name": "Programming Digest",
+      "url": "https://programmingdigest.net/"
+    },
+    {
+      "uid": "tldr-dev",
+      "name": "TLDR Dev",
+      "url": "https://refer.tldr.tech/d318b36c/3"
+    },
+    {
+      "uid": "tldr",
+      "name": "TLDR",
+      "url": "https://refer.tldr.tech/0335be35/"
+    },
     { "uid": "bytes-dev", "name": "bytes.dev", "url": "https://bytes.dev/" },
-    { "uid": "frontend-focus", "name": "Frontend Focus", "url": "https://frontendfoc.us/" },
-    { "uid": "javascript-weekly", "name": "JavaScript Weekly", "url": "https://javascriptweekly.com/" },
-    { "uid": "react-status", "name": "React Status", "url": "https://react.statuscode.com/" },
-    { "uid": "react-digest", "name": "React Digest", "url": "https://reactdigest.net/" },
-    { "uid": "this-week-in-react", "name": "This week in React", "url": "https://thisweekinreact.com/" }
+    {
+      "uid": "frontend-focus",
+      "name": "Frontend Focus",
+      "url": "https://frontendfoc.us/"
+    },
+    {
+      "uid": "javascript-weekly",
+      "name": "JavaScript Weekly",
+      "url": "https://javascriptweekly.com/"
+    },
+    {
+      "uid": "react-status",
+      "name": "React Status",
+      "url": "https://react.statuscode.com/"
+    },
+    {
+      "uid": "react-digest",
+      "name": "React Digest",
+      "url": "https://reactdigest.net/"
+    },
+    {
+      "uid": "this-week-in-react",
+      "name": "This week in React",
+      "url": "https://thisweekinreact.com/"
+    }
   ]
 }

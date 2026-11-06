@@ -38,7 +38,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .show--consent #cc-main .cc--anim .cm {
-    @apply motion-preset-blur-left motion-scale-in-95 motion-duration-500 motion-delay-[500ms] motion-ease-spring-bouncier/translate;
+    @apply motion-preset-blur-left motion-scale-in-95 motion-ease-spring-bouncier/translate motion-delay-[500ms] motion-duration-500;
     /* About 8px of overshoot, with smooth blur/opacity and a 500ms entry. */
     --motion-translate-perceptual-duration-multiplier: 1;
     --motion-opacity-duration: 250ms;

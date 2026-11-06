@@ -1,4 +1,5 @@
-import type { APIRoute } from "astro";
-import { watchRss } from "@/lib/watch-rss";
+import type { APIRoute } from 'astro'
 
-export const GET: APIRoute = ({ site }) => watchRss("en", site!);
+import { watchRss } from '@/lib/watch-rss'
+
+export const GET: APIRoute = ({ site }) => watchRss('en', site!)

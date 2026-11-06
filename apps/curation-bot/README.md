@@ -293,7 +293,6 @@ Après épuisement des contrôles, le suivi passe à `attention` et le bot ouvre
 
 Les anciennes publications acceptées sont libérées de leur verrou par le cron au déploiement. Les publications inconnues restent soumises au dialogue : aucune relance automatique d’écriture. Aucun nouveau schéma D1 n’est nécessaire ; les sessions et audits utilisent les tables existantes.
 
-
 Un lien validé qui attend la release commune est mis en attente avec `active=0`. Son workflow rend la place au lien suivant : réception, extraction, correction et validation continuent même quand une publication est bloquée. Les erreurs après début de publication sont aussi isolées de la conversation. Les écritures restent sérialisées ; les vérifications publiques sont indépendantes. Une écriture incertaine conserve son verrou jusqu’à une décision dans Telegram. Une acceptation HTTP 202 permet immédiatement la sélection suivante ; Prismic peut temporairement la refuser pendant son traitement, auquel cas les retries bornés restent applicables.
 
 Même sans fiche active, `/status` indique la fiche qui détient le verrou en erreur et le nombre de liens validés qui attendent. `/retry` sans identifiant retrouve cette fiche ; une écriture sans réponse reste protégée jusqu’à réconciliation. `/cancel` explique alors le blocage et permet toujours de retirer un autre lien en attente avec son identifiant. `/queue` distingue cette intervention nécessaire d’une simple attente de disponibilité de Prismic.
@@ -378,7 +377,6 @@ les valeurs de secrets dans le dépôt ni dans un chat. L’interface Prismic pe
 
 Références : [Prismic webhooks](https://prismic.io/docs/webhooks) et
 [GitHub workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
-
 
 ### Confirmation de publication dans Telegram
 

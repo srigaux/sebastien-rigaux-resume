@@ -34,8 +34,8 @@ pnpm format:check
 pnpm format
 ```
 
-Les plugins prennent en charge Astro, le tri des imports JavaScript/TypeScript et
-le tri des classes Tailwind CSS 4 à partir de `global.css`. Les imports à effets
+Les plugins prennent en charge Astro et le tri des imports JavaScript/TypeScript.
+Prettier ne trie pas les classes Tailwind. Les imports à effets
 de bord restent en place. Le tri des imports ne s'applique pas au frontmatter
 Astro. Les clés JSON conservent leur ordre, notamment pour les exports conditionnels.
 Les sorties générées, caches et états privés sont exclus dans `.prettierignore`.

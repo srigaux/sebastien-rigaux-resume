@@ -20,7 +20,13 @@ Configurer les paramètres de l’index :
 
 ```json
 {
-  "searchableAttributes": ["title", "summary", "topics", "credit", "discoveredVia"],
+  "searchableAttributes": [
+    "title",
+    "summary",
+    "topics",
+    "credit",
+    "discoveredVia"
+  ],
   "attributesForFaceting": ["locale", "format", "topics"],
   "attributeForDistinct": "url",
   "distinct": 1,

@@ -1,80 +1,77 @@
 ---
-import Logo from "@/assets/logo-animated.svg";
-import { ArrowUpRight, FileDown } from "@lucide/astro";
-import ExternalLink from "@/components/ExternalLink.astro";
-import HeroShader from "@/components/HeroShader.astro";
-import { watchPath } from "@/lib/watch-model";
-import { yearsSince } from "@/lib/years";
-import type { Locale, Person } from "@/types";
+import Logo from '@/assets/logo-animated.svg'
+import { ArrowUpRight, FileDown } from '@lucide/astro'
+import ExternalLink from '@/components/ExternalLink.astro'
+import HeroShader from '@/components/HeroShader.astro'
+import { watchPath } from '@/lib/watch-model'
+import { yearsSince } from '@/lib/years'
+import type { Locale, Person } from '@/types'
 
 interface Props {
-  locale: Locale;
-  person: Person;
+  locale: Locale
+  person: Person
 }
 
-const { locale, person } = Astro.props;
+const { locale, person } = Astro.props
 const about = {
   fr: {
     intro:
-      "Avec {{experienceYears}} ans d’expérience dans le web et le mobile, je relie vision technique, architecture et exécution. Directeur de la technologie (CTO) et Tech Lead, j’accompagne les équipes de l’idée à la mise en production.",
+      'Avec {{experienceYears}} ans d’expérience dans le web et le mobile, je relie vision technique, architecture et exécution. Directeur de la technologie (CTO) et Tech Lead, j’accompagne les équipes de l’idée à la mise en production.',
     paragraphs: [
-      "Aujourd’hui, je pilote la transition vers l’IA, accompagne les équipes et aide les clients à prendre leurs décisions techniques en CTO as a Service.",
-      "Chez Microsoft à Vancouver, j’ai dirigé l’équipe Voicemail de Teams et Skype for Business sur une plateforme traitant des millions de messages vocaux par jour. Autodidacte et proche du code, je fais aussi de la veille sur React, le frontend, C# et Kubernetes.",
-      "En dehors du travail, je passe du temps avec ma famille, j’aime voyager et sortir avec mes amis, et je pratique le hockey sur gazon, le kitesurf et le padel.",
+      'Aujourd’hui, je pilote la transition vers l’IA, accompagne les équipes et aide les clients à prendre leurs décisions techniques en CTO as a Service.',
+      'Chez Microsoft à Vancouver, j’ai dirigé l’équipe Voicemail de Teams et Skype for Business sur une plateforme traitant des millions de messages vocaux par jour. Autodidacte et proche du code, je fais aussi de la veille sur React, le frontend, C# et Kubernetes.',
+      'En dehors du travail, je passe du temps avec ma famille, j’aime voyager et sortir avec mes amis, et je pratique le hockey sur gazon, le kitesurf et le padel.',
     ],
-    socialTitle: "Retrouvez-moi",
-    contactTitle: "Contact",
-    watchLabel: "Parcourir ma veille",
-    pdfLabel: "Télécharger le CV en PDF",
+    socialTitle: 'Retrouvez-moi',
+    contactTitle: 'Contact',
+    watchLabel: 'Parcourir ma veille',
+    pdfLabel: 'Télécharger le CV en PDF',
   },
   en: {
     intro:
-      "With {{experienceYears}} years of experience in web and mobile, I connect technical vision, architecture and hands-on delivery. As a CTO and Tech Lead, I help teams take products from idea to launch.",
+      'With {{experienceYears}} years of experience in web and mobile, I connect technical vision, architecture and hands-on delivery. As a CTO and Tech Lead, I help teams take products from idea to launch.',
     paragraphs: [
-      "Today, I drive the transition to AI, support engineering teams and help clients make technology decisions through CTO as a Service engagements.",
-      "At Microsoft in Vancouver, I led the Voicemail team for Teams and Skype for Business on a platform handling millions of messages a day. Self-taught and close to the code, I also keep up with React, frontend development, C# and Kubernetes.",
-      "Outside work, I spend time with my family, travel, go out with friends, and enjoy field hockey, kitesurfing and padel.",
+      'Today, I drive the transition to AI, support engineering teams and help clients make technology decisions through CTO as a Service engagements.',
+      'At Microsoft in Vancouver, I led the Voicemail team for Teams and Skype for Business on a platform handling millions of messages a day. Self-taught and close to the code, I also keep up with React, frontend development, C# and Kubernetes.',
+      'Outside work, I spend time with my family, travel, go out with friends, and enjoy field hockey, kitesurfing and padel.',
     ],
-    socialTitle: "Find me online",
-    contactTitle: "Contact",
-    watchLabel: "Browse my tech watch",
-    pdfLabel: "Download my résumé (PDF)",
+    socialTitle: 'Find me online',
+    contactTitle: 'Contact',
+    watchLabel: 'Browse my tech watch',
+    pdfLabel: 'Download my résumé (PDF)',
   },
-}[locale];
-const introParts = about.intro.split(/(\{\{experienceYears\}\})/g);
-const experienceYears = yearsSince(person.firstExperienceDate);
-const firstNameLetters = Array.from(person.firstName);
-const lastNameLetters = Array.from(person.lastName);
-const rolePoints = person.role[locale].split(" · ");
+}[locale]
+const introParts = about.intro.split(/(\{\{experienceYears\}\})/g)
+const experienceYears = yearsSince(person.firstExperienceDate)
+const firstNameLetters = Array.from(person.firstName)
+const lastNameLetters = Array.from(person.lastName)
+const rolePoints = person.role[locale].split(' · ')
 const roleDelays = [
-  "sm:motion-delay-[300ms]",
-  "sm:motion-delay-[330ms]",
-  "sm:motion-delay-[360ms]",
-];
+  'sm:motion-delay-[300ms]',
+  'sm:motion-delay-[330ms]',
+  'sm:motion-delay-[360ms]',
+]
 const paragraphDelays = [
-  "sm:motion-delay-[330ms]",
-  "sm:motion-delay-[530ms]",
-  "sm:motion-delay-[560ms]",
-  "sm:motion-delay-[590ms]",
-];
+  'sm:motion-delay-[330ms]',
+  'sm:motion-delay-[530ms]',
+  'sm:motion-delay-[560ms]',
+  'sm:motion-delay-[590ms]',
+]
 ---
 
 <section
   id="about"
   aria-labelledby="name"
-  class="pb-16 pt-14 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24"
+  class="pt-14 pb-16 sm:pt-20 sm:pb-20 lg:pt-24 lg:pb-24"
 >
   <div data-cv-hero class="relative isolate">
     <HeroShader />
-    <div
-      class="relative flex min-h-[min(38rem,calc(100svh-8rem))] flex-col justify-center"
-    >
+    <div class="relative flex min-h-[min(38rem,calc(100svh-8rem))] flex-col justify-center">
       <div
         data-cv-decoration
         aria-hidden="true"
         class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"
-      >
-      </div>
+      ></div>
       <p class="mb-4 text-base font-semibold tracking-tight text-accent">
         {person.jobTitle[locale]}
       </p>
@@ -92,33 +89,28 @@ const paragraphDelays = [
             aria-hidden="true"
             class="block w-fit whitespace-nowrap"
           >
-            {
-              firstNameLetters.map((letter, index) => (
-                <span
-                  class="inline-block motion-preset-blur-up motion-duration-500 motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
-                  style={`--letter-index:${index}`}
-                >
-                  {letter}
-                </span>
-              ))
-            }
-          </span>
-          {" "}
+            {firstNameLetters.map((letter, index) => (
+              <span
+                class="inline-block motion-preset-blur-up motion-delay-[calc(var(--letter-index)*30ms)] motion-duration-500 motion-reduce:animate-none"
+                style={`--letter-index:${index}`}
+              >
+                {letter}
+              </span>
+            ))}
+          </span>{' '}
           <span
             data-hero-last-name
             aria-hidden="true"
             class="block w-fit whitespace-nowrap text-accent"
           >
-            {
-              lastNameLetters.map((letter, index) => (
-                <span
-                  class="inline-block motion-preset-blur-up motion-duration-500 motion-delay-[calc(var(--letter-index)*30ms)] motion-reduce:animate-none"
-                  style={`--letter-index:${index + firstNameLetters.length}`}
-                >
-                  {letter}
-                </span>
-              ))
-            }
+            {lastNameLetters.map((letter, index) => (
+              <span
+                class="inline-block motion-preset-blur-up motion-delay-[calc(var(--letter-index)*30ms)] motion-duration-500 motion-reduce:animate-none"
+                style={`--letter-index:${index + firstNameLetters.length}`}
+              >
+                {letter}
+              </span>
+            ))}
           </span>
         </h1>
         <Logo
@@ -128,21 +120,22 @@ const paragraphDelays = [
         />
       </div>
       <p class="mt-7 text-lg leading-relaxed text-muted sm:text-xl">
-        {
-          rolePoints.map((point, index) => (
-            <span
-              class:list={[
-                "inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none",
-                roleDelays[Math.min(index, roleDelays.length - 1)],
-              ]}
-            >
-              {index > 0 && <>&nbsp;·&nbsp;</>}
-              {point}
-            </span>
-          ))
-        }
+        {rolePoints.map((point, index) => (
+          <span
+            class:list={[
+              'inline-block motion-preset-blur-up motion-duration-500 motion-reduce:animate-none',
+              roleDelays[Math.min(index, roleDelays.length - 1)],
+            ]}
+          >
+            {index > 0 && <>&nbsp;·&nbsp;</>}
+            {point}
+          </span>
+        ))}
       </p>
-      <div data-cv-screen-only class="mt-8 flex flex-row flex-wrap items-center gap-3 motion-preset-blur-up motion-duration-500 sm:gap-4 sm:motion-delay-[420ms] motion-reduce:animate-none">
+      <div
+        data-cv-screen-only
+        class="mt-8 flex motion-preset-blur-up flex-row flex-wrap items-center gap-3 motion-duration-500 motion-reduce:animate-none sm:gap-4 sm:motion-delay-[420ms]"
+      >
         <a
           href={watchPath(locale)}
           class="inline-flex min-h-11 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline transition-[background-color,transform] duration-200 hover:bg-ink focus-visible:bg-ink active:scale-[0.98]"
@@ -175,91 +168,87 @@ const paragraphDelays = [
       <p
         no-intersect
         class:list={[
-          "intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink sm:text-2xl",
+          'intersect-once font-display text-xl leading-[1.55] font-medium tracking-[-0.015em] text-ink motion-duration-500 motion-reduce:animate-none sm:text-2xl intersect:motion-preset-blur-up',
           paragraphDelays[0],
         ]}
       >
-        {
-          introParts.map((part) =>
-            part === "{{experienceYears}}" ? (
-              <span data-years-since={person.firstExperienceDate}>
-                {experienceYears}
-              </span>
-            ) : (
-              part
-            ),
+        {introParts.map((part) =>
+          part === '{{experienceYears}}' ? (
+            <span data-years-since={person.firstExperienceDate}>
+              {experienceYears}
+            </span>
+          ) : (
+            part
           )
-        }
+        )}
       </p>
-      {
-        about.paragraphs.map((paragraph, index) => (
-          <p
-            no-intersect
-            class:list={[
-              "intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none",
-              paragraphDelays[Math.min(index + 1, paragraphDelays.length - 1)],
-            ]}
-          >
-            {paragraph}
-          </p>
-        ))
-      }
+      {about.paragraphs.map((paragraph, index) => (
+        <p
+          no-intersect
+          class:list={[
+            'intersect-once motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up',
+            paragraphDelays[Math.min(index + 1, paragraphDelays.length - 1)],
+          ]}
+        >
+          {paragraph}
+        </p>
+      ))}
     </div>
 
     <aside
       data-cv-contact
       no-intersect
-      class="intersect:motion-preset-blur-up motion-duration-500 intersect-once grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-6 border-t border-rule pt-8 lg:gap-10 lg:border-t-0 lg:pt-0"
+      class="intersect-once grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-6 border-t border-rule pt-8 motion-duration-500 lg:gap-10 lg:border-t-0 lg:pt-0 intersect:motion-preset-blur-up"
     >
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">
           {about.contactTitle}
         </h2>
-        <address
-          class="space-y-2 text-sm leading-relaxed not-italic text-muted"
-        >
+        <address class="space-y-2 text-sm leading-relaxed text-muted not-italic">
           <p>{person.address.formatted[locale]}</p>
           <p>
             <ExternalLink
               class="inline-block break-all hover:text-accent focus-visible:text-accent"
-              href={`tel:${person.phone.replace(/[^\d+]/g, "")}`}
-              >{person.phone}</ExternalLink
+              href={`tel:${person.phone.replace(/[^\d+]/g, '')}`}
             >
+              {person.phone}
+            </ExternalLink>
           </p>
           <p>
             <ExternalLink
               class="inline-block break-all hover:text-accent focus-visible:text-accent"
-              href={`mailto:${person.email}`}>{person.email}</ExternalLink
+              href={`mailto:${person.email}`}
             >
+              {person.email}
+            </ExternalLink>
           </p>
           <p>
             <ExternalLink
               class="inline-block break-all hover:text-accent focus-visible:text-accent"
               href={person.website}
-              >{new URL(person.website).hostname}</ExternalLink
             >
+              {new URL(person.website).hostname}
+            </ExternalLink>
           </p>
         </address>
       </div>
       <div>
         <h2 class="mb-4 text-sm font-semibold text-ink">{about.socialTitle}</h2>
         <ul class="space-y-2">
-          {
-            person.socialLinks.map((link) => (
-              <li>
-                <ExternalLink
-                  href={link.url}
-                  newTab
-                  class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
-                >
-                  <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">
-                    {link.label}
-                  </span>
-                  <span>{link.identifier}</span>
-                </ExternalLink>
-              </li>
-            ))
-          }
+          {person.socialLinks.map((link) => (
+            <li>
+              <ExternalLink
+                href={link.url}
+                newTab
+                class="group inline-flex items-baseline gap-2 text-sm text-muted hover:text-accent focus-visible:text-accent"
+              >
+                <span class="font-semibold text-ink group-hover:text-accent group-focus-visible:text-accent">
+                  {link.label}
+                </span>
+                <span>{link.identifier}</span>
+              </ExternalLink>
+            </li>
+          ))}
         </ul>
       </div>
     </aside>
@@ -267,12 +256,12 @@ const paragraphDelays = [
 </section>
 
 <script>
-  import { yearsSince } from "@/lib/years";
+  import { yearsSince } from '@/lib/years'
 
   document
-    .querySelectorAll<HTMLElement>("[data-years-since]")
+    .querySelectorAll<HTMLElement>('[data-years-since]')
     .forEach((element) => {
-      const date = element.dataset.yearsSince;
-      if (date) element.textContent = String(yearsSince(date));
-    });
+      const date = element.dataset.yearsSince
+      if (date) element.textContent = String(yearsSince(date))
+    })
 </script>

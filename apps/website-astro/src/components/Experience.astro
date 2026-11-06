@@ -1,162 +1,199 @@
 ---
-import Timeline from "@/components/Timeline.astro";
-import type { Locale, TimelineItem } from "@/types";
+import Timeline from '@/components/Timeline.astro'
+import type { Locale, TimelineItem } from '@/types'
 
 interface Props {
-  locale: Locale;
+  locale: Locale
 }
 
-const { locale } = Astro.props;
-const content: Record<Locale, { title: string; items: readonly TimelineItem[] }> = {
+const { locale } = Astro.props
+const content: Record<
+  Locale,
+  { title: string; items: readonly TimelineItem[] }
+> = {
   fr: {
-    title: "Expérience professionnelle",
+    title: 'Expérience professionnelle',
     items: [
       {
-        id: "cto-djm",
-        title: "Directeur de la technologie (CTO)",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgique"],
-        period: "2016 – aujourd’hui",
-        startDate: "2016",
+        id: 'cto-djm',
+        title: 'Directeur de la technologie (CTO)',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgique',
+        ],
+        period: '2016 – aujourd’hui',
+        startDate: '2016',
         bullets: [
-          "Piloter la stratégie technologique d’une entreprise d’environ 40 personnes et accompagner ses équipes de développement, de l’idée à la mise en production.",
-          "Définir les orientations techniques d’un portefeuille de dizaines d’applications web et mobiles, de milliers de sites web, de dizaines de boutiques en ligne et de solutions numériques de bout en bout.",
-          "Cadrer la transition vers l’IA : idéation des usages, choix des outils, formation des équipes et automatisation des processus internes.",
-          "Intégrer l’IA dans les produits et développer des solutions pour les clients, notamment des agents conversationnels téléphoniques.",
-          "Accompagner les clients en CTO as a Service : conseil en architecture, audits, analyses de risques et soutien aux équipes.",
-          "Prototyper de nouvelles idées, contribuer au développement des produits et superviser l’infrastructure serveur.",
+          'Piloter la stratégie technologique d’une entreprise d’environ 40 personnes et accompagner ses équipes de développement, de l’idée à la mise en production.',
+          'Définir les orientations techniques d’un portefeuille de dizaines d’applications web et mobiles, de milliers de sites web, de dizaines de boutiques en ligne et de solutions numériques de bout en bout.',
+          'Cadrer la transition vers l’IA : idéation des usages, choix des outils, formation des équipes et automatisation des processus internes.',
+          'Intégrer l’IA dans les produits et développer des solutions pour les clients, notamment des agents conversationnels téléphoniques.',
+          'Accompagner les clients en CTO as a Service : conseil en architecture, audits, analyses de risques et soutien aux équipes.',
+          'Prototyper de nouvelles idées, contribuer au développement des produits et superviser l’infrastructure serveur.',
         ],
       },
       {
-        id: "microsoft-voicemail",
-        title: "Software Engineer II · Voicemail",
-        subtitle: [{ text: "Microsoft", href: "https://blogs.microsoft.com/vancouver/" }, "· Vancouver, Colombie-Britannique, Canada"],
-        period: "2020 – 2021",
-        startDate: "2020",
-        endDate: "2021",
+        id: 'microsoft-voicemail',
+        title: 'Software Engineer II · Voicemail',
+        subtitle: [
+          { text: 'Microsoft', href: 'https://blogs.microsoft.com/vancouver/' },
+          '· Vancouver, Colombie-Britannique, Canada',
+        ],
+        period: '2020 – 2021',
+        startDate: '2020',
+        endDate: '2021',
         bullets: [
-          "Diriger l’équipe Voicemail pour Microsoft Teams et Skype for Business, avec des services traitant des millions de messages vocaux par jour.",
-          "Participer à la montée en charge des services de messagerie vocale pendant la forte hausse d’utilisation de Teams liée au COVID-19.",
-          "Contribuer à la modernisation et à la conteneurisation des services existants pour faire évoluer la plateforme.",
-          "Intégrer la synthèse vocale (TTS) avec voix neuronales, la reconnaissance vocale (STT), les parcours IVR et la traduction automatique par IA.",
+          'Diriger l’équipe Voicemail pour Microsoft Teams et Skype for Business, avec des services traitant des millions de messages vocaux par jour.',
+          'Participer à la montée en charge des services de messagerie vocale pendant la forte hausse d’utilisation de Teams liée au COVID-19.',
+          'Contribuer à la modernisation et à la conteneurisation des services existants pour faire évoluer la plateforme.',
+          'Intégrer la synthèse vocale (TTS) avec voix neuronales, la reconnaissance vocale (STT), les parcours IVR et la traduction automatique par IA.',
         ],
       },
       {
-        id: "mobile-djm",
-        title: "Directeur de la technologie - Mobile",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgique"],
-        period: "2015 – 2016",
-        startDate: "2015",
-        endDate: "2016",
+        id: 'mobile-djm',
+        title: 'Directeur de la technologie - Mobile',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgique',
+        ],
+        period: '2015 – 2016',
+        startDate: '2015',
+        endDate: '2016',
         bullets: [
-          "Diriger une équipe d’environ dix personnes et organiser les pôles mobile et API/backend .NET.",
-          "Définir l’architecture et choisir les technologies de plusieurs applications métier pour iOS et Android, notamment avec Xamarin, et de leurs API .NET.",
-          "Cadrer les besoins des clients, traduire leurs attentes en spécifications et piloter la réalisation du concept au lancement.",
-          "Développer des solutions grand public de bout en bout pour de grandes organisations publiques et sportives belges, associant plusieurs applications et utilisées par des milliers de personnes chaque mois.",
-          "Intégrer de l’IoT en temps réel dans l’un de ces projets.",
+          'Diriger une équipe d’environ dix personnes et organiser les pôles mobile et API/backend .NET.',
+          'Définir l’architecture et choisir les technologies de plusieurs applications métier pour iOS et Android, notamment avec Xamarin, et de leurs API .NET.',
+          'Cadrer les besoins des clients, traduire leurs attentes en spécifications et piloter la réalisation du concept au lancement.',
+          'Développer des solutions grand public de bout en bout pour de grandes organisations publiques et sportives belges, associant plusieurs applications et utilisées par des milliers de personnes chaque mois.',
+          'Intégrer de l’IoT en temps réel dans l’un de ces projets.',
         ],
       },
       {
-        id: "ios-djm",
-        title: "Développeur iOS & Web",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgique"],
-        period: "2012 – 2015",
-        startDate: "2012",
-        endDate: "2015",
+        id: 'ios-djm',
+        title: 'Développeur iOS & Web',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgique',
+        ],
+        period: '2012 – 2015',
+        startDate: '2012',
+        endDate: '2015',
         bullets: [
-          "Participer à toutes les étapes des projets iOS : recherche, planification, développement, lancement et support client.",
-          "Développer des applications mobiles natives adaptées aux besoins de chaque client.",
-          "Suivre les jalons des projets et présenter chaque semaine leur avancement à la direction.",
+          'Participer à toutes les étapes des projets iOS : recherche, planification, développement, lancement et support client.',
+          'Développer des applications mobiles natives adaptées aux besoins de chaque client.',
+          'Suivre les jalons des projets et présenter chaque semaine leur avancement à la direction.',
         ],
       },
       {
-        id: "internship-djm",
-        title: "Stage Développeur iOS",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgique"],
-        period: "2012 – 2012",
-        startDate: "2012",
-        endDate: "2012",
+        id: 'internship-djm',
+        title: 'Stage Développeur iOS',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgique',
+        ],
+        period: '2012 – 2012',
+        startDate: '2012',
+        endDate: '2012',
         bullets: [
-          "Développer une application iPhone et des API.",
-          "Développer des applications web en ASP.NET MVC.",
+          'Développer une application iPhone et des API.',
+          'Développer des applications web en ASP.NET MVC.',
         ],
       },
     ],
   },
   en: {
-    title: "Professional experience",
+    title: 'Professional experience',
     items: [
       {
-        id: "cto-djm",
-        title: "Chief Technology Officer",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgium"],
-        period: "2016 – present",
-        startDate: "2016",
+        id: 'cto-djm',
+        title: 'Chief Technology Officer',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgium',
+        ],
+        period: '2016 – present',
+        startDate: '2016',
         bullets: [
-          "Lead the technology strategy of a company with around 40 employees and support its development teams from idea to launch.",
-          "Set technical direction for a portfolio of dozens of web and mobile apps, thousands of websites, dozens of online stores and complete digital solutions.",
-          "Drive the transition to AI: explore use cases, select tools, train teams and automate internal workflows.",
-          "Bring AI into products and build client solutions, including AI-powered telephone agents.",
-          "Advise clients on architecture through CTO as a Service engagements, conduct audits and risk assessments, and support their teams.",
-          "Prototype new ideas, contribute to product development and oversee server infrastructure.",
+          'Lead the technology strategy of a company with around 40 employees and support its development teams from idea to launch.',
+          'Set technical direction for a portfolio of dozens of web and mobile apps, thousands of websites, dozens of online stores and complete digital solutions.',
+          'Drive the transition to AI: explore use cases, select tools, train teams and automate internal workflows.',
+          'Bring AI into products and build client solutions, including AI-powered telephone agents.',
+          'Advise clients on architecture through CTO as a Service engagements, conduct audits and risk assessments, and support their teams.',
+          'Prototype new ideas, contribute to product development and oversee server infrastructure.',
         ],
       },
       {
-        id: "microsoft-voicemail",
-        title: "Software Engineer II · Voicemail",
-        subtitle: [{ text: "Microsoft", href: "https://blogs.microsoft.com/vancouver/" }, "· Vancouver, BC, Canada"],
-        period: "2020 – 2021",
-        startDate: "2020",
-        endDate: "2021",
+        id: 'microsoft-voicemail',
+        title: 'Software Engineer II · Voicemail',
+        subtitle: [
+          { text: 'Microsoft', href: 'https://blogs.microsoft.com/vancouver/' },
+          '· Vancouver, BC, Canada',
+        ],
+        period: '2020 – 2021',
+        startDate: '2020',
+        endDate: '2021',
         bullets: [
-          "Led the Voicemail team for Microsoft Teams and Skype for Business, with services processing millions of voicemails each day.",
-          "Helped scale voicemail services as Teams usage surged during the COVID-19 pandemic.",
-          "Contributed to modernizing and containerizing existing services as the platform evolved.",
-          "Integrated neural-voice text-to-speech (TTS), speech-to-text (STT), IVR flows and AI-powered automatic translation.",
+          'Led the Voicemail team for Microsoft Teams and Skype for Business, with services processing millions of voicemails each day.',
+          'Helped scale voicemail services as Teams usage surged during the COVID-19 pandemic.',
+          'Contributed to modernizing and containerizing existing services as the platform evolved.',
+          'Integrated neural-voice text-to-speech (TTS), speech-to-text (STT), IVR flows and AI-powered automatic translation.',
         ],
       },
       {
-        id: "mobile-djm",
-        title: "Chief Technology Officer · Mobile",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgium"],
-        period: "2015 – 2016",
-        startDate: "2015",
-        endDate: "2016",
+        id: 'mobile-djm',
+        title: 'Chief Technology Officer · Mobile',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgium',
+        ],
+        period: '2015 – 2016',
+        startDate: '2015',
+        endDate: '2016',
         bullets: [
-          "Led a team of around ten and organized the mobile and .NET API/backend groups.",
-          "Set the architecture and selected technologies for several iOS and Android business applications, including Xamarin-based apps, and their .NET APIs.",
-          "Scoped client needs, turned requirements into specifications and guided delivery from concept to launch.",
-          "Built end-to-end consumer-facing solutions for major Belgian public and sports organizations, spanning multiple applications and serving thousands of people each month.",
-          "One of these projects also included real-time IoT capabilities.",
+          'Led a team of around ten and organized the mobile and .NET API/backend groups.',
+          'Set the architecture and selected technologies for several iOS and Android business applications, including Xamarin-based apps, and their .NET APIs.',
+          'Scoped client needs, turned requirements into specifications and guided delivery from concept to launch.',
+          'Built end-to-end consumer-facing solutions for major Belgian public and sports organizations, spanning multiple applications and serving thousands of people each month.',
+          'One of these projects also included real-time IoT capabilities.',
         ],
       },
       {
-        id: "ios-djm",
-        title: "iOS & Web Developer",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgium"],
-        period: "2012 – 2015",
-        startDate: "2012",
-        endDate: "2015",
+        id: 'ios-djm',
+        title: 'iOS & Web Developer',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgium',
+        ],
+        period: '2012 – 2015',
+        startDate: '2012',
+        endDate: '2015',
         bullets: [
-          "Worked across the full iOS project lifecycle: research, planning, development, launch and client support.",
-          "Built native mobile applications tailored to each client’s needs.",
-          "Tracked project milestones and reported progress to leadership every week.",
+          'Worked across the full iOS project lifecycle: research, planning, development, launch and client support.',
+          'Built native mobile applications tailored to each client’s needs.',
+          'Tracked project milestones and reported progress to leadership every week.',
         ],
       },
       {
-        id: "internship-djm",
-        title: "iOS Developer Intern",
-        subtitle: [{ text: "djm digital S.A.", href: "https://djmdigital.be/fr/" }, "· Liège, Belgium"],
-        period: "2012 – 2012",
-        startDate: "2012",
-        endDate: "2012",
+        id: 'internship-djm',
+        title: 'iOS Developer Intern',
+        subtitle: [
+          { text: 'djm digital S.A.', href: 'https://djmdigital.be/fr/' },
+          '· Liège, Belgium',
+        ],
+        period: '2012 – 2012',
+        startDate: '2012',
+        endDate: '2012',
         bullets: [
-          "Developed an iPhone app and APIs.",
-          "Also built web applications using ASP.NET MVC.",
+          'Developed an iPhone app and APIs.',
+          'Also built web applications using ASP.NET MVC.',
         ],
       },
     ],
   },
-};
+}
 ---
 
-<Timeline id="experience" title={content[locale].title} items={content[locale].items} />
+<Timeline
+  id="experience"
+  title={content[locale].title}
+  items={content[locale].items}
+/>

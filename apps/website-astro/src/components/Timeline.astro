@@ -1,14 +1,14 @@
 ---
-import type { TimelineItem } from "@/types";
-import ExternalLink from "@/components/ExternalLink.astro";
+import type { TimelineItem } from '@/types'
+import ExternalLink from '@/components/ExternalLink.astro'
 
 interface Props {
-  id: "experience" | "education";
-  title: string;
-  items: readonly TimelineItem[];
+  id: 'experience' | 'education'
+  title: string
+  items: readonly TimelineItem[]
 }
 
-const { id, title, items } = Astro.props;
+const { id, title, items } = Astro.props
 ---
 
 <section
@@ -25,83 +25,122 @@ const { id, title, items } = Astro.props;
       <h2
         id={`${id}-title`}
         no-intersect
-        class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-half max-w-[18ch] font-display text-3xl leading-tight font-semibold tracking-tight text-ink sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)]"
+        class="intersect-once intersect-half max-w-[18ch] font-display text-3xl leading-tight font-semibold tracking-tight text-ink motion-duration-500 sm:text-4xl lg:max-w-none lg:text-[clamp(1.875rem,2.5vw,2.25rem)] intersect:motion-preset-blur-up"
       >
         {title}
       </h2>
-      <div data-cv-decoration aria-hidden="true" class="mt-6 h-0.5 w-12 -rotate-12 bg-accent">
-      </div>
+      <div
+        data-cv-decoration
+        aria-hidden="true"
+        class="mt-6 h-0.5 w-12 -rotate-12 bg-accent"
+      ></div>
     </div>
 
     <ol data-cv-timeline-list class="border-l border-rule pl-7 sm:pl-9">
-      {
-        items.map((item) => (
-          <li
-            data-cv-timeline-item
-            no-intersect
-            class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] relative pb-12 last:pb-0 sm:pb-14"
-          >
-            <article id={item.id} aria-labelledby={`${item.id}-title`}>
-              <div data-cv-entry-heading class="relative z-10 grid gap-1 bg-paper py-2 md:sticky md:top-[4.25rem] sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
-                <span
-                  aria-hidden="true"
-                  class="absolute -left-[2.15rem] top-3 size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"
-                />
-                <p class="pt-0.5 text-sm leading-relaxed font-semibold text-accent">
-                  <time datetime={item.startDate}>{item.period.split(" – ")[0]}</time>
-                  {" – "}
-                  {item.endDate
-                    ? <time datetime={item.endDate}>{item.period.split(" – ")[1]}</time>
-                    : <span>{item.period.split(" – ")[1]}</span>}
+      {items.map((item) => (
+        <li
+          data-cv-timeline-item
+          no-intersect
+          class="intersect-once intersect-[0.2] relative pb-12 motion-duration-500 last:pb-0 sm:pb-14 intersect:motion-preset-blur-up"
+        >
+          <article id={item.id} aria-labelledby={`${item.id}-title`}>
+            <div
+              data-cv-entry-heading
+              class="relative z-10 grid gap-1 bg-paper py-2 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6 md:sticky md:top-[4.25rem]"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-3 -left-[2.15rem] size-3 rotate-45 border-2 border-accent bg-paper sm:-left-[2.65rem]"
+              />
+              <p class="pt-0.5 text-sm leading-relaxed font-semibold text-accent">
+                <time datetime={item.startDate}>
+                  {item.period.split(' – ')[0]}
+                </time>
+                {' – '}
+                {item.endDate ? (
+                  <time datetime={item.endDate}>
+                    {item.period.split(' – ')[1]}
+                  </time>
+                ) : (
+                  <span>{item.period.split(' – ')[1]}</span>
+                )}
+              </p>
+              <h3
+                id={`${item.id}-title`}
+                class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl"
+              >
+                {typeof item.title === 'string'
+                  ? item.title
+                  : item.title.map((part) =>
+                      typeof part === 'string' ? (
+                        part
+                      ) : (
+                        <>
+                          <ExternalLink
+                            href={part.href}
+                            newTab
+                            class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none"
+                          >
+                            {part.text}
+                          </ExternalLink>
+                          <span class="sr-only"> </span>
+                        </>
+                      )
+                    )}
+              </h3>
+            </div>
+            <div data-cv-entry-body class="sm:ml-44">
+              <p class="mt-1 text-base leading-relaxed text-muted">
+                {typeof item.subtitle === 'string'
+                  ? item.subtitle
+                  : item.subtitle.map((part) =>
+                      typeof part === 'string' ? (
+                        part
+                      ) : (
+                        <>
+                          <ExternalLink
+                            href={part.href}
+                            newTab
+                            class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none"
+                          >
+                            {part.text}
+                          </ExternalLink>
+                          <span class="sr-only"> </span>
+                        </>
+                      )
+                    )}
+              </p>
+              {item.description && (
+                <p class="mt-4 max-w-[68ch] leading-relaxed text-muted">
+                  {item.description}
                 </p>
-                <h3 id={`${item.id}-title`} class="text-xl leading-snug font-semibold tracking-tight text-ink sm:text-2xl">
-                  {typeof item.title === "string"
-                    ? item.title
-                    : item.title.map((part) =>
-                        typeof part === "string" ? part : <><ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink><span class="sr-only"> </span></>
-                      )}
-                </h3>
-              </div>
-              <div data-cv-entry-body class="sm:ml-44">
-                <p class="mt-1 text-base leading-relaxed text-muted">
-                  {typeof item.subtitle === "string"
-                    ? item.subtitle
-                    : item.subtitle.map((part) =>
-                        typeof part === "string" ? part : <><ExternalLink href={part.href} newTab class="mr-[0.35em] inline-block transition-[margin] duration-200 hover:mr-[1.5em] focus-visible:mr-[1.5em] motion-reduce:transition-none">{part.text}</ExternalLink><span class="sr-only"> </span></>
-                      )}
+              )}
+              {item.bullets && (
+                <ul
+                  role="list"
+                  class="mt-5 max-w-[72ch] list-none space-y-2 text-base leading-relaxed text-muted"
+                >
+                  {item.bullets.map((bullet) => (
+                    <li
+                      no-intersect
+                      class:list={[
+                        "intersect-half intersect-once relative pl-5 motion-duration-500 before:absolute before:top-[0.65em] before:left-0 before:size-1.5 before:rotate-45 before:bg-accent before:content-[''] intersect:motion-preset-blur-up",
+                      ]}
+                    >
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {item.distinction && (
+                <p class="mt-4 text-sm font-medium text-ink">
+                  {item.distinction}
                 </p>
-                {item.description && (
-                  <p class="mt-4 max-w-[68ch] leading-relaxed text-muted">
-                    {item.description}
-                  </p>
-                )}
-                {item.bullets && (
-                  <ul
-                    role="list"
-                    class="mt-5 max-w-[72ch] list-none space-y-2 text-base leading-relaxed text-muted"
-                  >
-                    {item.bullets.map((bullet) => (
-                      <li
-                        no-intersect
-                        class:list={[
-                          "intersect:motion-preset-blur-up intersect-half motion-duration-500 intersect-once relative pl-5 before:absolute before:left-0 before:top-[0.65em] before:size-1.5 before:rotate-45 before:bg-accent before:content-['']",
-                        ]}
-                      >
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {item.distinction && (
-                  <p class="mt-4 text-sm font-medium text-ink">
-                    {item.distinction}
-                  </p>
-                )}
-              </div>
-            </article>
-          </li>
-        ))
-      }
+              )}
+            </div>
+          </article>
+        </li>
+      ))}
     </ol>
   </div>
 </section>

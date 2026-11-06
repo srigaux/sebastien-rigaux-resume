@@ -4,9 +4,9 @@ run-name: 🔎 Check website updates · run ${{ github.run_number }}
 on:
   schedule:
     # Twice an hour, away from the busiest start-of-hour scheduling period.
-    - cron: "17,47 * * * *"
+    - cron: '17,47 * * * *'
     # Force the annual experience-years refresh in the static PDFs.
-    - cron: "0 6 1 2 *"
+    - cron: '0 6 1 2 *'
   workflow_dispatch:
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
       - name: 🔎 Compare published content with the deployed website
         id: content
         env:
-          CONTENT_CHECK_ONLY: "true"
+          CONTENT_CHECK_ONLY: 'true'
         run: node apps/website-astro/scripts/check-published-content.mjs
       - name: ⏭️ Keep the current website — no changes detected
         if: steps.content.outputs.changed != 'true'

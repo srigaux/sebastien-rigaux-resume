@@ -1,6 +1,6 @@
 ---
-import Logo from "@/assets/logo-animated.svg";
-import BaseLayout from "@/layouts/BaseLayout.astro";
+import Logo from '@/assets/logo-animated.svg'
+import BaseLayout from '@/layouts/BaseLayout.astro'
 ---
 
 <BaseLayout
@@ -9,19 +9,18 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   description="La page demandée est introuvable. The requested page was not found."
   noindex
 >
-  <main
-    class="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-16"
-  >
+  <main class="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-16">
     <Logo class="mb-10 size-14 text-ink" aria-hidden="true" />
     <p class="text-sm font-semibold text-accent">404</p>
-    <h1
-      class="mt-4 font-display text-5xl leading-tight font-semibold tracking-tight text-ink sm:text-6xl"
-    >
-      Page introuvable<br /><span lang="en">Page not found</span>
+    <h1 class="mt-4 font-display text-5xl leading-tight font-semibold tracking-tight text-ink sm:text-6xl">
+      Page introuvable
+      <br />
+      <span lang="en">Page not found</span>
     </h1>
     <p class="mt-8 max-w-xl text-lg leading-relaxed text-muted">
-      Cette adresse ne correspond à aucune page du site.<br /><span lang="en"
-        >This address does not match a page on this site.</span>
+      Cette adresse ne correspond à aucune page du site.
+      <br />
+      <span lang="en">This address does not match a page on this site.</span>
     </p>
     <nav
       aria-label="Choisir une page / Choose a page"
@@ -30,13 +29,16 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
       <a
         href="/"
         class="inline-flex min-h-11 items-center border border-accent bg-accent px-5 font-medium text-paper hover:bg-ink hover:text-paper"
-        >Accueil en français</a
       >
+        Accueil en français
+      </a>
       <a
         href="/en"
         class="inline-flex min-h-11 items-center border border-rule px-5 font-medium text-ink hover:border-accent hover:text-accent"
-        lang="en">English home</a
+        lang="en"
       >
+        English home
+      </a>
     </nav>
   </main>
 </BaseLayout>

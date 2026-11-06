@@ -4,7 +4,7 @@
   margin: 13mm 15mm;
 
   @top-right {
-    content: "SÉBASTIEN RIGAUX  /  CV";
+    content: 'SÉBASTIEN RIGAUX  /  CV';
     color: #536361;
     font-family: Arial, sans-serif;
     font-size: 7pt;
@@ -12,14 +12,14 @@
   }
 
   @bottom-left {
-    content: "sebastien.rigaux.be";
+    content: 'sebastien.rigaux.be';
     color: #536361;
     font-family: Arial, sans-serif;
     font-size: 8pt;
   }
 
   @bottom-right {
-    content: counter(page) " / " counter(pages);
+    content: counter(page) ' / ' counter(pages);
     color: #536361;
     font-family: Arial, sans-serif;
     font-size: 8pt;
@@ -249,15 +249,15 @@
   }
 
   #experience [data-cv-section-heading] h2::before {
-    content: "01";
+    content: '01';
   }
 
   #education [data-cv-section-heading] h2::before {
-    content: "02";
+    content: '02';
   }
 
   #skills [data-cv-section-heading] h2::before {
-    content: "03";
+    content: '03';
   }
 
   [data-cv-timeline-list] {
@@ -340,7 +340,7 @@
     background: var(--theme-accent);
     rotate: 45deg;
     transform: none;
-    content: "";
+    content: '';
   }
 
   [data-cv-entry-body] > ul > li + li {

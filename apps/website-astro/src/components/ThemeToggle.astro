@@ -1,16 +1,16 @@
 ---
-import { Moon, Sun } from "@lucide/astro";
-import type { Locale } from "@/types";
+import { Moon, Sun } from '@lucide/astro'
+import type { Locale } from '@/types'
 
 interface Props {
-  locale: Locale;
+  locale: Locale
 }
 
-const { locale } = Astro.props;
+const { locale } = Astro.props
 const copy = {
-  fr: { toLight: "Passer en mode clair", toDark: "Passer en mode sombre" },
-  en: { toLight: "Switch to light mode", toDark: "Switch to dark mode" },
-}[locale];
+  fr: { toLight: 'Passer en mode clair', toDark: 'Passer en mode sombre' },
+  en: { toLight: 'Switch to light mode', toDark: 'Switch to dark mode' },
+}[locale]
 ---
 
 <button

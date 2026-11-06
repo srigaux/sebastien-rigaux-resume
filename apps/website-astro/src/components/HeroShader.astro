@@ -9,101 +9,107 @@
 </div>
 
 <script>
-  const canvas = document.querySelector<HTMLCanvasElement>("[data-hero-shader]");
-  const shader = canvas?.parentElement;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const printMedia = window.matchMedia("print");
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-shader]')
+  const shader = canvas?.parentElement
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+  const printMedia = window.matchMedia('print')
   const device = navigator as Navigator & {
-    deviceMemory?: number;
-    connection?: EventTarget & { saveData?: boolean; effectiveType?: string };
-  };
-  const memory = device.deviceMemory ?? Infinity;
-  const cores = device.hardwareConcurrency || Infinity;
-  const economical = memory <= 4 || cores <= 4;
-  const fps = economical ? 20 : 30;
-  const maxPixelRatio = economical ? 0.75 : 1;
-  const maxPixels = economical ? 500_000 : 1_000_000;
+    deviceMemory?: number
+    connection?: EventTarget & { saveData?: boolean; effectiveType?: string }
+  }
+  const memory = device.deviceMemory ?? Infinity
+  const cores = device.hardwareConcurrency || Infinity
+  const economical = memory <= 4 || cores <= 4
+  const fps = economical ? 20 : 30
+  const maxPixelRatio = economical ? 0.75 : 1
+  const maxPixels = economical ? 500_000 : 1_000_000
 
   if (canvas && shader && memory > 2 && cores > 2) {
-    let visible = false;
-    let loadReady = false;
-    let printing = false;
-    let pageHidden = false;
-    let failed = false;
-    let cancelIdle: (() => void) | undefined;
-    let pendingStart: (() => void) | undefined;
-    let syncRenderer: (() => void) | undefined;
-    const canAnimate = () => !failed && !printing && !pageHidden &&
-      !reducedMotion.matches && !printMedia.matches &&
+    let visible = false
+    let loadReady = false
+    let printing = false
+    let pageHidden = false
+    let failed = false
+    let cancelIdle: (() => void) | undefined
+    let pendingStart: (() => void) | undefined
+    let syncRenderer: (() => void) | undefined
+    const canAnimate = () =>
+      !failed &&
+      !printing &&
+      !pageHidden &&
+      !reducedMotion.matches &&
+      !printMedia.matches &&
       !device.connection?.saveData &&
-      !["slow-2g", "2g"].includes(device.connection?.effectiveType ?? "");
-    const canRun = () => loadReady && visible && !document.hidden && canAnimate();
+      !['slow-2g', '2g'].includes(device.connection?.effectiveType ?? '')
+    const canRun = () =>
+      loadReady && visible && !document.hidden && canAnimate()
 
     const whenIdle = (callback: () => void) => {
-      if ("requestIdleCallback" in window) {
-        const id = window.requestIdleCallback(callback, { timeout: 2000 });
-        return () => window.cancelIdleCallback(id);
+      if ('requestIdleCallback' in window) {
+        const id = window.requestIdleCallback(callback, { timeout: 2000 })
+        return () => window.cancelIdleCallback(id)
       }
-      const id = setTimeout(callback, 50);
-      return () => window.clearTimeout(id);
-    };
+      const id = setTimeout(callback, 50)
+      return () => window.clearTimeout(id)
+    }
     const syncState = () => {
       if (!canRun()) {
-        cancelIdle?.();
-        cancelIdle = undefined;
-        if (!canAnimate()) delete shader.dataset.ready;
+        cancelIdle?.()
+        cancelIdle = undefined
+        if (!canAnimate()) delete shader.dataset.ready
       } else if (pendingStart && !cancelIdle) {
         cancelIdle = whenIdle(() => {
-          cancelIdle = undefined;
-          if (!canRun()) return;
-          const callback = pendingStart;
-          pendingStart = undefined;
-          callback?.();
-        });
+          cancelIdle = undefined
+          if (!canRun()) return
+          const callback = pendingStart
+          pendingStart = undefined
+          callback?.()
+        })
       }
-      syncRenderer?.();
-    };
+      syncRenderer?.()
+    }
     // An import resolves in a microtask, not necessarily during idle time.
-    const waitForIdle = () => new Promise<void>((resolve) => {
-      pendingStart = resolve;
-      syncState();
-    });
+    const waitForIdle = () =>
+      new Promise<void>((resolve) => {
+        pendingStart = resolve
+        syncState()
+      })
 
     const start = async () => {
-      let dispose: (() => void) | undefined;
+      let dispose: (() => void) | undefined
       try {
         // Destructure the dynamic import so Vite can retain only these exports.
-        const {
-          Renderer,
-          Program,
-          Triangle,
-          Vec2,
-          Color,
-          Mesh,
-        } = await import("ogl");
-        do { await waitForIdle(); } while (!canRun());
+        const { Renderer, Program, Triangle, Vec2, Color, Mesh } =
+          await import('ogl')
+        do {
+          await waitForIdle()
+        } while (!canRun())
         const renderer = new Renderer({
           canvas,
           alpha: true,
           premultipliedAlpha: true,
           antialias: false,
           depth: false,
-          powerPreference: "low-power",
-        });
-        const gl = renderer.gl;
+          powerPreference: 'low-power',
+        })
+        const gl = renderer.gl
         // CPU-backed WebGL can make this decorative effect block the page.
         // Keep the CSS glow instead, before compiling or drawing the shader.
-        const rendererInfo = gl.getExtension("WEBGL_debug_renderer_info");
-        const rendererName = String(gl.getParameter(
-          rendererInfo?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER,
-        ));
-        if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(rendererName)) {
-          failed = true;
-          syncState();
-          gl.getExtension("WEBGL_lose_context")?.loseContext();
-          return;
+        const rendererInfo = gl.getExtension('WEBGL_debug_renderer_info')
+        const rendererName = String(
+          gl.getParameter(rendererInfo?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER)
+        )
+        if (
+          /swiftshader|llvmpipe|softpipe|software|basic render/i.test(
+            rendererName
+          )
+        ) {
+          failed = true
+          syncState()
+          gl.getExtension('WEBGL_lose_context')?.loseContext()
+          return
         }
-        const root = document.documentElement;
+        const root = document.documentElement
         const uniforms = {
           resolution: { value: new Vec2(1, 1) },
           center: { value: new Vec2() },
@@ -112,9 +118,9 @@
           lightMode: { value: 0 },
           parallax: { value: 0 },
           interaction: { value: new Vec2() },
-        };
-        const geometry = new Triangle(gl);
-        dispose = () => geometry.remove();
+        }
+        const geometry = new Triangle(gl)
+        dispose = () => geometry.remove()
         // OGL links the program synchronously, inside the deferred idle task.
         const program = new Program(gl, {
           uniforms,
@@ -180,194 +186,276 @@
               gl_FragColor = vec4(ink, alpha);
             }
           `,
-        });
+        })
         const disposeResources = () => {
-          geometry.remove();
-          program.remove();
-          gl.deleteShader(program.vertexShader);
-          gl.deleteShader(program.fragmentShader);
-        };
-        dispose = disposeResources;
+          geometry.remove()
+          program.remove()
+          gl.deleteShader(program.vertexShader)
+          gl.deleteShader(program.fragmentShader)
+        }
+        dispose = disposeResources
         if (!gl.getProgramParameter(program.program, gl.LINK_STATUS)) {
-          throw new Error("Unable to compile the hero shader");
+          throw new Error('Unable to compile the hero shader')
         }
         // The shader emits straight RGB; blend into a premultiplied canvas.
-        program.setBlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-        const mesh = new Mesh(gl, { geometry, program, frustumCulled: false });
+        program.setBlendFunc(
+          gl.SRC_ALPHA,
+          gl.ONE_MINUS_SRC_ALPHA,
+          gl.ONE,
+          gl.ONE_MINUS_SRC_ALPHA
+        )
+        const mesh = new Mesh(gl, { geometry, program, frustumCulled: false })
 
-        const listeners = new AbortController();
-        let frame = 0;
-        let lastRender: number | undefined;
-        let lastTick: number | undefined;
-        let themeDirty = true;
-        let sizeDirty = true;
+        const listeners = new AbortController()
+        let frame = 0
+        let lastRender: number | undefined
+        let lastTick: number | undefined
+        let themeDirty = true
+        let sizeDirty = true
 
         const syncTheme = () => {
-          const styles = getComputedStyle(root);
-          const isLight = styles.colorScheme === "light";
-          uniforms.accent.value.set(styles.getPropertyValue("--theme-accent").trim());
+          const styles = getComputedStyle(root)
+          const isLight = styles.colorScheme === 'light'
+          uniforms.accent.value.set(
+            styles.getPropertyValue('--theme-accent').trim()
+          )
           // Preserve the original shader palette: sRGB in light mode, linear in dark mode.
           if (!isLight) {
-            const color = uniforms.accent.value;
+            const color = uniforms.accent.value
             for (let channel = 0; channel < 3; channel++) {
-              const value = color[channel];
-              color[channel] = value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+              const value = color[channel]
+              color[channel] =
+                value <= 0.04045
+                  ? value / 12.92
+                  : Math.pow((value + 0.055) / 1.055, 2.4)
             }
           }
-          uniforms.lightMode.value = Number(isLight);
-        };
-        const markThemeDirty = () => { themeDirty = true; };
-        const themeObserver = new MutationObserver(markThemeDirty);
-        themeObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
-        const scheme = window.matchMedia("(prefers-color-scheme: dark)");
-        scheme.addEventListener("change", markThemeDirty, { signal: listeners.signal });
+          uniforms.lightMode.value = Number(isLight)
+        }
+        const markThemeDirty = () => {
+          themeDirty = true
+        }
+        const themeObserver = new MutationObserver(markThemeDirty)
+        themeObserver.observe(root, {
+          attributes: true,
+          attributeFilter: ['class'],
+        })
+        const scheme = window.matchMedia('(prefers-color-scheme: dark)')
+        scheme.addEventListener('change', markThemeDirty, {
+          signal: listeners.signal,
+        })
 
-        const hero = shader.closest<HTMLElement>("[data-cv-hero]");
-        const logo = hero?.querySelector<SVGElement>("[data-hero-logo]");
-        let heroTravel = 640;
-        let parallaxTarget = 0;
+        const hero = shader.closest<HTMLElement>('[data-cv-hero]')
+        const logo = hero?.querySelector<SVGElement>('[data-hero-logo]')
+        let heroTravel = 640
+        let parallaxTarget = 0
         const syncParallax = () => {
-          parallaxTarget = Math.min(window.scrollY / heroTravel, 1) * 0.42;
-        };
-        window.addEventListener("scroll", syncParallax, { passive: true, signal: listeners.signal });
+          parallaxTarget = Math.min(window.scrollY / heroTravel, 1) * 0.42
+        }
+        window.addEventListener('scroll', syncParallax, {
+          passive: true,
+          signal: listeners.signal,
+        })
 
-        let targetX = 0;
-        let targetY = 0;
-        hero?.addEventListener("pointermove", (event) => {
-          if (event.pointerType !== "mouse" || !canRun()) return;
-          const bounds = hero.getBoundingClientRect();
-          const x = (event.clientX - bounds.left) / bounds.width * 2 - 1;
-          const y = (event.clientY - bounds.top) / bounds.height * 2 - 1;
-          targetX = -x * 0.16;
-          targetY = y * 0.12;
-        }, { signal: listeners.signal });
-        hero?.addEventListener("pointerleave", () => {
-          targetX = 0;
-          targetY = 0;
-        }, { signal: listeners.signal });
+        let targetX = 0
+        let targetY = 0
+        hero?.addEventListener(
+          'pointermove',
+          (event) => {
+            if (event.pointerType !== 'mouse' || !canRun()) return
+            const bounds = hero.getBoundingClientRect()
+            const x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1
+            const y = ((event.clientY - bounds.top) / bounds.height) * 2 - 1
+            targetX = -x * 0.16
+            targetY = y * 0.12
+          },
+          { signal: listeners.signal }
+        )
+        hero?.addEventListener(
+          'pointerleave',
+          () => {
+            targetX = 0
+            targetY = 0
+          },
+          { signal: listeners.signal }
+        )
 
-        let initialGamma: number | undefined;
-        let initialBeta: number | undefined;
-        const clamp = (value: number) => Math.max(-1, Math.min(1, value));
+        let initialGamma: number | undefined
+        let initialBeta: number | undefined
+        const clamp = (value: number) => Math.max(-1, Math.min(1, value))
         const onOrientation = (event: DeviceOrientationEvent) => {
-          if (!canRun() || event.gamma === null || event.beta === null) return;
-          initialGamma ??= event.gamma;
-          initialBeta ??= event.beta;
-          targetX = -clamp((event.gamma - initialGamma) / 25) * 0.075;
-          targetY = clamp((event.beta - initialBeta) / 25) * 0.055;
-        };
-        if (typeof DeviceOrientationEvent !== "undefined") {
-          const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-            requestPermission?: () => Promise<"granted" | "denied">;
-          };
+          if (!canRun() || event.gamma === null || event.beta === null) return
+          initialGamma ??= event.gamma
+          initialBeta ??= event.beta
+          targetX = -clamp((event.gamma - initialGamma) / 25) * 0.075
+          targetY = clamp((event.beta - initialBeta) / 25) * 0.055
+        }
+        if (typeof DeviceOrientationEvent !== 'undefined') {
+          const orientation =
+            DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+              requestPermission?: () => Promise<'granted' | 'denied'>
+            }
           if (!orientation.requestPermission) {
-            window.addEventListener("deviceorientation", onOrientation, { signal: listeners.signal });
+            window.addEventListener('deviceorientation', onOrientation, {
+              signal: listeners.signal,
+            })
           }
         }
 
         const resize = () => {
           // Read layout only on initialization or resize, before updating the canvas.
-          const { left, top, width, height } = shader.getBoundingClientRect();
-          const logoBounds = logo?.getBoundingClientRect();
-          heroTravel = Math.max(hero?.clientHeight ?? height, 1);
-          const unit = Math.max(Math.min(width, height), 1);
+          const { left, top, width, height } = shader.getBoundingClientRect()
+          const logoBounds = logo?.getBoundingClientRect()
+          heroTravel = Math.max(hero?.clientHeight ?? height, 1)
+          const unit = Math.max(Math.min(width, height), 1)
           if (logoBounds) {
             uniforms.center.value.set(
-              (logoBounds.left + logoBounds.width / 2 - left - width / 2) / unit,
-              (height / 2 - (logoBounds.top + logoBounds.height / 2 - top)) / unit,
-            );
+              (logoBounds.left + logoBounds.width / 2 - left - width / 2) /
+                unit,
+              (height / 2 - (logoBounds.top + logoBounds.height / 2 - top)) /
+                unit
+            )
           } else {
-            uniforms.center.value.set(0.29 * width / unit, 0.015);
+            uniforms.center.value.set((0.29 * width) / unit, 0.015)
           }
-          syncParallax();
-          const ratio = Math.min(devicePixelRatio, maxPixelRatio,
-            Math.sqrt(maxPixels / Math.max(width * height, 1)));
-          renderer.setSize(Math.max(1, Math.floor(width * ratio)),
-            Math.max(1, Math.floor(height * ratio)));
+          syncParallax()
+          const ratio = Math.min(
+            devicePixelRatio,
+            maxPixelRatio,
+            Math.sqrt(maxPixels / Math.max(width * height, 1))
+          )
+          renderer.setSize(
+            Math.max(1, Math.floor(width * ratio)),
+            Math.max(1, Math.floor(height * ratio))
+          )
           // OGL also sets CSS dimensions; keep layout driven by the full-size classes.
-          canvas.style.removeProperty("width");
-          canvas.style.removeProperty("height");
-          uniforms.resolution.value.set(canvas.width, canvas.height);
-        };
-        const resizeObserver = new ResizeObserver(() => { sizeDirty = true; });
-        resizeObserver.observe(shader);
-        if (logo) resizeObserver.observe(logo);
-        syncTheme();
-        resize();
+          canvas.style.removeProperty('width')
+          canvas.style.removeProperty('height')
+          uniforms.resolution.value.set(canvas.width, canvas.height)
+        }
+        const resizeObserver = new ResizeObserver(() => {
+          sizeDirty = true
+        })
+        resizeObserver.observe(shader)
+        if (logo) resizeObserver.observe(logo)
+        syncTheme()
+        resize()
 
-        const interval = 1000 / fps;
+        const interval = 1000 / fps
         const render = (now: number) => {
-          frame = 0;
-          if (!canRun()) { syncState(); return; }
-          frame = requestAnimationFrame(render);
-          const elapsed = lastTick === undefined ? interval : now - lastTick;
-          if (elapsed < interval - 0.1) return;
+          frame = 0
+          if (!canRun()) {
+            syncState()
+            return
+          }
+          frame = requestAnimationFrame(render)
+          const elapsed = lastTick === undefined ? interval : now - lastTick
+          if (elapsed < interval - 0.1) return
           // Absorb rAF timestamp rounding without rendering an extra frame.
-          const intervals = Math.floor((elapsed + 0.1) / interval);
-          lastTick = now - Math.max(0, elapsed - intervals * interval);
-          const delta = lastRender === undefined ? interval : Math.min(now - lastRender, 100);
-          lastRender = now;
-          if (themeDirty) { syncTheme(); themeDirty = false; }
-          if (sizeDirty) { resize(); sizeDirty = false; }
-          uniforms.time.value += delta * 0.001;
+          const intervals = Math.floor((elapsed + 0.1) / interval)
+          lastTick = now - Math.max(0, elapsed - intervals * interval)
+          const delta =
+            lastRender === undefined
+              ? interval
+              : Math.min(now - lastRender, 100)
+          lastRender = now
+          if (themeDirty) {
+            syncTheme()
+            themeDirty = false
+          }
+          if (sizeDirty) {
+            resize()
+            sizeDirty = false
+          }
+          uniforms.time.value += delta * 0.001
           // Match the original 60 Hz easing at either rendering frequency.
-          const parallaxEase = 1 - Math.pow(1 - 0.16, delta / (1000 / 60));
-          const interactionEase = 1 - Math.pow(1 - 0.12, delta / (1000 / 60));
-          uniforms.parallax.value += (parallaxTarget - uniforms.parallax.value) * parallaxEase;
-          uniforms.interaction.value.x += (targetX - uniforms.interaction.value.x) * interactionEase;
-          uniforms.interaction.value.y += (targetY - uniforms.interaction.value.y) * interactionEase;
-          renderer.render({ scene: mesh, update: false, sort: false, frustumCull: false });
-          shader.dataset.ready = "";
-        };
+          const parallaxEase = 1 - Math.pow(1 - 0.16, delta / (1000 / 60))
+          const interactionEase = 1 - Math.pow(1 - 0.12, delta / (1000 / 60))
+          uniforms.parallax.value +=
+            (parallaxTarget - uniforms.parallax.value) * parallaxEase
+          uniforms.interaction.value.x +=
+            (targetX - uniforms.interaction.value.x) * interactionEase
+          uniforms.interaction.value.y +=
+            (targetY - uniforms.interaction.value.y) * interactionEase
+          renderer.render({
+            scene: mesh,
+            update: false,
+            sort: false,
+            frustumCull: false,
+          })
+          shader.dataset.ready = ''
+        }
         const queueRender = () => {
-          if (!frame && canRun()) frame = requestAnimationFrame(render);
-        };
+          if (!frame && canRun()) frame = requestAnimationFrame(render)
+        }
         const stopRender = () => {
-          cancelAnimationFrame(frame);
-          frame = 0;
-          lastTick = undefined;
-          lastRender = undefined;
-        };
+          cancelAnimationFrame(frame)
+          frame = 0
+          lastTick = undefined
+          lastRender = undefined
+        }
         dispose = () => {
-          stopRender();
-          listeners.abort();
-          themeObserver.disconnect();
-          resizeObserver.disconnect();
-          disposeResources();
-        };
-        syncRenderer = () => { if (canRun()) queueRender(); else stopRender(); };
-        canvas.addEventListener("webglcontextlost", (event) => {
-          event.preventDefault();
-          failed = true;
-          syncState();
-          dispose?.();
-        }, { signal: listeners.signal });
-        syncState();
+          stopRender()
+          listeners.abort()
+          themeObserver.disconnect()
+          resizeObserver.disconnect()
+          disposeResources()
+        }
+        syncRenderer = () => {
+          if (canRun()) queueRender()
+          else stopRender()
+        }
+        canvas.addEventListener(
+          'webglcontextlost',
+          (event) => {
+            event.preventDefault()
+            failed = true
+            syncState()
+            dispose?.()
+          },
+          { signal: listeners.signal }
+        )
+        syncState()
       } catch {
         // The CSS glow remains visible when WebGL is unavailable.
-        failed = true;
-        syncState();
-        dispose?.();
+        failed = true
+        syncState()
+        dispose?.()
       }
-    };
-    pendingStart = () => { void start(); };
+    }
+    pendingStart = () => {
+      void start()
+    }
     new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      syncState();
-    }).observe(shader);
-    document.addEventListener("visibilitychange", syncState);
-    reducedMotion.addEventListener("change", syncState);
-    printMedia.addEventListener("change", syncState);
-    device.connection?.addEventListener("change", syncState);
-    window.addEventListener("beforeprint", () => { printing = true; syncState(); });
-    window.addEventListener("afterprint", () => { printing = false; syncState(); });
-    window.addEventListener("pagehide", () => { pageHidden = true; syncState(); });
-    window.addEventListener("pageshow", () => { pageHidden = false; syncState(); });
-    const afterLoad = () => window.setTimeout(() => {
-      loadReady = true;
-      syncState();
-    }, 1000);
-    if (document.readyState === "complete") afterLoad();
-    else window.addEventListener("load", afterLoad, { once: true });
+      visible = entry.isIntersecting
+      syncState()
+    }).observe(shader)
+    document.addEventListener('visibilitychange', syncState)
+    reducedMotion.addEventListener('change', syncState)
+    printMedia.addEventListener('change', syncState)
+    device.connection?.addEventListener('change', syncState)
+    window.addEventListener('beforeprint', () => {
+      printing = true
+      syncState()
+    })
+    window.addEventListener('afterprint', () => {
+      printing = false
+      syncState()
+    })
+    window.addEventListener('pagehide', () => {
+      pageHidden = true
+      syncState()
+    })
+    window.addEventListener('pageshow', () => {
+      pageHidden = false
+      syncState()
+    })
+    const afterLoad = () =>
+      window.setTimeout(() => {
+        loadReady = true
+        syncState()
+      }, 1000)
+    if (document.readyState === 'complete') afterLoad()
+    else window.addEventListener('load', afterLoad, { once: true })
   }
 </script>

@@ -1,7 +1,7 @@
 ---
-import WatchImage from "@/components/WatchImage.astro";
-import WatchSiteIcon from "@/components/WatchSiteIcon.astro";
-import CookieSettings from "@/components/CookieSettings.astro";
+import WatchImage from '@/components/WatchImage.astro'
+import WatchSiteIcon from '@/components/WatchSiteIcon.astro'
+import CookieSettings from '@/components/CookieSettings.astro'
 import {
   FileText,
   Video,
@@ -11,116 +11,116 @@ import {
   Wrench,
   Ellipsis,
   Rss,
-} from "@lucide/astro";
-import type { WatchFormat } from "@/lib/watch-model";
-import { pageMarkdownPath, watchRssPath } from "@/lib/urls";
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import ExternalLink from "@/components/ExternalLink.astro";
-import Header from "@/components/Header.astro";
-import WatchSearch from "@/components/WatchSearch.astro";
-import { WATCH_PAGE_SIZE, watchPath, watchLinkTarget } from "@/lib/watch-model";
-import { renderSummaryMarkdown } from "@/lib/watch-markdown";
-import type { WatchPageProps } from "@/lib/watch-pages";
+} from '@lucide/astro'
+import type { WatchFormat } from '@/lib/watch-model'
+import { pageMarkdownPath, watchRssPath } from '@/lib/urls'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import ExternalLink from '@/components/ExternalLink.astro'
+import Header from '@/components/Header.astro'
+import WatchSearch from '@/components/WatchSearch.astro'
+import { WATCH_PAGE_SIZE, watchPath, watchLinkTarget } from '@/lib/watch-model'
+import { renderSummaryMarkdown } from '@/lib/watch-markdown'
+import type { WatchPageProps } from '@/lib/watch-pages'
 
 const { locale, links, topics, topic, page, totalPages } =
-  Astro.props as WatchPageProps;
+  Astro.props as WatchPageProps
 const t = {
   fr: {
-    title: "Veille technologique",
-    selectedLabel: "Liens sélectionnés",
+    title: 'Veille technologique',
+    selectedLabel: 'Liens sélectionnés',
     intro:
-      "Une sélection personnelle de liens, outils et idées que je souhaite garder et partager avec mes équipes.",
-    all: "Tous les liens",
-    topics: "Explorer par sujet",
-    empty: "Les premiers liens sélectionnés arrivent bientôt.",
-    previous: "Précédent",
-    next: "Suivant",
-    page: "Page",
-    of: "sur",
-    source: "Repéré via",
-    external: "Ouvrir le lien original",
-    selected: "Sélectionné le",
-    backToTop: "Retour en haut",
+      'Une sélection personnelle de liens, outils et idées que je souhaite garder et partager avec mes équipes.',
+    all: 'Tous les liens',
+    topics: 'Explorer par sujet',
+    empty: 'Les premiers liens sélectionnés arrivent bientôt.',
+    previous: 'Précédent',
+    next: 'Suivant',
+    page: 'Page',
+    of: 'sur',
+    source: 'Repéré via',
+    external: 'Ouvrir le lien original',
+    selected: 'Sélectionné le',
+    backToTop: 'Retour en haut',
   },
   en: {
-    title: "Tech watch",
-    selectedLabel: "Selected links",
+    title: 'Tech watch',
+    selectedLabel: 'Selected links',
     intro:
-      "A personal selection of links, tools, and ideas I want to keep and share with my teams.",
-    all: "All links",
-    topics: "Explore topics",
-    empty: "The first selected links are coming soon.",
-    previous: "Previous",
-    next: "Next",
-    page: "Page",
-    of: "of",
-    source: "Found via",
-    external: "Open original link",
-    selected: "Selected on",
-    backToTop: "Back to top",
+      'A personal selection of links, tools, and ideas I want to keep and share with my teams.',
+    all: 'All links',
+    topics: 'Explore topics',
+    empty: 'The first selected links are coming soon.',
+    previous: 'Previous',
+    next: 'Next',
+    page: 'Page',
+    of: 'of',
+    source: 'Found via',
+    external: 'Open original link',
+    selected: 'Selected on',
+    backToTop: 'Back to top',
   },
-}[locale];
-const path = watchPath(locale, page, topic?.uid);
+}[locale]
+const path = watchPath(locale, page, topic?.uid)
 const alternatePaths = {
-  fr: watchPath("fr", page, topic?.uid),
-  en: watchPath("en", page, topic?.uid),
-};
-const heading = topic ? `${topic.name} · ${t.title}` : t.title;
-const title = page > 1 ? `${heading} · ${t.page} ${page}` : heading;
+  fr: watchPath('fr', page, topic?.uid),
+  en: watchPath('en', page, topic?.uid),
+}
+const heading = topic ? `${topic.name} · ${t.title}` : t.title
+const title = page > 1 ? `${heading} · ${t.page} ${page}` : heading
 const baseDescription = topic
-  ? `${topic.name}: ${locale === "fr" ? "liens sélectionnés par Sébastien Rigaux" : "links selected by Sébastien Rigaux"}.`
-  : t.intro;
+  ? `${topic.name}: ${locale === 'fr' ? 'liens sélectionnés par Sébastien Rigaux' : 'links selected by Sébastien Rigaux'}.`
+  : t.intro
 const description =
   page > 1
     ? `${baseDescription} ${t.page} ${page} ${t.of} ${totalPages}.`
-    : baseDescription;
+    : baseDescription
 const previousPath =
-  page > 1 ? watchPath(locale, page - 1, topic?.uid) : undefined;
+  page > 1 ? watchPath(locale, page - 1, topic?.uid) : undefined
 const nextPath =
-  page < totalPages ? watchPath(locale, page + 1, topic?.uid) : undefined;
+  page < totalPages ? watchPath(locale, page + 1, topic?.uid) : undefined
 // Keep the endpoints and one neighbor on each side: at most five page links.
 const pageNumbers = [...new Set([1, page - 1, page, page + 1, totalPages])]
   .filter((number) => number >= 1 && number <= totalPages)
-  .sort((a, b) => a - b);
+  .sort((a, b) => a - b)
 const intro =
   topic?.description ||
   (topic
-    ? locale === "fr"
+    ? locale === 'fr'
       ? `Mes liens sélectionnés autour de ${topic.name}.`
       : `My selected links about ${topic.name}.`
-    : t.intro);
-const site = Astro.site!;
-const canonical = new URL(path, site).href;
+    : t.intro)
+const site = Astro.site!
+const canonical = new URL(path, site).href
 const breadcrumbs = [
   { name: t.title, path: watchPath(locale) },
   ...(topic
     ? [{ name: topic.name, path: watchPath(locale, 1, topic.uid) }]
     : []),
   ...(page > 1 ? [{ name: `${t.page} ${page}`, path }] : []),
-];
+]
 const schema = {
-  "@context": "https://schema.org",
-  "@graph": [
+  '@context': 'https://schema.org',
+  '@graph': [
     {
-      "@type": "CollectionPage",
-      "@id": `${canonical}#webpage`,
+      '@type': 'CollectionPage',
+      '@id': `${canonical}#webpage`,
       url: canonical,
       name: title,
       description,
       inLanguage: locale,
-      isPartOf: { "@id": new URL("/#website", site).href },
-      mainEntity: { "@id": `${canonical}#links` },
+      isPartOf: { '@id': new URL('/#website', site).href },
+      mainEntity: { '@id': `${canonical}#links` },
       ...(breadcrumbs.length > 1 && {
-        breadcrumb: { "@id": `${canonical}#breadcrumb` },
+        breadcrumb: { '@id': `${canonical}#breadcrumb` },
       }),
     },
     ...(breadcrumbs.length > 1
       ? [
           {
-            "@type": "BreadcrumbList",
-            "@id": `${canonical}#breadcrumb`,
+            '@type': 'BreadcrumbList',
+            '@id': `${canonical}#breadcrumb`,
             itemListElement: breadcrumbs.map((entry, index) => ({
-              "@type": "ListItem",
+              '@type': 'ListItem',
               position: index + 1,
               name: entry.name,
               item: new URL(entry.path, site).href,
@@ -129,15 +129,15 @@ const schema = {
         ]
       : []),
     {
-      "@type": "ItemList",
-      "@id": `${canonical}#links`,
+      '@type': 'ItemList',
+      '@id': `${canonical}#links`,
       numberOfItems: links.length,
-      itemListOrder: "https://schema.org/ItemListOrderDescending",
+      itemListOrder: 'https://schema.org/ItemListOrderDescending',
       itemListElement: links.map((link, index) => ({
-        "@type": "ListItem",
+        '@type': 'ListItem',
         position: (page - 1) * WATCH_PAGE_SIZE + index + 1,
         item: {
-          "@type": "WebPage",
+          '@type': 'WebPage',
           url: new URL(watchLinkTarget(link, locale), site).href,
           name: link.title,
           inLanguage: link.locale,
@@ -145,15 +145,15 @@ const schema = {
       })),
     },
   ],
-};
+}
 // Give the hero a 100 ms head start before revealing the first links.
 // Only these four links stagger, from tablet upwards.
 const linkDelays = [
-  "motion-delay-[100ms]",
-  "motion-delay-[100ms] md:motion-delay-[160ms]",
-  "motion-delay-[100ms] md:motion-delay-[220ms]",
-  "motion-delay-[100ms] md:motion-delay-[280ms]",
-];
+  'motion-delay-[100ms]',
+  'motion-delay-[100ms] md:motion-delay-[160ms]',
+  'motion-delay-[100ms] md:motion-delay-[220ms]',
+  'motion-delay-[100ms] md:motion-delay-[280ms]',
+]
 const formatIcons = {
   Article: FileText,
   Video,
@@ -162,11 +162,11 @@ const formatIcons = {
   Documentation: BookOpen,
   Tool: Wrench,
   Other: Ellipsis,
-} satisfies Record<WatchFormat, typeof FileText>;
+} satisfies Record<WatchFormat, typeof FileText>
 const dateFormatter = new Intl.DateTimeFormat(
-  locale === "fr" ? "fr-BE" : "en-GB",
-  { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" },
-);
+  locale === 'fr' ? 'fr-BE' : 'en-GB',
+  { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }
+)
 ---
 
 <BaseLayout
@@ -187,87 +187,80 @@ const dateFormatter = new Intl.DateTimeFormat(
     languagePaths={alternatePaths}
   />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
-    {
-      page === 1 ? (
-        <section
-          no-intersect
-          class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none pt-14 sm:pt-20 lg:pt-24"
-        >
-          <div
-            aria-hidden="true"
-            class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"
-          />
+    {page === 1 ? (
+      <section
+        no-intersect
+        class="intersect-once intersect-[0.2] pt-14 motion-duration-500 motion-reduce:animate-none sm:pt-20 lg:pt-24 intersect:motion-preset-blur-up"
+      >
+        <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent" />
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+          <p class="text-base font-semibold tracking-tight text-accent">
+            {topic ? t.title : t.selectedLabel}
+          </p>
+          {topic && (
+            <a
+              href={watchPath(locale)}
+              class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              ← {t.all}
+            </a>
+          )}
+        </div>
+        <h1 class="max-w-5xl font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] break-words text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
+          {topic ? topic.name : t.title}
+        </h1>
+        <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
+        <div class="mt-5 flex items-center gap-3">
+          <a
+            href={watchRssPath(locale)}
+            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
+          >
+            <Rss size={18} aria-hidden="true" />
+            {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
+            <span class="sr-only"> RSS</span>
+          </a>
+          <span data-watch-search-trigger class="inline-flex" />
+        </div>
+      </section>
+    ) : (
+      <header
+        no-intersect
+        class="intersect-once intersect-[0.2] pt-10 motion-duration-500 motion-reduce:animate-none sm:pt-12 lg:pt-14 intersect:motion-preset-blur-up"
+      >
+        {topic && (
           <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
             <p class="text-base font-semibold tracking-tight text-accent">
-              {topic ? t.title : t.selectedLabel}
+              {t.title}
             </p>
-            {topic && (
-              <a
-                href={watchPath(locale)}
-                class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
-              >
-                ← {t.all}
-              </a>
-            )}
+            <a
+              href={watchPath(locale)}
+              class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              ← {t.all}
+            </a>
           </div>
-          <h1 class="max-w-5xl break-words font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
-            {topic ? topic.name : t.title}
+        )}
+        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <h1 class="font-display text-2xl font-semibold tracking-tight break-words text-ink sm:text-3xl">
+            {topic?.name || t.title}
           </h1>
-          <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">
-            {intro}
+          <p class="shrink-0 text-sm text-muted">
+            {t.page} {page} {t.of} {totalPages}
           </p>
-          <div class="mt-5 flex items-center gap-3">
+        </div>
+        <div class="mt-5 flex items-center gap-3">
           <a
             href={watchRssPath(locale)}
             class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
           >
             <Rss size={18} aria-hidden="true" />
-            {locale === "fr" ? "S’abonner" : "Subscribe"}
+            {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
             <span class="sr-only"> RSS</span>
           </a>
           <span data-watch-search-trigger class="inline-flex" />
-          </div>
-        </section>
-      ) : (
-        <header
-          no-intersect
-          class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none pt-10 sm:pt-12 lg:pt-14"
-        >
-          {topic && (
-            <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
-              <p class="text-base font-semibold tracking-tight text-accent">
-                {t.title}
-              </p>
-              <a
-                href={watchPath(locale)}
-                class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
-              >
-                ← {t.all}
-              </a>
-            </div>
-          )}
-          <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-            <h1 class="break-words font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              {topic?.name || t.title}
-            </h1>
-            <p class="shrink-0 text-sm text-muted">
-              {t.page} {page} {t.of} {totalPages}
-            </p>
-          </div>
-          <div class="mt-5 flex items-center gap-3">
-          <a
-            href={watchRssPath(locale)}
-            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
-          >
-            <Rss size={18} aria-hidden="true" />
-            {locale === "fr" ? "S’abonner" : "Subscribe"}
-            <span class="sr-only"> RSS</span>
-          </a>
-          <span data-watch-search-trigger class="inline-flex" />
-          </div>
-        </header>
-      )
-    }
+        </div>
+      </header>
+    )}
 
     <div>
       <WatchSearch locale={locale} />
@@ -275,268 +268,270 @@ const dateFormatter = new Intl.DateTimeFormat(
     <div
       data-watch-browse
       class:list={[
-        "mt-8 sm:mt-10 lg:mt-12 grid [&[hidden]]:hidden gap-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16",
+        'mt-8 grid gap-12 sm:mt-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-16 [&[hidden]]:hidden',
       ]}
     >
       <section aria-label={topic?.name || t.all} class="min-w-0">
-        {
-          links.length === 0 && (
-            <p class="border-t border-rule py-12 text-muted">{t.empty}</p>
-          )
-        }
+        {links.length === 0 && (
+          <p class="border-t border-rule py-12 text-muted">{t.empty}</p>
+        )}
         <div class="divide-y divide-rule border-t border-rule">
-          {
-            links.map((link, index) => {
-              const FormatIcon = formatIcons[link.format];
-              const sourceLanguageTitle =
-                locale === "fr"
-                  ? `Langue de la source : ${link.sourceLanguage === "EN" ? "anglais" : "français"}`
-                  : `Source language: ${link.sourceLanguage === "FR" ? "French" : "English"}`;
-              const monogram = new URL(link.url).hostname
-                .replace(/^www\./, "")
-                .charAt(0)
-                .toUpperCase();
-              return (
-                <article
-                  no-intersect
-                  class:list={[
-                    "intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none relative isolate py-8 sm:py-10",
-                    linkDelays[index],
-                  ]}
-                >
-                  <div class="min-w-0">
-                    <header class="mb-5">
-                      <div class="min-w-0">
-                        <div class="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                          <time
-                            datetime={link.selectedOn}
-                            aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}
-                          >
-                            {dateFormatter.format(
-                              new Date(`${link.selectedOn}T00:00:00Z`),
-                            )}
-                          </time>
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span class="inline-flex items-center gap-1.5">
-                              <FormatIcon
-                                size={14}
-                                class="shrink-0"
-                                aria-hidden="true"
-                              />
-                              {link.format}
-                            </span>
-                          </>
-                          {link.sourceLanguage &&
-                            link.sourceLanguage.toLowerCase() !== locale && (
-                              <>
-                                <span aria-hidden="true">·</span>
-                                <span
-                                  class="border border-rule px-1.5 py-0.5 font-semibold tracking-wide"
-                                  title={sourceLanguageTitle}
-                                  aria-label={sourceLanguageTitle}
-                                >
-                                  {link.sourceLanguage}
-                                </span>
-                              </>
-                            )}
-                        </div>
-                        <h2
-                          class="pr-8 font-display text-xl font-semibold leading-snug tracking-tight sm:text-2xl"
-                          lang={link.textLanguage}
-                        >
-                          <WatchSiteIcon icon={link.siteIcon} fallbackIcon={link.discoveredVia?.icon} monogram={monogram} eager={index === 0} />
-                          <ExternalLink
-                            href={link.url}
-                            newTab
-                            stretched
-                            aria-label={`${link.title} — ${t.external}`}
-                            class="text-ink hover:text-accent"
-                          >
-                            {link.title}
-                          </ExternalLink>
-                        </h2>
-                        <div class="pointer-events-none relative z-10 mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
-                          <span class="inline-flex min-w-0 items-center gap-2">
-                            <span class="break-all">
-                              {new URL(link.url).hostname.replace(/^www\./, "")}
-                            </span>
-                          </span>
-                          <a
-                            href={watchLinkTarget(link, locale)}
-                            aria-label={`${locale === "fr" ? "Permalien" : "Permalink"} : ${link.title}`}
-                            class="pointer-events-auto underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent"
-                          >
-                            {locale === "fr" ? "Permalien" : "Permalink"}
-                          </a>
-                        </div>
-                      </div>
-                    </header>
-                    <div class="flow-root">
-                      {link.image && (
-                        <WatchImage image={link.image} eager={index === 0} class="h-full w-full object-cover" />
-                      )}
-                      <div
-                        class="[&_p+p]:mt-3 pointer-events-none text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_strong]:font-semibold [&_em]:italic [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]"
-                        lang={link.textLanguage}
-                        set:html={renderSummaryMarkdown(link.summary)}
-                      />
-                    </div>
-                    <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
-                      {link.topics.map((item) => (
-                        <a
-                          href={watchPath(locale, 1, item.uid)}
-                          class="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted no-underline transition-colors hover:bg-accent/10 hover:text-accent"
-                        >
-                          {item.name}
-                        </a>
-                      ))}
-                    </div>
-                    {(link.credit || link.discoveredVia) && (
-                      <p class="pointer-events-none relative z-10 mt-4 text-xs text-muted">
-                        {link.credit && <span lang="en">{link.credit}</span>}
-                        {link.credit && link.discoveredVia && (
-                          <span aria-hidden="true"> · </span>
-                        )}
-                        {link.discoveredVia && (
-                          <span>
-                            {t.source}{" "}
-                            <a
-                              href={link.discoveredVia.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="pointer-events-auto relative z-10 underline decoration-rule hover:text-accent"
-                            >
-                              {link.discoveredVia.name}
-                            </a>
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                </article>
-              );
-            })
-          }
-        </div>
-        {
-          totalPages > 1 && (
-            <nav
-              no-intersect
-              aria-label="Pagination"
-              class="intersect:motion-preset-blur-up motion-duration-500 intersect-once intersect-[0.2] motion-reduce:animate-none mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold"
-            >
-              {previousPath ? (
-                <a
-                  href={previousPath}
-                  rel="prev"
-                  class="inline-flex min-h-11 items-center justify-self-start text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-                >
-                  <span aria-hidden="true">←&nbsp;</span>
-                  {t.previous}
-                </a>
-              ) : (
-                <span />
-              )}
-              <span
-                class="whitespace-nowrap text-muted md:hidden"
-                aria-label={`${t.page} ${page} ${t.of} ${totalPages}`}
+          {links.map((link, index) => {
+            const FormatIcon = formatIcons[link.format]
+            const sourceLanguageTitle =
+              locale === 'fr'
+                ? `Langue de la source : ${link.sourceLanguage === 'EN' ? 'anglais' : 'français'}`
+                : `Source language: ${link.sourceLanguage === 'FR' ? 'French' : 'English'}`
+            const monogram = new URL(link.url).hostname
+              .replace(/^www\./, '')
+              .charAt(0)
+              .toUpperCase()
+            return (
+              <article
+                no-intersect
+                class:list={[
+                  'intersect-once intersect-[0.2] relative isolate py-8 motion-duration-500 motion-reduce:animate-none sm:py-10 intersect:motion-preset-blur-up',
+                  linkDelays[index],
+                ]}
               >
-                {page} / {totalPages}
-              </span>
-              <ol class="hidden items-center gap-1 md:flex">
-                {pageNumbers.map((number, index) => (
-                  <>
-                    {index > 0 && number > pageNumbers[index - 1] + 1 && (
-                      <li aria-hidden="true" class="px-1 text-muted">
-                        …
-                      </li>
-                    )}
-                    <li>
-                      <a
-                        href={watchPath(locale, number, topic?.uid)}
-                        aria-label={`${t.page} ${number}`}
-                        aria-current={number === page ? "page" : undefined}
-                        class:list={[
-                          "inline-flex min-h-11 min-w-11 items-center justify-center border px-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent hover:border-accent hover:text-accent",
-                          number === page
-                            ? "border-accent text-accent"
-                            : "border-rule text-muted",
-                        ]}
+                <div class="min-w-0">
+                  <header class="mb-5">
+                    <div class="min-w-0">
+                      <div class="pointer-events-none relative z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                        <time
+                          datetime={link.selectedOn}
+                          aria-label={`${t.selected} ${dateFormatter.format(new Date(`${link.selectedOn}T00:00:00Z`))}`}
+                        >
+                          {dateFormatter.format(
+                            new Date(`${link.selectedOn}T00:00:00Z`)
+                          )}
+                        </time>
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span class="inline-flex items-center gap-1.5">
+                            <FormatIcon
+                              size={14}
+                              class="shrink-0"
+                              aria-hidden="true"
+                            />
+                            {link.format}
+                          </span>
+                        </>
+                        {link.sourceLanguage &&
+                          link.sourceLanguage.toLowerCase() !== locale && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span
+                                class="border border-rule px-1.5 py-0.5 font-semibold tracking-wide"
+                                title={sourceLanguageTitle}
+                                aria-label={sourceLanguageTitle}
+                              >
+                                {link.sourceLanguage}
+                              </span>
+                            </>
+                          )}
+                      </div>
+                      <h2
+                        class="pr-8 font-display text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
+                        lang={link.textLanguage}
                       >
-                        {number}
+                        <WatchSiteIcon
+                          icon={link.siteIcon}
+                          fallbackIcon={link.discoveredVia?.icon}
+                          monogram={monogram}
+                          eager={index === 0}
+                        />
+                        <ExternalLink
+                          href={link.url}
+                          newTab
+                          stretched
+                          aria-label={`${link.title} — ${t.external}`}
+                          class="text-ink hover:text-accent"
+                        >
+                          {link.title}
+                        </ExternalLink>
+                      </h2>
+                      <div class="pointer-events-none relative z-10 mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
+                        <span class="inline-flex min-w-0 items-center gap-2">
+                          <span class="break-all">
+                            {new URL(link.url).hostname.replace(/^www\./, '')}
+                          </span>
+                        </span>
+                        <a
+                          href={watchLinkTarget(link, locale)}
+                          aria-label={`${locale === 'fr' ? 'Permalien' : 'Permalink'} : ${link.title}`}
+                          class="pointer-events-auto underline decoration-rule underline-offset-4 hover:text-accent focus-visible:outline-accent"
+                        >
+                          {locale === 'fr' ? 'Permalien' : 'Permalink'}
+                        </a>
+                      </div>
+                    </div>
+                  </header>
+                  <div class="flow-root">
+                    {link.image && (
+                      <WatchImage
+                        image={link.image}
+                        eager={index === 0}
+                        class="h-full w-full object-cover"
+                      />
+                    )}
+                    <div
+                      class="pointer-events-none text-base leading-[1.75] text-muted [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_a]:underline [&_a]:decoration-rule [&_a:hover]:text-accent [&_code]:rounded [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
+                      lang={link.textLanguage}
+                      set:html={renderSummaryMarkdown(link.summary)}
+                    />
+                  </div>
+                  <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
+                    {link.topics.map((item) => (
+                      <a
+                        href={watchPath(locale, 1, item.uid)}
+                        class="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted no-underline transition-colors hover:bg-accent/10 hover:text-accent"
+                      >
+                        {item.name}
                       </a>
+                    ))}
+                  </div>
+                  {(link.credit || link.discoveredVia) && (
+                    <p class="pointer-events-none relative z-10 mt-4 text-xs text-muted">
+                      {link.credit && <span lang="en">{link.credit}</span>}
+                      {link.credit && link.discoveredVia && (
+                        <span aria-hidden="true"> · </span>
+                      )}
+                      {link.discoveredVia && (
+                        <span>
+                          {t.source}{' '}
+                          <a
+                            href={link.discoveredVia.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="pointer-events-auto relative z-10 underline decoration-rule hover:text-accent"
+                          >
+                            {link.discoveredVia.name}
+                          </a>
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+        {totalPages > 1 && (
+          <nav
+            no-intersect
+            aria-label="Pagination"
+            class="intersect-once intersect-[0.2] mt-8 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm font-semibold motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
+          >
+            {previousPath ? (
+              <a
+                href={previousPath}
+                rel="prev"
+                class="inline-flex min-h-11 items-center justify-self-start text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+              >
+                <span aria-hidden="true">←&nbsp;</span>
+                {t.previous}
+              </a>
+            ) : (
+              <span />
+            )}
+            <span
+              class="whitespace-nowrap text-muted md:hidden"
+              aria-label={`${t.page} ${page} ${t.of} ${totalPages}`}
+            >
+              {page} / {totalPages}
+            </span>
+            <ol class="hidden items-center gap-1 md:flex">
+              {pageNumbers.map((number, index) => (
+                <>
+                  {index > 0 && number > pageNumbers[index - 1] + 1 && (
+                    <li aria-hidden="true" class="px-1 text-muted">
+                      …
                     </li>
-                  </>
-                ))}
-              </ol>
-              {nextPath ? (
-                <a
-                  href={nextPath}
-                  rel="next"
-                  class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-                >
-                  {t.next}
-                  <span aria-hidden="true">&nbsp;→</span>
-                </a>
-              ) : (
-                <span />
-              )}
-            </nav>
-          )
-        }
+                  )}
+                  <li>
+                    <a
+                      href={watchPath(locale, number, topic?.uid)}
+                      aria-label={`${t.page} ${number}`}
+                      aria-current={number === page ? 'page' : undefined}
+                      class:list={[
+                        'inline-flex min-h-11 min-w-11 items-center justify-center border px-2 hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent',
+                        number === page
+                          ? 'border-accent text-accent'
+                          : 'border-rule text-muted',
+                      ]}
+                    >
+                      {number}
+                    </a>
+                  </li>
+                </>
+              ))}
+            </ol>
+            {nextPath ? (
+              <a
+                href={nextPath}
+                rel="next"
+                class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+              >
+                {t.next}
+                <span aria-hidden="true">&nbsp;→</span>
+              </a>
+            ) : (
+              <span />
+            )}
+          </nav>
+        )}
       </section>
 
-      {
-        topics.length > 0 && (
-          <aside
-            no-intersect
-            class="intersect:motion-preset-blur-up motion-duration-500 intersect-once motion-reduce:animate-none self-start lg:pt-0"
-            aria-label={t.topics}
-          >
-            <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-              {t.topics}
-            </h2>
-            <div
-              aria-hidden="true"
-              class="mb-6 mt-5 h-0.5 w-12 -rotate-12 bg-accent"
-            />
-            <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">
-              {topics.map((item) => (
-                <a
-                  href={watchPath(locale, 1, item.uid)}
-                  aria-current={topic?.uid === item.uid ? "page" : undefined}
-                  class:list={[
-                    "inline-block border px-2 py-1.5 text-sm no-underline transition-colors lg:block lg:border-0 lg:border-l-2",
-                    topic?.uid === item.uid
-                      ? "border-accent bg-accent/10 font-semibold text-accent lg:bg-transparent"
-                      : "border-transparent text-muted hover:text-accent",
-                  ]}
-                >
-                  {item.name}
-                </a>
-              ))}
-            </div>
-          </aside>
-        )
-      }
+      {topics.length > 0 && (
+        <aside
+          no-intersect
+          class="intersect-once self-start motion-duration-500 motion-reduce:animate-none lg:pt-0 intersect:motion-preset-blur-up"
+          aria-label={t.topics}
+        >
+          <h2 class="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+            {t.topics}
+          </h2>
+          <div
+            aria-hidden="true"
+            class="mt-5 mb-6 h-0.5 w-12 -rotate-12 bg-accent"
+          />
+          <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">
+            {topics.map((item) => (
+              <a
+                href={watchPath(locale, 1, item.uid)}
+                aria-current={topic?.uid === item.uid ? 'page' : undefined}
+                class:list={[
+                  'inline-block border px-2 py-1.5 text-sm no-underline transition-colors lg:block lg:border-0 lg:border-l-2',
+                  topic?.uid === item.uid
+                    ? 'border-accent bg-accent/10 font-semibold text-accent lg:bg-transparent'
+                    : 'border-transparent text-muted hover:text-accent',
+                ]}
+              >
+                {item.name}
+              </a>
+            ))}
+          </div>
+        </aside>
+      )}
     </div>
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(schema).replace(/</g, "\\u003c")}
+      set:html={JSON.stringify(schema).replace(/</g, '\\u003c')}
     />
   </main>
   <footer class="border-t border-rule">
-    <div
-      class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12"
-    >
+    <div class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 lg:px-12">
       <p>Sébastien Rigaux</p>
       <a
         href="#main"
         class="justify-self-end font-medium text-accent hover:underline"
-        >{t.backToTop}</a
       >
+        {t.backToTop}
+      </a>
     </div>
-    <div class="mx-auto max-w-7xl px-5 pb-6 text-center sm:px-8 lg:px-12"><CookieSettings locale={locale} /></div>
+    <div class="mx-auto max-w-7xl px-5 pb-6 text-center sm:px-8 lg:px-12">
+      <CookieSettings locale={locale} />
+    </div>
   </footer>
 </BaseLayout>

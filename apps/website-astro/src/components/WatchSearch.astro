@@ -1,8 +1,17 @@
 ---
-import type { Locale } from "@/types";
-import WatchSearchPanel from "./WatchSearchPanel";
-interface Props { locale: Locale }
-const { locale } = Astro.props;
+import type { Locale } from '@/types'
+import WatchSearchPanel from './WatchSearchPanel'
+interface Props {
+  locale: Locale
+}
+const { locale } = Astro.props
 ---
+
 <WatchSearchPanel locale={locale} client:load />
-<noscript><p class="mb-8 text-muted">{locale === "fr" ? "La recherche nécessite JavaScript. Explorez les liens et les sujets ci-dessous." : "Search requires JavaScript. Browse the links and topics below."}</p></noscript>
+<noscript>
+  <p class="mb-8 text-muted">
+    {locale === 'fr'
+      ? 'La recherche nécessite JavaScript. Explorez les liens et les sujets ci-dessous.'
+      : 'Search requires JavaScript. Browse the links and topics below.'}
+  </p>
+</noscript>
