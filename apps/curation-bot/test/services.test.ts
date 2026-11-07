@@ -163,7 +163,7 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
   expect(JSON.stringify(body)).toContain(extraction.markdown)
   expect(JSON.stringify(body)).toContain(draft.fr.title)
   expect(body.model).toBe('gpt-6-luna')
-  expect(body.reasoning).toMatchObject({ effort: 'none' })
+  expect(body.reasoning).toMatchObject({ effort: 'low' })
   expect(body.store).toBe(false)
 })
 it('importe réellement deux médias via le SDK officiel, lie EN à FR et reprend sans duplication', async () => {

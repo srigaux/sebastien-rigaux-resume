@@ -103,17 +103,59 @@ console.log(
 )
 
 if (process.argv.includes('--apply')) {
+  const search = algoliasearch(siteAppId, ALGOLIA_SEARCH_API_KEY)
+  const objects = records.map((record) => ({ ...record, objectID: record.id }))
+  let previousIds = []
+
+  if (process.argv.includes('--in-place')) {
+    // Restricted keys cannot create the temporary index used by atomic replacement.
+    // Read the complete old snapshot before writing or deleting any records.
+    const snapshot = await search.searchSingleIndex({
+      indexName,
+      searchParams: {
+        query: '',
+        hitsPerPage: 1000,
+        distinct: false,
+        attributesToRetrieve: ['objectID'],
+      },
+    })
+    assert.equal(
+      snapshot.hits.length,
+      snapshot.nbHits,
+      'Incomplete index snapshot'
+    )
+    previousIds = snapshot.hits.map((hit) => hit.objectID)
+  }
+
   const task = await client.setSettings({ indexName, indexSettings })
+  console.log(`Waiting for settings task ${task.taskID}.`)
   await client.waitForTask({ indexName, taskID: task.taskID })
+  console.log('Settings confirmed; indexing published records.')
+
   // Atomic snapshot replacement also removes unpublished entries. Retain settings,
   // synonyms and rules. The live JSON connector uses id as its record key;
   // retain that identity, not the export's legacy locale-prefixed objectID.
-  await client.replaceAllObjects({
-    indexName,
-    objects: records.map((record) => ({ ...record, objectID: record.id })),
-    scopes: ['settings', 'rules', 'synonyms'],
-  })
-  const search = algoliasearch(siteAppId, ALGOLIA_SEARCH_API_KEY)
+  if (process.argv.includes('--in-place')) {
+    await client.saveObjects({ indexName, objects, waitForTasks: true })
+    console.log('Records confirmed; reconciling removed entries.')
+    const currentIds = new Set(records.map((record) => record.id))
+    const staleIds = previousIds.filter((id) => !currentIds.has(id))
+
+    if (staleIds.length) {
+      await client.deleteObjects({
+        indexName,
+        objectIDs: staleIds,
+        waitForTasks: true,
+      })
+    }
+  } else {
+    await client.replaceAllObjects({
+      indexName,
+      objects,
+      scopes: ['settings', 'rules', 'synonyms'],
+    })
+  }
+
   const result = await search.searchSingleIndex({
     indexName,
     searchParams: { query: '', hitsPerPage: 0, distinct: false },

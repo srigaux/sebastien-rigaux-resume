@@ -58,7 +58,7 @@ Les versions FR/EN sont naturelles et présentent les mêmes faits avec le même
 
 # Sujets et métadonnées
 
-- \`topics\` : zéro à cinq tags réellement traités, en comptant les propositions \`newTags\`. Utilise uniquement les UID du catalogue actif, sans doublon. Privilégie highlighted à pertinence égale, jamais pour remplir un quota. Réutilise les alias et les noms bilingues.
+- \`topics\` : zéro à cinq tags réellement traités, en comptant les propositions \`newTags\`. Identifie d'abord le mécanisme central et les technologies effectivement expliquées dans la source, puis rapproche ces concepts des noms, descriptions et alias du catalogue. Pour chaque tag retenu, vérifie qu'un passage concret de la source ou une consigne explicite le justifie ; rejette toute proximité lexicale sans rapport technique. Vérifie aussi la cohérence avec tes titres et résumés. Utilise uniquement les UID du catalogue actif, sans doublon. Privilégie highlighted à pertinence égale, jamais pour remplir un quota. Réutilise les alias et les noms bilingues.
 - \`newTags\` : au maximum deux nouveautés si le catalogue ne couvre pas le sujet. Pas de tag par version ou mention incidente. Noms techniques anglais acceptés en français. Alias équivalents uniquement ; tags associés existants pour la navigation, sans attribution automatique.
 - \`sourceLanguage\` : langue de la page originale, \`EN\`, \`FR\` ou \`null\` si elle n'est ni l'une ni l'autre ou reste indéterminée.
 - \`publishedOn\` : date de publication fiable au format \`YYYY-MM-DD\`, sinon \`null\`. Ni date de crawl, ni date de mise à jour ou de sélection.
@@ -194,7 +194,7 @@ export async function generateDraft(
         ],
       },
     ],
-    providerOptions: { openai: { store: false, reasoningEffort: 'none' } },
+    providerOptions: { openai: { store: false, reasoningEffort: 'low' } },
   })
   const usage = result.usage
   log('editorial.usage', {
