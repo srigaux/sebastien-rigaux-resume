@@ -28,7 +28,7 @@ const proposal = {
   relatedUids: ['react'],
 }
 
-it('reuses a proposal with an unambiguous canonical name but rejects alias-only or retired matches', () => {
+it('reuses unambiguous names or aliases while rejecting retired or ambiguous matches', () => {
   const existing = {
     uid: 'rsc',
     name: 'React Server Components',
@@ -40,10 +40,14 @@ it('reuses a proposal with an unambiguous canonical name but rejects alias-only 
   ).toBeUndefined()
   const different = {
     ...proposal,
-    fr: { ...copy, uid: 'rendering', name: 'Rendering' },
-    en: { ...copy, uid: 'rendering', name: 'Rendering' },
+    fr: {
+      ...copy,
+      uid: 'composants-serveur-react',
+      name: 'Composants serveur React',
+    },
+    en: { ...copy, uid: 'server-components', name: 'Server components' },
   }
-  expect(existingTagForProposal(different, [existing])).toBeUndefined()
+  expect(existingTagForProposal(different, [existing])).toBe('rsc')
   expect(
     existingTagForProposal(proposal, [
       existing,

@@ -74,12 +74,7 @@ export function existingTagForProposal(
     return undefined
   }
 
-  const match = collisions[0]
-  return [match.name, match.uid, ...(match.aliases ?? [])].some((term) =>
-    canonical.includes(normalizeTagName(term))
-  )
-    ? match.uid
-    : undefined
+  return collisions[0].uid
 }
 
 export function validateTagProposals(

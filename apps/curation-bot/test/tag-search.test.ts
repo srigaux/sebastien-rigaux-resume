@@ -4,10 +4,21 @@ import { expect, it, vi } from 'vitest'
 
 import { resolveTags } from '@/tag-editor'
 import {
+  conceptQueries,
   searchTagCandidates,
   supportedConcepts,
   tagSearchRecord,
 } from '@/tag-search'
+
+it('searches explicit acronyms independently of a long translated concept name', () => {
+  expect(
+    conceptQueries({
+      name: 'Rendu côté serveur (SSR)',
+      searchTerms: ['server-side rendering'],
+      evidence: 'Server-side rendering is used here.',
+    })
+  ).toStrictEqual(['Rendu côté serveur (SSR)', 'SSR', 'server-side rendering'])
+})
 
 const hydration = {
   name: 'Hydration',

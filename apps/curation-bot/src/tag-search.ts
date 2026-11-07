@@ -12,6 +12,15 @@ export const tagConceptSchema = z.object({
 })
 export type TagConcept = z.infer<typeof tagConceptSchema>
 
+export function conceptQueries(concept: TagConcept) {
+  const acronyms = [
+    ...concept.name.matchAll(/\(([A-Z][A-Z0-9.+#-]{1,15})\)/g),
+  ].map((match) => match[1])
+  return [
+    ...new Set([concept.name, ...acronyms, ...concept.searchTerms]),
+  ].slice(0, 6)
+}
+
 export function supportedConcepts(concepts: TagConcept[], material: string[]) {
   const normalize = (value: string) => value.replace(/\s+/g, ' ').trim()
   return concepts.filter((concept) =>
@@ -182,7 +191,7 @@ export async function searchTagCandidates(
   }
 
   const queries = concepts.flatMap((concept, conceptIndex) =>
-    [...new Set([concept.name, ...concept.searchTerms])].map((query) => ({
+    conceptQueries(concept).map((query) => ({
       query,
       conceptIndex,
     }))
@@ -213,7 +222,7 @@ export async function searchTagCandidates(
   }
 
   return concepts.map((concept, conceptIndex) => {
-    const terms = [concept.name, ...concept.searchTerms].map(normalizeTagName)
+    const terms = conceptQueries(concept).map(normalizeTagName)
     // Exact Prismic identities also cover a newly published tag while its search
     // record is still indexing. Search never overrides authoritative CMS data.
     const exact = active.filter((tag) =>
