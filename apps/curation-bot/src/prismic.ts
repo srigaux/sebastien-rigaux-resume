@@ -121,6 +121,7 @@ export async function catalog(env: Env, fresh = false): Promise<Catalog> {
         const english = topics.find((item) => item.id === enId)
         return {
           ...map(doc),
+          englishName: english?.data.name ?? undefined,
           description: doc.data.description ?? undefined,
           category: doc.data.category ?? undefined,
           highlighted: doc.data.highlighted ?? false,

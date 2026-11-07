@@ -131,6 +131,7 @@ export type Entry = {
   id: string
   uid: string
   name: string
+  englishName?: string
   url?: string
   description?: string
   aliases?: string[]

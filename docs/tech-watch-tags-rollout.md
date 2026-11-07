@@ -21,7 +21,7 @@ Sous le verrou de publication, le bot relit le catalogue et contrôle aussi les 
 
 ## Résolution des tags en deux appels
 
-La rédaction ne reçoit aucun catalogue de tags ni les tags du brouillon précédent. Elle extrait au maximum cinq concepts, leurs termes de recherche et un extrait justificatif. Le bot rejette les extraits qui ne figurent pas dans la source ou les consignes utilisateur.
+La rédaction reçoit seulement une liste dédupliquée des noms anglais des tags actifs comme repère de vocabulaire et de granularité, sans identifiants, alias, descriptions ni tags du brouillon précédent. Si la traduction anglaise manque, le nom de référence est conservé. Cette liste ne constitue pas une preuve de pertinence et n’impose aucun choix. Elle extrait au maximum cinq concepts, leurs termes de recherche et un extrait justificatif. Le bot rejette les extraits qui ne figurent pas dans la source ou les consignes utilisateur.
 
 L’index Algolia privé `watchtags` contient un enregistrement par concept actif, y compris ceux qui n’ont encore aucun lien : identifiant Prismic français, UID, nom, alias bilingues, description, catégorie et highlight. Il est distinct de l’index public `watchlink`. Une clé limitée à `watchtags` avec `search`, `addObject`, `deleteObject`, `settings` et `editSettings` alimente le script et le secret Worker `ALGOLIA_TAGS_API_KEY`. Aucun secret de cet index n’est envoyé au navigateur.
 

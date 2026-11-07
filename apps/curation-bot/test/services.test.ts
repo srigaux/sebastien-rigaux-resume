@@ -208,6 +208,7 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
   )
   expect(context.user.confirmedFormat).toBe('Release')
   expect(context.catalog).toStrictEqual({ sources: cats.sources })
+  expect(context.tagVocabulary).toStrictEqual(['CSS', 'React'])
   expect(context.previous).not.toHaveProperty('topics')
   expect(context.previous).not.toHaveProperty('newTags')
   expect(result.topics).toStrictEqual(['react', 'css'])

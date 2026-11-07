@@ -65,7 +65,7 @@ Les versions FR/EN sont naturelles et présentent les mêmes faits avec le même
 
 # Sujets et métadonnées
 
-- \`tagConcepts\` : identifie zéro à cinq concepts centraux réellement expliqués dans la ressource : technologies, standards, mécanismes ou pratiques techniques. N'utilise aucun identifiant de catalogue et ne tente pas de choisir des tags existants. Donne pour chacun un nom précis et naturel, jusqu'à trois termes de recherche équivalents (alias/acronymes/traductions), et un extrait exact de la source ou d'une consigne utilisateur qui justifie sa pertinence. Ne copie pas les tags du brouillon précédent. Pas de version, de titre d'article, de thème générique ni de mention incidente. Les extraits doivent décrire le concept, pas simplement contenir un mot voisin. Privilégie des concepts établis et réutilisables entre plusieurs ressources. N'extrais pas les noms de fonctions, props ou options, ni les recettes ou combinaisons propres à cet article comme concepts autonomes. Le bot recherchera ensuite les tags correspondants séparément.
+- \`tagConcepts\` : identifie zéro à cinq concepts centraux réellement expliqués dans la ressource : technologies, standards, mécanismes ou pratiques techniques. La liste tagVocabulary contient uniquement les noms anglais des tags actifs : utilise-la comme repère de vocabulaire et de granularité, jamais comme preuve qu'un sujet figure dans la source. Privilégie ces noms lorsqu'ils décrivent exactement un concept central, sans forcer leur sélection ni interdire un concept nouveau justifié. N'utilise aucun identifiant de catalogue et ne tente pas de choisir des tags existants. Donne pour chacun un nom précis et naturel, jusqu'à trois termes de recherche équivalents (alias/acronymes/traductions), et un extrait exact de la source ou d'une consigne utilisateur qui justifie sa pertinence. Ne copie pas les tags du brouillon précédent. Pas de version, de titre d'article, de thème générique ni de mention incidente. Les extraits doivent décrire le concept, pas simplement contenir un mot voisin. Privilégie des concepts établis et réutilisables entre plusieurs ressources. N'extrais pas les noms de fonctions, props ou options, ni les recettes ou combinaisons propres à cet article comme concepts autonomes. Le bot recherchera ensuite les tags correspondants séparément.
 - \`sourceLanguage\` : langue de la page originale, \`EN\`, \`FR\` ou \`null\` si elle n'est ni l'une ni l'autre ou reste indéterminée.
 - \`publishedOn\` : date de publication fiable au format \`YYYY-MM-DD\`, sinon \`null\`. Ni date de crawl, ni date de mise à jour ou de sélection.
 - \`credit\` : nom et/ou prénom, entreprise ou pseudo explicitement identifié comme auteur ou éditeur. Texte simple, jamais une URL, un lien Markdown ou une adresse de profil. Si seul un lien est fourni sans nom attesté, renvoie \`null\`. L'auteur extrait des métadonnées est déjà fourni.
@@ -202,6 +202,13 @@ export async function generateEditorialDraft(
                   }
                 : null,
               catalog: { sources: cats.sources },
+              tagVocabulary: [
+                ...new Set(
+                  cats.topics
+                    .filter((tag) => tag.status !== 'retired')
+                    .map((tag) => tag.englishName ?? tag.name)
+                ),
+              ].sort(),
               untrustedPage: { ...extraction, media: item.state.media },
             }),
           },
