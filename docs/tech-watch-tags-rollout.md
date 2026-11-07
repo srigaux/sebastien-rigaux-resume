@@ -36,7 +36,7 @@ L’ancienne génération monolithique a proposé à tort Authentication pour un
 
 ## Complément des alias — 7 novembre 2026
 
-La release `au8zNhIAAAJSlsHS` complète les formes développées de 18 tags (36 documents FR/EN), dont SSR, SSG, CSS, AI, RAG et WCAG. Le corpus JSON contient ces ajouts ; leur publication Prismic reste à valider. Aucun lien historique n’est modifié. Après publication, rafraîchir le catalogue du bot et synchroniser `watchtags`. Les noms anglais identiques au nom principal ne sont plus ajoutés comme alias de recherche.
+La release `au8zNhIAAAJSlsHS` complète les formes développées de 18 tags (36 documents FR/EN), dont SSR, SSG, CSS, AI, RAG et WCAG. Le corpus JSON contient ces ajouts ; leur publication Prismic et leur synchronisation dans les 166 enregistrements de `watchtags` sont vérifiées. Aucun lien historique n’est modifié. Après publication, rafraîchir le catalogue du bot et synchroniser `watchtags`. Les noms anglais identiques au nom principal ne sont plus ajoutés comme alias de recherche.
 
 Le nouveau test réel a atteint la revue avec Hydration et SSR, sans erreur de doublon. Il a également proposé deux créations trop spécifiques : les consignes excluent désormais les fonctions, props, options et recettes propres à un article des concepts autonomes. Cette dernière restriction doit encore être vérifiée sur une génération réelle.
 

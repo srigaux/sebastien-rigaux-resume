@@ -65,7 +65,12 @@ for (const tag of corpus.tags) {
       `${tag.key}/${locale}/aliases`
     )
     assert.deepEqual(
-      (doc.data.related_tags ?? []).map((row) => row.tag.id).sort(),
+      (doc.data.related_tags ?? [])
+        .filter((row) =>
+          Object.keys(row.tag).some((key) => key !== 'link_type')
+        )
+        .map((row) => row.tag.id)
+        .sort(),
       tag.relatedKeys.map((key) => identities.get(key).fr.id).sort(),
       `${tag.key}/${locale}/related`
     )
