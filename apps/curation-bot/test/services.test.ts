@@ -222,6 +222,47 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
   expect(body.reasoning).toMatchObject({ effort: 'low' })
   expect(body.store).toBe(false)
 })
+it('resumes tag resolution from saved copy without requesting editorial generation again', async () => {
+  const { advance } = await import('@/flow')
+  const { Store } = await import('@/store')
+  const store = new Store(env.DB)
+  const item = fixture()
+  item.state.draft = undefined
+  item.state.editorial = {
+    revision: item.state.revision,
+    draft: { ...draft, topics: [], newTags: [] },
+    concepts: [],
+  }
+  item.state.checked = [item.state.url]
+  item.state.extractionKey = 'extractions/copy-resume.json'
+  await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction))
+  await store.enqueue(item.id, 100, '1', item.state, item.created_at)
+  await store.claim('1')
+  const urls: string[] = []
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: unknown) => {
+      const url = String(input)
+      urls.push(url)
+      expect(url).toContain('api.telegram.org')
+      return Response.json({
+        ok: true,
+        result: url.endsWith('sendChatAction')
+          ? true
+          : {
+              message_id: 20,
+              date: 1,
+              chat: { id: 1, type: 'private' },
+            },
+      })
+    })
+  )
+  await advance(env, steps(), 'resume-copy', item, cats)
+  expect(item.state.draft?.fr).toStrictEqual(draft.fr)
+  expect(item.state.editorial).toBeUndefined()
+  expect(urls.some((url) => url.includes('api.openai.com'))).toBe(false)
+})
+
 it('importe réellement deux médias via le SDK officiel, lie EN à FR et reprend sans duplication', async () => {
   const item = fixture()
   item.state.draft!.fr.summary +=

@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import type { ReasonCode } from '@/error-reasons'
 import { log } from '@/observability'
+import type { TagConcept } from '@/tag-search'
 import { tagProposalSchema, validateTagProposals } from '@/tags'
 
 export const formats = [
@@ -215,6 +216,7 @@ export type State = {
   acceptedTagProposals?: string[]
   tagDocumentIds?: string[]
   draft?: Draft
+  editorial?: { revision: number; draft: Draft; concepts: TagConcept[] }
   sourceUid?: string | null
   instructions: string[]
   approvedRevision?: number

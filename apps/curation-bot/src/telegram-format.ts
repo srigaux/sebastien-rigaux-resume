@@ -10,6 +10,7 @@ export const analysisStages = [
   'canonical',
   'media',
   'generate',
+  'tags',
 ] as const
 export type AnalysisStage = (typeof analysisStages)[number]
 export function analysisHtml(
@@ -25,6 +26,7 @@ export function analysisHtml(
     'Vérification du lien final',
     'Préparation des médias pour Prismic',
     'Rédaction des titres et résumés FR/EN',
+    'Recherche et résolution des tags',
   ]
   const current = analysisStages.indexOf(stage)
   return [

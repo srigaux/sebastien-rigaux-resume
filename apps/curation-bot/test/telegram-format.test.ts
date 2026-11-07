@@ -4,11 +4,18 @@ import { expect, it } from 'vitest'
 import { formats } from '@/domain'
 import { formatKeyboard, keyboard, sourceKeyboard } from '@/telegram'
 import {
+  analysisHtml,
   duplicateHtml,
   proposalHtml,
   publicationChecklist,
   telegramMarkdown,
 } from '@/telegram-format'
+
+it('marks copy complete while tag resolution is in progress', () => {
+  const html = analysisHtml(fixture(), 'tags')
+  expect(html).toContain('✅ Rédaction des titres et résumés FR/EN')
+  expect(html).toContain('⏳ Recherche et résolution des tags')
+})
 
 it('renders Telegram inline HTML, quotes and escaped catalog labels', () => {
   const item = fixture()

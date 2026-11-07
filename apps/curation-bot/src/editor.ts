@@ -16,7 +16,11 @@ import {
 import { log } from '@/observability'
 import { Store } from '@/store'
 import { resolveTags } from '@/tag-editor'
-import { supportedConcepts, tagConceptSchema } from '@/tag-search'
+import {
+  type TagConcept,
+  supportedConcepts,
+  tagConceptSchema,
+} from '@/tag-search'
 
 export const EDITORIAL = `# Mission éditoriale
 
@@ -124,12 +128,12 @@ Pour une correction, garde les faits et les choix explicites de l'utilisateur ; 
 Avant de répondre, vérifie que chaque paragraphe apporte un fait ou un éclairage distinct, qu'aucune réserve n'est ajoutée par réflexe et que FR/EN conservent les mêmes faits et conditions. Vérifie les limites de longueur dans chaque langue.
 Respecte le schéma de sortie fourni par l'API. Les titres et sections de ce prompt organisent les instructions : ils ne doivent pas apparaître dans les descriptions. Renvoie uniquement l'objet attendu, sans commentaire autour.`
 
-export async function generateDraft(
+export async function generateEditorialDraft(
   env: Env,
   item: Item,
   extraction: Extraction,
   cats: Catalog
-): Promise<Draft> {
+): Promise<{ draft: Draft; concepts: TagConcept[] }> {
   const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
   const lastDiscoverySource = await new Store(env.DB).cache<{
     uid: string | null
@@ -236,8 +240,7 @@ export async function generateDraft(
     concepts: concepts.map((concept) => concept.name),
     rejectedCount: tagConcepts.length - concepts.length,
   })
-  const tags = await resolveTags(env, item, concepts, cats)
-  const draft = assertDraft({ ...copy, ...tags }, cats)
+  const draft = assertDraft({ ...copy, topics: [], newTags: [] }, cats)
 
   if (item.state.confirmedFormat) {
     draft.format = item.state.confirmedFormat
@@ -284,5 +287,16 @@ export async function generateDraft(
     throw new BotError('Proposition éditoriale vide.', 'draft_invalid')
   }
 
-  return draft
+  return { draft, concepts }
+}
+
+export async function generateDraft(
+  env: Env,
+  item: Item,
+  extraction: Extraction,
+  cats: Catalog
+): Promise<Draft> {
+  const editorial = await generateEditorialDraft(env, item, extraction, cats)
+  const tags = await resolveTags(env, item, editorial.concepts, cats)
+  return assertDraft({ ...editorial.draft, ...tags }, cats)
 }

@@ -142,6 +142,8 @@ const activities: Record<string, string> = {
   image: 'Téléchargement de l’image de l’article',
   icon: 'Téléchargement de l’icône du site',
   generate: 'Rédaction de la proposition en français et en anglais',
+  'write-copy': 'Rédaction de la proposition en français et en anglais',
+  'resolve-tags': 'Recherche et résolution des tags',
   preview: 'Envoi de l’aperçu dans Telegram',
   present: 'Présentation de la proposition dans Telegram',
   migrate: 'Création des brouillons et transfert des médias',

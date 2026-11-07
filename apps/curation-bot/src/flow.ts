@@ -14,7 +14,7 @@ import {
   normalizeUrl,
   webUrl,
 } from '@/domain'
-import { generateDraft } from '@/editor'
+import { generateEditorialDraft } from '@/editor'
 import { collectMedia, scrape } from '@/extract'
 import { log } from '@/observability'
 import {
@@ -27,6 +27,7 @@ import {
 import { schedulePublicationCheck } from '@/publication'
 import { type Steps, retry } from '@/retry'
 import { Store } from '@/store'
+import { resolveTags } from '@/tag-editor'
 import { pendingTagProposals, tagProposalKey } from '@/tags'
 import { analysisNotice, publicationNotice } from '@/telegram'
 import type { AnalysisStage } from '@/telegram-format'
@@ -218,11 +219,28 @@ export async function advance(
     await progress('generate')
     delete s.sourceEditMessageId
     const previous = s.draft
-    s.draft = await retry(step, `${prefix}-generate`, () =>
+    let editorial =
+      s.editorial?.revision === s.revision ? s.editorial : undefined
+
+    if (!editorial) {
+      const generated = await retry(step, `${prefix}-write-copy`, () =>
+        withTyping(env, item.chat_id, () =>
+          generateEditorialDraft(env, item, extraction, cats)
+        )
+      )
+      editorial = { ...generated, revision: s.revision }
+      s.editorial = editorial
+      await checkpoint(env, step, `${prefix}-checkpoint-copy`, item)
+    }
+
+    await progress('tags')
+    const tags = await retry(step, `${prefix}-resolve-tags`, () =>
       withTyping(env, item.chat_id, () =>
-        generateDraft(env, item, extraction, cats)
+        resolveTags(env, item, editorial.concepts, cats)
       )
     )
+    s.draft = assertDraft({ ...editorial.draft, ...tags }, cats)
+    delete s.editorial
 
     if (previous) {
       s.revisionNote = s.draft.revisionNote ?? undefined
