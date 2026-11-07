@@ -112,11 +112,15 @@ const breadcrumbs = [
     : []),
   ...(page > 1 ? [{ name: `${t.page} ${page}`, path }] : []),
 ]
+const keywords = topic
+  ? [...new Set([topic.name, ...(topic.aliases ?? [])])]
+  : undefined
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'CollectionPage',
+      keywords,
       '@id': `${canonical}#webpage`,
       url: canonical,
       name: title,
@@ -187,9 +191,7 @@ const dateFormatter = new Intl.DateTimeFormat(
   locale={locale}
   title={title}
   description={description}
-  keywords={
-    topic ? [...new Set([topic.name, ...(topic.aliases ?? [])])] : undefined
-  }
+  keywords={keywords}
   canonicalPath={path}
   alternatePaths={alternatePaths}
   markdownPath={pageMarkdownPath(path)}

@@ -13,6 +13,7 @@ interface Props {
   title: string
   description: string
   keywords?: string[]
+  author?: string
   noindex?: boolean
   person?: Person
   canonicalPath?: string
@@ -30,6 +31,7 @@ const {
   description,
   noindex = false,
   keywords,
+  author,
   person,
   canonicalPath,
   alternatePaths,
@@ -358,8 +360,11 @@ const structuredData =
     </script>
     <meta name="description" content={description} />
     {keywords?.length && <meta name="keywords" content={keywords.join(', ')} />}
-    {person && (
-      <meta name="author" content={`${person.firstName} ${person.lastName}`} />
+    {(author || person) && (
+      <meta
+        name="author"
+        content={author ?? `${person!.firstName} ${person!.lastName}`}
+      />
     )}
     <title>{fullTitle}</title>
     <link

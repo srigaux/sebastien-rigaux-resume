@@ -88,11 +88,22 @@ const formatter = new Intl.DateTimeFormat(locale === 'fr' ? 'fr-BE' : 'en-GB', {
 })
 const date = (value: string) =>
   formatter.format(new Date(value.length === 10 ? `${value}T00:00:00Z` : value))
+const keywords = [
+  ...new Set(link.topics.flatMap((tag) => [tag.name, ...(tag.aliases ?? [])])),
+]
+const author = {
+  '@type': 'Person',
+  '@id': new URL('/#person', site).href,
+  name: 'Sébastien Rigaux',
+}
+const resourceCredit = link.credit?.trim()
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'WebPage',
+      author,
+      about: { '@id': link.url },
       '@id': `${canonical}#webpage`,
       url: canonical,
       name: link.title,
@@ -103,8 +114,16 @@ const schema = {
       isPartOf: { '@id': new URL('/#website', site).href },
       breadcrumb: { '@id': `${canonical}#breadcrumb` },
       relatedLink: link.url,
-      keywords: link.topics.map((tag) => tag.name),
+      keywords,
       ...(link.image && { image: link.image.url }),
+    },
+    {
+      '@type': 'CreativeWork',
+      '@id': link.url,
+      url: link.url,
+      // Credits may identify a person, team or organization; their type is unknown.
+      ...(resourceCredit && { author: { name: resourceCredit } }),
+      ...(link.publishedOn && { datePublished: link.publishedOn }),
     },
     {
       '@type': 'BreadcrumbList',
@@ -124,7 +143,8 @@ const schema = {
 ---
 
 <BaseLayout
-  keywords={link.topics.map((tag) => tag.name)}
+  author={author.name}
+  keywords={keywords}
   locale={locale}
   title={link.title}
   description={description}
