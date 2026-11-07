@@ -127,9 +127,19 @@ if (process.argv.includes('--apply')) {
     previousIds = snapshot.hits.map((hit) => hit.objectID)
   }
 
-  const task = await client.setSettings({ indexName, indexSettings })
-  console.log(`Waiting for settings task ${task.taskID}.`)
-  await client.waitForTask({ indexName, taskID: task.taskID })
+  const settingsChanged = Object.entries(indexSettings).some(
+    ([key, value]) =>
+      JSON.stringify(
+        key === 'distinct' ? Number(current[key]) : current[key]
+      ) !== JSON.stringify(value)
+  )
+
+  if (settingsChanged) {
+    const task = await client.setSettings({ indexName, indexSettings })
+    console.log(`Waiting for settings task ${task.taskID}.`)
+    await client.waitForTask({ indexName, taskID: task.taskID, maxRetries: 20 })
+  }
+
   console.log('Settings confirmed; indexing published records.')
 
   // Atomic snapshot replacement also removes unpublished entries. Retain settings,
