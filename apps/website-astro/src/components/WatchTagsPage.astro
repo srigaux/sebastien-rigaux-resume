@@ -1,0 +1,156 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import Header from '@/components/Header.astro'
+import CookieSettings from '@/components/CookieSettings.astro'
+import { getWatchData } from '@/lib/watch-prismic'
+import { watchPath, type WatchTopic } from '@/lib/watch-model'
+import type { Locale } from '@/types'
+
+interface Props {
+  locale: Locale
+}
+const { locale } = Astro.props
+const { topics } = await getWatchData(locale)
+const tags = topics.filter((tag) => tag.status !== 'retired')
+const title = locale === 'fr' ? 'Tous les tags' : 'All tags'
+const paths = { fr: '/veille/tags/', en: '/en/tech-watch/tags/' }
+const groups = new Map<string, WatchTopic[]>()
+
+for (const tag of tags.sort((a, b) =>
+  a.name.localeCompare(b.name, locale, { sensitivity: 'base' })
+)) {
+  const initial = tag.name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .charAt(0)
+    .toUpperCase()
+  const letter = /^[A-Z]$/.test(initial) ? initial : '#'
+  groups.set(letter, [...(groups.get(letter) ?? []), tag])
+}
+
+const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
+---
+
+<BaseLayout
+  locale={locale}
+  title={title}
+  description={
+    locale === 'fr'
+      ? 'Tous les tags de la veille technologique, classés par ordre alphabétique.'
+      : 'Browse all tech watch tags in alphabetical order.'
+  }
+  canonicalPath={paths[locale]}
+  alternatePaths={paths}
+>
+  <Header
+    locale={locale}
+    firstName="Sébastien"
+    lastName="Rigaux"
+    page="watch"
+    languagePaths={paths}
+  />
+  <main
+    id="main"
+    class="mx-auto max-w-7xl px-5 pt-6 pb-20 sm:px-8 sm:pt-10 lg:px-12"
+  >
+    <a
+      href={watchPath(locale)}
+      class="inline-flex min-h-11 items-center text-sm text-accent underline-offset-4 hover:underline"
+    >
+      ← {locale === 'fr' ? 'Veille technologique' : 'Tech watch'}
+    </a>
+    <h1 class="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      {title}
+    </h1>
+    <nav
+      aria-label={locale === 'fr' ? 'Index alphabétique' : 'Alphabetical index'}
+      class="mt-7 flex flex-wrap gap-x-1 border-b border-rule pb-6"
+    >
+      {sections.map(([letter]) => (
+        <a
+          href={`#tag-${letter === '#' ? 'other' : letter}`}
+          class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          {letter}
+        </a>
+      ))}
+    </nav>
+    <div
+      data-tag-directory
+      class="mt-10 columns-1 gap-12 sm:columns-2 lg:columns-3 xl:columns-4"
+    >
+      {sections.map(([letter, items]) => (
+        <section
+          id={`tag-${letter === '#' ? 'other' : letter}`}
+          class="mb-10 scroll-mt-24 break-inside-avoid"
+          aria-labelledby={`heading-${letter}`}
+        >
+          <h2
+            id={`heading-${letter}`}
+            class="sticky top-16 z-10 mb-3 border-b border-rule bg-paper py-3 font-display text-2xl font-semibold text-accent sm:top-[65px]"
+          >
+            {letter}
+          </h2>
+          <ul class="space-y-1">
+            {items.map((tag) => (
+              <li class:list={[tag.highlighted && 'font-semibold']}>
+                {tag.path ? (
+                  <a
+                    href={tag.path}
+                    class="inline-flex min-h-11 items-center text-ink underline-offset-4 hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                  >
+                    {tag.name}
+                  </a>
+                ) : (
+                  <span class="inline-flex min-h-11 items-center text-muted">
+                    {tag.name}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </main>
+  <footer class="border-t border-rule">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 text-sm text-muted sm:px-8 lg:px-12">
+      <span>Sébastien Rigaux</span>
+      <CookieSettings locale={locale} />
+    </div>
+  </footer>
+</BaseLayout>
+
+<style>
+  @supports (display: grid-lanes) {
+    [data-tag-directory] {
+      --tag-columns: 1;
+      display: grid-lanes;
+      columns: auto;
+      grid-template-columns: repeat(var(--tag-columns), minmax(0, 1fr));
+      gap: 2.5rem 3rem;
+    }
+
+    [data-tag-directory] > section {
+      margin-bottom: 0;
+    }
+
+    @media (min-width: 40rem) {
+      [data-tag-directory] {
+        --tag-columns: 2;
+      }
+    }
+
+    @media (min-width: 64rem) {
+      [data-tag-directory] {
+        --tag-columns: 3;
+      }
+    }
+
+    @media (min-width: 80rem) {
+      [data-tag-directory] {
+        --tag-columns: 4;
+      }
+    }
+  }
+</style>

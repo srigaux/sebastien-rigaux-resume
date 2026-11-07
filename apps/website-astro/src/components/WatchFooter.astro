@@ -4,8 +4,8 @@ import type { Locale } from '@/types'
 interface Props {
   locale: Locale
   markdownPath: string
-  backHref: string
-  backLabel: string
+  backHref?: string
+  backLabel?: string
 }
 const { locale, markdownPath, backHref, backLabel } = Astro.props
 ---
@@ -33,15 +33,17 @@ const { locale, markdownPath, backHref, backLabel } = Astro.props
       </a>
       <CookieSettings locale={locale} />
     </div>
-    <a
-      href={backHref}
-      aria-label={backLabel}
-      class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:underline"
-    >
-      <span class="hidden md:inline">{backLabel}</span>
-      <span aria-hidden="true" class="md:hidden">
-        {backHref === '#main' ? '↑' : '←'}
-      </span>
-    </a>
+    {backHref && backLabel && (
+      <a
+        href={backHref}
+        aria-label={backLabel}
+        class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:underline"
+      >
+        <span class="hidden md:inline">{backLabel}</span>
+        <span aria-hidden="true" class="md:hidden">
+          {backHref === '#main' ? '↑' : '←'}
+        </span>
+      </a>
+    )}
   </div>
 </footer>

@@ -43,7 +43,6 @@ const t =
         discovered: 'Repéré via',
         format: 'Format',
         topics: 'Tags',
-        back: 'Retour à la veille',
         sourceLanguage: 'Langue de la source',
         navigation: 'Parcourir les liens de la veille',
         previous: 'Plus récent',
@@ -59,7 +58,6 @@ const t =
         discovered: 'Found via',
         format: 'Format',
         topics: 'Tags',
-        back: 'Back to tech watch',
         sourceLanguage: 'Source language',
         navigation: 'Browse tech watch links',
         previous: 'Newer',
@@ -342,10 +340,5 @@ const schema = {
       set:html={JSON.stringify(schema).replace(/</g, '\\u003c')}
     />
   </main>
-  <WatchFooter
-    locale={locale}
-    markdownPath={pageMarkdownPath(path)}
-    backHref={watchPath(locale)}
-    backLabel={t.back}
-  />
+  <WatchFooter locale={locale} markdownPath={pageMarkdownPath(path)} />
 </BaseLayout>
