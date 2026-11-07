@@ -187,6 +187,9 @@ const dateFormatter = new Intl.DateTimeFormat(
   locale={locale}
   title={title}
   description={description}
+  keywords={
+    topic ? [...new Set([topic.name, ...(topic.aliases ?? [])])] : undefined
+  }
   canonicalPath={path}
   alternatePaths={alternatePaths}
   markdownPath={pageMarkdownPath(path)}

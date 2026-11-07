@@ -62,6 +62,7 @@ export function normalizeWatchImage(field: unknown): WatchImage | undefined {
 }
 
 export type WatchTopic = {
+  category?: string
   id: string
   uid: string
   name: string

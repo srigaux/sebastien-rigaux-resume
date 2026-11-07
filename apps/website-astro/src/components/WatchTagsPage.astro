@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import Header from '@/components/Header.astro'
 import CookieSettings from '@/components/CookieSettings.astro'
+import { ChevronDown, SlidersHorizontal } from '@lucide/astro'
 import { getWatchData } from '@/lib/watch-prismic'
 import { watchPath, type WatchTopic } from '@/lib/watch-model'
 import type { Locale } from '@/types'
@@ -14,6 +15,28 @@ const { topics } = await getWatchData(locale)
 const tags = topics.filter((tag) => tag.status !== 'retired')
 const title = locale === 'fr' ? 'Tous les tags' : 'All tags'
 const paths = { fr: '/veille/tags/', en: '/en/tech-watch/tags/' }
+const categories = [
+  ['language', 'Langages', 'Languages'],
+  [
+    'framework-library',
+    'Frameworks et bibliothèques',
+    'Frameworks and libraries',
+  ],
+  ['tool-application', 'Outils et applications', 'Tools and applications'],
+  [
+    'platform-infrastructure',
+    'Plateformes et infrastructure',
+    'Platforms and infrastructure',
+  ],
+  [
+    'standard-api-format',
+    'Standards, API et formats',
+    'Standards, APIs and formats',
+  ],
+  ['concept-technique', 'Concepts et techniques', 'Concepts and techniques'],
+  ['practice-method', 'Pratiques et méthodes', 'Practices and methods'],
+  ['domain-use-case', 'Domaines et usages', 'Domains and use cases'],
+]
 const groups = new Map<string, WatchTopic[]>()
 
 for (const tag of tags.sort((a, b) =>
@@ -59,15 +82,57 @@ const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
     >
       ← {locale === 'fr' ? 'Veille technologique' : 'Tech watch'}
     </a>
-    <h1 class="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-      {title}
-    </h1>
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-5">
+      <h1 class="font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+        {title}
+      </h1>
+      <button
+        data-tag-filter-toggle
+        hidden
+        type="button"
+        aria-expanded="false"
+        aria-controls="tag-filter-panel"
+        class="inline-flex min-h-11 items-center gap-2 rounded-md border border-rule px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:hidden"
+      >
+        <SlidersHorizontal size={16} aria-hidden="true" />
+        {locale === 'fr' ? 'Filtrer' : 'Filter'}
+      </button>
+      <div
+        id="tag-filter-panel"
+        data-tag-filter
+        hidden
+        class="relative w-full max-w-full sm:w-auto"
+      >
+        <label for="tag-category" class="sr-only">
+          {locale === 'fr' ? 'Catégorie' : 'Category'}
+        </label>
+        <select
+          id="tag-category"
+          class="min-h-11 max-w-full appearance-none rounded-md border border-rule bg-paper py-2 pr-10 pl-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <option value="">
+            {locale === 'fr' ? 'Toutes les catégories' : 'All categories'}
+          </option>
+          {categories
+            .filter(([key]) => tags.some((tag) => tag.category === key))
+            .map(([key, fr, en]) => (
+              <option value={key}>{locale === 'fr' ? fr : en}</option>
+            ))}
+        </select>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted"
+        />
+      </div>
+    </div>
     <nav
       aria-label={locale === 'fr' ? 'Index alphabétique' : 'Alphabetical index'}
       class="mt-7 flex flex-wrap gap-x-1 border-b border-rule pb-6"
     >
       {sections.map(([letter]) => (
         <a
+          data-letter-link
           href={`#tag-${letter === '#' ? 'other' : letter}`}
           class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent"
         >
@@ -93,7 +158,10 @@ const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
           </h2>
           <ul class="space-y-1">
             {items.map((tag) => (
-              <li class:list={[tag.highlighted && 'font-semibold']}>
+              <li
+                data-tag-category={tag.category ?? ''}
+                class:list={[tag.highlighted && 'font-semibold']}
+              >
                 {tag.path ? (
                   <a
                     href={tag.path}
@@ -121,7 +189,76 @@ const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
   </footer>
 </BaseLayout>
 
+<script>
+  function initTagFilter() {
+    const filter = document.querySelector<HTMLElement>('[data-tag-filter]')
+    const select = document.querySelector<HTMLSelectElement>('#tag-category')
+    const directory = document.querySelector<HTMLElement>(
+      '[data-tag-directory]'
+    )
+    if (!filter || !select || !directory) return
+    filter.hidden = false
+    const toggle = document.querySelector<HTMLButtonElement>(
+      '[data-tag-filter-toggle]'
+    )
+    if (toggle) {
+      toggle.hidden = false
+      toggle.onclick = () => {
+        const open = toggle.getAttribute('aria-expanded') !== 'true'
+        toggle.setAttribute('aria-expanded', String(open))
+        filter.dataset.open = String(open)
+        if (open) select.focus()
+      }
+    }
+    const update = () => {
+      directory
+        .querySelectorAll<HTMLElement>('[data-tag-category]')
+        .forEach((item) => {
+          item.hidden = Boolean(
+            select.value && item.dataset.tagCategory !== select.value
+          )
+        })
+      directory.querySelectorAll<HTMLElement>('section').forEach((section) => {
+        section.hidden = !section.querySelector(
+          '[data-tag-category]:not([hidden])'
+        )
+        document
+          .querySelectorAll<HTMLAnchorElement>('[data-letter-link]')
+          .forEach((link) => {
+            if (link.hash === `#${section.id}`) {
+              link.setAttribute('aria-disabled', String(section.hidden))
+              link.tabIndex = section.hidden ? -1 : 0
+              link.onclick = (event) => {
+                if (link.getAttribute('aria-disabled') === 'true')
+                  event.preventDefault()
+              }
+            }
+          })
+      })
+    }
+    select.onchange = update
+    update()
+  }
+  initTagFilter()
+  document.addEventListener('astro:page-load', initTagFilter)
+</script>
+
 <style>
+  @media (width < 40rem) {
+    [data-tag-filter]:not([data-open='true']) {
+      display: none;
+    }
+    [data-tag-filter] select {
+      width: 100%;
+    }
+  }
+  [data-letter-link][aria-disabled='true'] {
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  [hidden] {
+    display: none !important;
+  }
   @supports (display: grid-lanes) {
     [data-tag-directory] {
       --tag-columns: 1;

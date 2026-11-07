@@ -100,6 +100,7 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
         id: doc.id,
         ...tagText(doc),
         highlighted: doc.data.highlighted ?? false,
+        category: doc.data.category ?? undefined,
         status: doc.data.status ?? 'active',
         legacyPage: doc.data.legacy_page === true,
         relatedIds: (doc.data.related_tags ?? [])
