@@ -36,9 +36,18 @@ L’ancienne génération monolithique a proposé à tort Authentication pour un
 
 ## Complément des alias — 7 novembre 2026
 
-La release `au8zNhIAAAJSlsHS` complète les formes développées de 18 tags (36 documents FR/EN), dont SSR, SSG, CSS, AI, RAG et WCAG. Le corpus JSON contient ces ajouts ; leur publication Prismic et leur synchronisation dans les 166 enregistrements de `watchtags` sont vérifiées. Aucun lien historique n’est modifié. Après publication, rafraîchir le catalogue du bot et synchroniser `watchtags`. Les noms anglais identiques au nom principal ne sont plus ajoutés comme alias de recherche.
+La release `au8zNhIAAAJSlsHS` complète les formes développées de 18 tags (36 documents FR/EN), dont SSR, SSG, CSS, AI, RAG et WCAG. Le corpus JSON contient ces ajouts ; leur publication Prismic et leur synchronisation dans les 166 enregistrements de `watchtags` sont vérifiées. Aucun lien historique n’est modifié. Le cache du bot a été invalidé et `watchtags` synchronisé après publication. Les noms anglais identiques au nom principal ne sont plus ajoutés comme alias de recherche.
 
-Le nouveau test réel a atteint la revue avec Hydration et SSR, sans erreur de doublon. Il a également proposé deux créations trop spécifiques : les consignes excluent désormais les fonctions, props, options et recettes propres à un article des concepts autonomes. Cette dernière restriction doit encore être vérifiée sur une génération réelle.
+Le nouveau test réel a atteint la revue avec Hydration et SSR, sans erreur de doublon. Il a également proposé deux créations trop spécifiques : les consignes excluent désormais les fonctions, props, options et recettes propres à un article des concepts autonomes. Le test suivant a encore proposé Rendu déterministe et React Suspense. Le commit `3a57bf7` transmet désormais le titre et le résumé au second appel, avec une comparaison des recouvrements et de la centralité des sujets. Cette dernière évolution reste à vérifier sur une nouvelle instance réelle ; le brouillon `u428355146` conserve les propositions antérieures et ne constitue pas une preuve pour ce correctif.
+
+## État de validation au 7 novembre 2026
+
+- Catalogue publié : 336 documents vérifiés contre le corpus, avec identifiants, traductions, alias et associations.
+- Algolia : 166 concepts actifs dans `watchtags` ; 843 traductions publiées dans `watchlink`. Après le rebuild Prismic, l’export contient l’alias Server-side rendering sur 12 fiches FR/EN et a été réindexé.
+- Site : build et déploiement GitHub Actions `42381758086` terminés avec succès.
+- Bot : 186 tests Vitest et 6 tests de scripts réussis avant le dernier ajout de contexte ; les 15 tests services/workflow concernés par cet ajout passent, ainsi que TypeScript, ESLint et Prettier.
+- Version Worker du dernier correctif : `fb2eb8ea-755b-45e4-a945-75e1d4f20cf5`.
+- Validation encore ouverte : sélection autonome sur une nouvelle instance Telegram utilisant cette version. Ne pas publier le doublon de test et ne pas considérer les assertions de prompts ou tests simulés comme une preuve de pertinence éditoriale réelle.
 
 ## Phase 2, séparée
 
