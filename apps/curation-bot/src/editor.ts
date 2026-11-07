@@ -297,6 +297,9 @@ export async function generateDraft(
   cats: Catalog
 ): Promise<Draft> {
   const editorial = await generateEditorialDraft(env, item, extraction, cats)
-  const tags = await resolveTags(env, item, editorial.concepts, cats)
+  const tags = await resolveTags(env, item, editorial.concepts, cats, {
+    title: editorial.draft.en.title,
+    summary: editorial.draft.en.summary,
+  })
   return assertDraft({ ...editorial.draft, ...tags }, cats)
 }

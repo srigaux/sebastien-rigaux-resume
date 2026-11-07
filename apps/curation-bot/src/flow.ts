@@ -236,7 +236,10 @@ export async function advance(
     await progress('tags')
     const tags = await retry(step, `${prefix}-resolve-tags`, () =>
       withTyping(env, item.chat_id, () =>
-        resolveTags(env, item, editorial.concepts, cats)
+        resolveTags(env, item, editorial.concepts, cats, {
+          title: editorial.draft.en.title,
+          summary: editorial.draft.en.summary,
+        })
       )
     )
     s.draft = assertDraft({ ...editorial.draft, ...tags }, cats)
