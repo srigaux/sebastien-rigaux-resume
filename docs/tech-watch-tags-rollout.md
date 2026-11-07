@@ -47,7 +47,7 @@ Le nouveau test réel a atteint la revue avec Hydration et SSR, sans erreur de d
 - Site : build et déploiement GitHub Actions `42381758086` terminés avec succès.
 - Bot : 186 tests Vitest et 6 tests de scripts réussis avant le dernier ajout de contexte ; les 15 tests services/workflow concernés par cet ajout passent, ainsi que TypeScript, ESLint et Prettier.
 - Version Worker du dernier correctif : `fb2eb8ea-755b-45e4-a945-75e1d4f20cf5`.
-- Validation encore ouverte : sélection autonome sur une nouvelle instance Telegram utilisant cette version. Ne pas publier le doublon de test et ne pas considérer les assertions de prompts ou tests simulés comme une preuve de pertinence éditoriale réelle.
+- Test réel final : après ajout du vocabulaire anglais compact (`c87d0d0`, Worker `145c1e0d-04e2-4e5e-9b6f-382536dc7e93`), la nouvelle instance `u428355149-g0` atteint la revue avec Hydration, SSR et React, zéro création et aucune erreur. Le doublon reste non publié. Ce résultat valide cet article de régression, sans garantir la pertinence de toutes les futures sélections.
 
 ## Phase 2, séparée
 
