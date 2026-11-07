@@ -34,6 +34,12 @@ Avant la recherche, le bot synchronise le catalogue si son empreinte a changé, 
 
 L’ancienne génération monolithique a proposé à tort Authentication pour un article sur l’hydratation React. Le changement de niveau de raisonnement seul n’a pas suffi selon le test utilisateur ; la séparation des tâches et la recherche dédiée remplacent cette approche.
 
+## Complément des alias — 7 novembre 2026
+
+La release `au8zNhIAAAJSlsHS` complète les formes développées de 18 tags (36 documents FR/EN), dont SSR, SSG, CSS, AI, RAG et WCAG. Le corpus JSON contient ces ajouts ; leur publication Prismic reste à valider. Aucun lien historique n’est modifié. Après publication, rafraîchir le catalogue du bot et synchroniser `watchtags`. Les noms anglais identiques au nom principal ne sont plus ajoutés comme alias de recherche.
+
+Le nouveau test réel a atteint la revue avec Hydration et SSR, sans erreur de doublon. Il a également proposé deux créations trop spécifiques : les consignes excluent désormais les fonctions, props, options et recettes propres à un article des concepts autonomes. Cette dernière restriction doit encore être vérifiée sur une génération réelle.
+
 ## Phase 2, séparée
 
 Rapprocher le corpus et le manifeste du catalogue Prismic actualisé. Regrouper les traductions d’une ressource et proposer un diff révisable des tags, avec justification. Tooling et Releases exigent une nouvelle lecture du contenu, sans remplacement générique. Appliquer seulement les choix validés, puis réaffecter les relations et associations avant toute fusion ou suppression. Préserver ou rediriger les anciennes URLs, reconstruire le site et réindexer Algolia après cette migration.

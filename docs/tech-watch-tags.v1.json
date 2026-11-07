@@ -229,7 +229,7 @@
           "name": ".NET",
           "slug": "dotnet",
           "description": "Plateforme de développement Microsoft : runtime, bibliothèques, SDK et applications multiplateformes.",
-          "aliases": [],
+          "aliases": ["dotnet"],
           "seoTitle": ".NET — Veille technologique",
           "seoDescription": "Plateforme de développement Microsoft : runtime, bibliothèques, SDK et applications multiplateformes."
         },
@@ -237,7 +237,7 @@
           "name": ".NET",
           "slug": "dotnet",
           "description": "Microsoft’s development platform: runtime, libraries, SDK and cross-platform applications.",
-          "aliases": [],
+          "aliases": ["dotnet"],
           "seoTitle": ".NET — Tech watch",
           "seoDescription": "Microsoft’s development platform: runtime, libraries, SDK and cross-platform applications."
         }
@@ -526,7 +526,7 @@
           "name": "CSS",
           "slug": "css",
           "description": "Mise en page, styles adaptatifs et fonctionnalités natives de présentation du Web.",
-          "aliases": [],
+          "aliases": ["Cascading Style Sheets", "Feuilles de style en cascade"],
           "seoTitle": "CSS — Veille technologique",
           "seoDescription": "Mise en page, styles adaptatifs et fonctionnalités natives de présentation du Web."
         },
@@ -534,7 +534,7 @@
           "name": "CSS",
           "slug": "css",
           "description": "Layout, responsive styling and native presentation features of the Web.",
-          "aliases": [],
+          "aliases": ["Cascading Style Sheets"],
           "seoTitle": "CSS — Tech watch",
           "seoDescription": "Layout, responsive styling and native presentation features of the Web."
         }
@@ -740,7 +740,11 @@
           "name": "SSR",
           "slug": "ssr",
           "description": "Production du HTML sur le serveur et articulation avec les données et interactions côté client.",
-          "aliases": [],
+          "aliases": [
+            "Server-side rendering",
+            "Rendu côté serveur",
+            "Rendu serveur"
+          ],
           "seoTitle": "SSR — Veille technologique",
           "seoDescription": "Production du HTML sur le serveur et articulation avec les données et interactions côté client."
         },
@@ -748,7 +752,7 @@
           "name": "SSR",
           "slug": "ssr",
           "description": "Producing HTML on the server and coordinating it with client-side data and interactions.",
-          "aliases": [],
+          "aliases": ["Server-side rendering", "Server side rendering"],
           "seoTitle": "SSR — Tech watch",
           "seoDescription": "Producing HTML on the server and coordinating it with client-side data and interactions."
         }
@@ -777,7 +781,10 @@
           "name": "SSG",
           "slug": "ssg",
           "description": "Génération de pages HTML au build pour diffuser des sites statiques.",
-          "aliases": [],
+          "aliases": [
+            "Static site generation",
+            "Génération de sites statiques"
+          ],
           "seoTitle": "SSG — Veille technologique",
           "seoDescription": "Génération de pages HTML au build pour diffuser des sites statiques."
         },
@@ -785,7 +792,7 @@
           "name": "SSG",
           "slug": "ssg",
           "description": "Generating HTML pages at build time for static site delivery.",
-          "aliases": [],
+          "aliases": ["Static site generation"],
           "seoTitle": "SSG — Tech watch",
           "seoDescription": "Generating HTML pages at build time for static site delivery."
         }
@@ -1228,7 +1235,7 @@
           "name": "AWS",
           "slug": "aws",
           "description": "Services Amazon Web Services pour le calcul, le stockage et les architectures cloud.",
-          "aliases": [],
+          "aliases": ["Amazon Web Services"],
           "seoTitle": "AWS — Veille technologique",
           "seoDescription": "Services Amazon Web Services pour le calcul, le stockage et les architectures cloud."
         },
@@ -1236,7 +1243,7 @@
           "name": "AWS",
           "slug": "aws",
           "description": "Amazon Web Services for compute, storage and cloud architectures.",
-          "aliases": [],
+          "aliases": ["Amazon Web Services"],
           "seoTitle": "AWS — Tech watch",
           "seoDescription": "Amazon Web Services for compute, storage and cloud architectures."
         }
@@ -1263,7 +1270,7 @@
           "name": "GCP",
           "slug": "gcp",
           "description": "Services Google Cloud pour l’hébergement, les données et l’infrastructure applicative.",
-          "aliases": [],
+          "aliases": ["Google Cloud Platform", "Google Cloud"],
           "seoTitle": "GCP — Veille technologique",
           "seoDescription": "Services Google Cloud pour l’hébergement, les données et l’infrastructure applicative."
         },
@@ -1271,7 +1278,7 @@
           "name": "GCP",
           "slug": "gcp",
           "description": "Google Cloud services for hosting, data and application infrastructure.",
-          "aliases": [],
+          "aliases": ["Google Cloud Platform", "Google Cloud"],
           "seoTitle": "GCP — Tech watch",
           "seoDescription": "Google Cloud services for hosting, data and application infrastructure."
         }
@@ -1403,7 +1410,11 @@
           "name": "CI/CD",
           "slug": "ci-cd",
           "description": "Automatisation de la validation, de la construction et de la livraison du logiciel.",
-          "aliases": [],
+          "aliases": [
+            "Continuous integration and continuous delivery",
+            "Continuous integration and continuous deployment",
+            "Intégration et livraison continues"
+          ],
           "seoTitle": "CI/CD — Veille technologique",
           "seoDescription": "Automatisation de la validation, de la construction et de la livraison du logiciel."
         },
@@ -1411,7 +1422,10 @@
           "name": "CI/CD",
           "slug": "ci-cd",
           "description": "Automating software validation, builds and delivery.",
-          "aliases": [],
+          "aliases": [
+            "Continuous integration and continuous delivery",
+            "Continuous integration and continuous deployment"
+          ],
           "seoTitle": "CI/CD — Tech watch",
           "seoDescription": "Automating software validation, builds and delivery."
         }
@@ -1789,7 +1803,11 @@
           "name": "AI",
           "slug": "ai",
           "description": "Modèles et applications d’intelligence artificielle, leurs capacités et leurs limites.",
-          "aliases": [],
+          "aliases": [
+            "Artificial intelligence",
+            "Intelligence artificielle",
+            "IA"
+          ],
           "seoTitle": "AI — Veille technologique",
           "seoDescription": "Modèles et applications d’intelligence artificielle, leurs capacités et leurs limites."
         },
@@ -1797,7 +1815,7 @@
           "name": "AI",
           "slug": "ai",
           "description": "Artificial intelligence models and applications, their capabilities and limitations.",
-          "aliases": [],
+          "aliases": ["Artificial intelligence"],
           "seoTitle": "AI — Tech watch",
           "seoDescription": "Artificial intelligence models and applications, their capabilities and limitations."
         }
@@ -1898,7 +1916,10 @@
           "name": "RAG",
           "slug": "rag",
           "description": "Enrichissement des réponses d’un modèle par la recherche de documents et de contexte pertinent.",
-          "aliases": [],
+          "aliases": [
+            "Retrieval-augmented generation",
+            "Génération augmentée par recherche"
+          ],
           "seoTitle": "RAG — Veille technologique",
           "seoDescription": "Enrichissement des réponses d’un modèle par la recherche de documents et de contexte pertinent."
         },
@@ -1906,7 +1927,7 @@
           "name": "RAG",
           "slug": "rag",
           "description": "Augmenting model responses by retrieving relevant documents and context.",
-          "aliases": [],
+          "aliases": ["Retrieval-augmented generation"],
           "seoTitle": "RAG — Tech watch",
           "seoDescription": "Augmenting model responses by retrieving relevant documents and context."
         }
@@ -2583,7 +2604,7 @@
           "name": "SEO",
           "slug": "seo",
           "description": "Exploration, indexation et présentation du contenu dans les moteurs de recherche.",
-          "aliases": [],
+          "aliases": ["Search engine optimization", "Référencement naturel"],
           "seoTitle": "SEO — Veille technologique",
           "seoDescription": "Exploration, indexation et présentation du contenu dans les moteurs de recherche."
         },
@@ -2591,7 +2612,10 @@
           "name": "SEO",
           "slug": "seo",
           "description": "Crawling, indexing and presenting content in search engines.",
-          "aliases": [],
+          "aliases": [
+            "Search engine optimization",
+            "Search engine optimisation"
+          ],
           "seoTitle": "SEO — Tech watch",
           "seoDescription": "Crawling, indexing and presenting content in search engines."
         }
@@ -2625,7 +2649,10 @@
           "name": "UI/UX",
           "slug": "ui-ux",
           "description": "Conception d’interfaces et de parcours adaptés aux besoins des utilisateurs.",
-          "aliases": [],
+          "aliases": [
+            "User interface and user experience",
+            "Interface et expérience utilisateur"
+          ],
           "seoTitle": "UI/UX — Veille technologique",
           "seoDescription": "Conception d’interfaces et de parcours adaptés aux besoins des utilisateurs."
         },
@@ -2633,7 +2660,7 @@
           "name": "UI/UX",
           "slug": "ui-ux",
           "description": "Designing interfaces and flows around user needs.",
-          "aliases": [],
+          "aliases": ["User interface and user experience"],
           "seoTitle": "UI/UX — Tech watch",
           "seoDescription": "Designing interfaces and flows around user needs."
         }
@@ -2816,7 +2843,7 @@
           "name": "HTML",
           "slug": "html",
           "description": "Structure et sémantique des documents web, formulaires et éléments natifs du navigateur.",
-          "aliases": [],
+          "aliases": ["HyperText Markup Language"],
           "seoTitle": "HTML — Veille technologique",
           "seoDescription": "Structure et sémantique des documents web, formulaires et éléments natifs du navigateur."
         },
@@ -2824,7 +2851,7 @@
           "name": "HTML",
           "slug": "html",
           "description": "Structure and semantics of web documents, forms and native browser elements.",
-          "aliases": [],
+          "aliases": ["HyperText Markup Language"],
           "seoTitle": "HTML — Tech watch",
           "seoDescription": "Structure and semantics of web documents, forms and native browser elements."
         }
@@ -2866,7 +2893,7 @@
           "name": "SQL",
           "slug": "sql",
           "description": "Langage de définition et de manipulation des données relationnelles : requêtes, schémas et transactions.",
-          "aliases": [],
+          "aliases": ["Structured Query Language"],
           "seoTitle": "SQL — Veille technologique",
           "seoDescription": "Langage de définition et de manipulation des données relationnelles : requêtes, schémas et transactions."
         },
@@ -2874,7 +2901,7 @@
           "name": "SQL",
           "slug": "sql",
           "description": "Defining and manipulating relational data through queries, schemas and transactions.",
-          "aliases": [],
+          "aliases": ["Structured Query Language"],
           "seoTitle": "SQL — Tech watch",
           "seoDescription": "Defining and manipulating relational data through queries, schemas and transactions."
         }
@@ -4833,7 +4860,7 @@
           "name": "RSS",
           "slug": "rss",
           "description": "Format de syndication permettant de suivre les publications depuis un lecteur de flux.",
-          "aliases": [],
+          "aliases": ["Really Simple Syndication"],
           "seoTitle": "RSS — Veille technologique",
           "seoDescription": "Format de syndication permettant de suivre les publications depuis un lecteur de flux."
         },
@@ -4841,7 +4868,7 @@
           "name": "RSS",
           "slug": "rss",
           "description": "A syndication format for following publications through feed readers.",
-          "aliases": [],
+          "aliases": ["Really Simple Syndication"],
           "seoTitle": "RSS — Tech watch",
           "seoDescription": "A syndication format for following publications through feed readers."
         }
@@ -4870,7 +4897,10 @@
           "name": "SVG",
           "slug": "svg",
           "description": "Format vectoriel du Web pour les icônes, illustrations et graphiques.",
-          "aliases": [],
+          "aliases": [
+            "Scalable Vector Graphics",
+            "Graphisme vectoriel adaptable"
+          ],
           "seoTitle": "SVG — Veille technologique",
           "seoDescription": "Format vectoriel du Web pour les icônes, illustrations et graphiques."
         },
@@ -4878,7 +4908,7 @@
           "name": "SVG",
           "slug": "svg",
           "description": "The Web’s vector format for icons, illustrations and graphics.",
-          "aliases": [],
+          "aliases": ["Scalable Vector Graphics"],
           "seoTitle": "SVG — Tech watch",
           "seoDescription": "The Web’s vector format for icons, illustrations and graphics."
         }
@@ -4910,7 +4940,7 @@
           "name": "JSON-LD",
           "slug": "json-ld",
           "description": "Représentation de données liées en JSON, notamment pour décrire le contenu aux moteurs de recherche.",
-          "aliases": [],
+          "aliases": ["JavaScript Object Notation for Linked Data"],
           "seoTitle": "JSON-LD — Veille technologique",
           "seoDescription": "Représentation de données liées en JSON, notamment pour décrire le contenu aux moteurs de recherche."
         },
@@ -4918,7 +4948,7 @@
           "name": "JSON-LD",
           "slug": "json-ld",
           "description": "Representing linked data in JSON, including content descriptions for search engines.",
-          "aliases": [],
+          "aliases": ["JavaScript Object Notation for Linked Data"],
           "seoTitle": "JSON-LD — Tech watch",
           "seoDescription": "Representing linked data in JSON, including content descriptions for search engines."
         }
@@ -4948,7 +4978,10 @@
           "name": "WCAG",
           "slug": "wcag",
           "description": "Recommandations et critères de réussite pour évaluer l’accessibilité du contenu web.",
-          "aliases": [],
+          "aliases": [
+            "Web Content Accessibility Guidelines",
+            "Règles pour l’accessibilité des contenus web"
+          ],
           "seoTitle": "WCAG — Veille technologique",
           "seoDescription": "Recommandations et critères de réussite pour évaluer l’accessibilité du contenu web."
         },
@@ -4956,7 +4989,7 @@
           "name": "WCAG",
           "slug": "wcag",
           "description": "Guidelines and success criteria for evaluating web content accessibility.",
-          "aliases": [],
+          "aliases": ["Web Content Accessibility Guidelines"],
           "seoTitle": "WCAG — Tech watch",
           "seoDescription": "Guidelines and success criteria for evaluating web content accessibility."
         }
@@ -4986,7 +5019,7 @@
           "name": "SSH",
           "slug": "ssh",
           "description": "Accès distant sécurisé pour les sessions terminal, tunnels et transferts.",
-          "aliases": [],
+          "aliases": ["Secure Shell"],
           "seoTitle": "SSH — Veille technologique",
           "seoDescription": "Accès distant sécurisé pour les sessions terminal, tunnels et transferts."
         },
@@ -4994,7 +5027,7 @@
           "name": "SSH",
           "slug": "ssh",
           "description": "Secure remote access for terminal sessions, tunnels and transfers.",
-          "aliases": [],
+          "aliases": ["Secure Shell"],
           "seoTitle": "SSH — Tech watch",
           "seoDescription": "Secure remote access for terminal sessions, tunnels and transfers."
         }

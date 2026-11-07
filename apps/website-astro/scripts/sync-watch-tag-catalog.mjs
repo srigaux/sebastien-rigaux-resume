@@ -30,7 +30,11 @@ const records = docs
             ...(doc.data.aliases ?? []).map((row) => row.alias),
             ...(english?.data.aliases ?? []).map((row) => row.alias),
             english?.data.name,
-          ].filter(Boolean)
+          ].filter(
+            (alias) =>
+              alias &&
+              alias.trim().toLowerCase() !== doc.data.name?.trim().toLowerCase()
+          )
         ),
       ],
       description: doc.data.description ?? '',

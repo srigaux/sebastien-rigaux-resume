@@ -131,7 +131,12 @@ export async function catalog(env: Env, fresh = false): Promise<Catalog> {
                 ...(doc.data.aliases ?? []).map((item) => item.alias),
                 ...(english?.data.aliases ?? []).map((item) => item.alias),
                 english?.data.name,
-              ].filter((alias): alias is string => Boolean(alias))
+              ].filter(
+                (alias): alias is string =>
+                  Boolean(alias) &&
+                  alias?.trim().toLowerCase() !==
+                    doc.data.name?.trim().toLowerCase()
+              )
             ),
           ],
         }
