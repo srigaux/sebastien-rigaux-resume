@@ -20,10 +20,90 @@
           "label": "Description"
         },
         "type": "Text"
+      },
+      "category": {
+        "config": {
+          "label": "Category",
+          "options": [
+            "language",
+            "framework-library",
+            "tool-application",
+            "platform-infrastructure",
+            "standard-api-format",
+            "concept-technique",
+            "practice-method",
+            "domain-use-case"
+          ]
+        },
+        "type": "Select"
+      },
+      "status": {
+        "config": {
+          "default_value": "active",
+          "label": "Status",
+          "options": ["active", "retired"]
+        },
+        "type": "Select"
+      },
+      "highlighted": {
+        "config": {
+          "default_value": false,
+          "label": "Highlighted"
+        },
+        "type": "Boolean"
+      },
+      "legacy_page": {
+        "config": {
+          "default_value": false,
+          "label": "Preserve existing page"
+        },
+        "type": "Boolean"
+      },
+      "aliases": {
+        "config": {
+          "fields": {
+            "alias": {
+              "config": {
+                "label": "Alias"
+              },
+              "type": "Text"
+            }
+          },
+          "label": "Aliases"
+        },
+        "type": "Group"
+      },
+      "related_tags": {
+        "config": {
+          "fields": {
+            "tag": {
+              "config": {
+                "customtypes": ["topic"],
+                "label": "Tag",
+                "select": "document"
+              },
+              "type": "Link"
+            }
+          },
+          "label": "Related tags"
+        },
+        "type": "Group"
+      },
+      "seo_title": {
+        "config": {
+          "label": "SEO title"
+        },
+        "type": "Text"
+      },
+      "seo_description": {
+        "config": {
+          "label": "SEO description"
+        },
+        "type": "Text"
       }
     }
   },
-  "label": "Topic",
+  "label": "Tags",
   "repeatable": true,
   "status": true
 }

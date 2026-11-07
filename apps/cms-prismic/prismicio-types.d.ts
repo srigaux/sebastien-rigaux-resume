@@ -47,11 +47,11 @@ type ContentRelationshipFieldWithData<
 }[Exclude<TCustomType[number], string>["id"]];
 
 /**
- * Item in *Curated Link → Topics*
+ * Item in *Curated Link → Tags*
  */
 export interface CuratedLinkDocumentDataTopicsItem {
 	/**
-	 * Topic field in *Curated Link → Topics*
+	 * Topic field in *Curated Link → Tags*
 	 *
 	 * - **Field Type**: Content Relationship
 	 * - **Placeholder**: *None*
@@ -75,7 +75,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/rich-text
 	 */
 	title: prismic.RichTextField;
-
+	
 	/**
 	 * Summary field in *Curated Link*
 	 *
@@ -86,7 +86,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/rich-text
 	 */
 	summary: prismic.RichTextField;
-
+	
 	/**
 	 * Url field in *Curated Link*
 	 *
@@ -97,7 +97,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/link
 	 */
 	url: prismic.LinkField<string, string, unknown, prismic.FieldState, never>;
-
+	
 	/**
 	 * Selected On field in *Curated Link*
 	 *
@@ -108,7 +108,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/date
 	 */
 	selected_on: prismic.DateField;
-
+	
 	/**
 	 * Published On field in *Curated Link*
 	 *
@@ -119,7 +119,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/date
 	 */
 	published_on: prismic.DateField;
-
+	
 	/**
 	 * Format field in *Curated Link*
 	 *
@@ -130,7 +130,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/select
 	 */
 	format: prismic.SelectField<"Article" | "Video" | "Repository" | "Release" | "Documentation" | "Tool" | "Other">;
-
+	
 	/**
 	 * Credit field in *Curated Link*
 	 *
@@ -141,7 +141,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	credit: prismic.KeyTextField;
-
+	
 	/**
 	 * Discovered Via field in *Curated Link*
 	 *
@@ -152,9 +152,9 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/content-relationship
 	 */
 	discovered_via: prismic.ContentRelationshipField<"discovery_source">;
-
+	
 	/**
-	 * Topics field in *Curated Link*
+	 * Tags field in *Curated Link*
 	 *
 	 * - **Field Type**: Group
 	 * - **Placeholder**: *None*
@@ -163,7 +163,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/repeatable-group
 	 */
 	topics: prismic.GroupField<Simplify<CuratedLinkDocumentDataTopicsItem>>;
-
+	
 	/**
 	 * Image field in *Curated Link*
 	 *
@@ -174,7 +174,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/image
 	 */
 	image: prismic.ImageField<never>;
-
+	
 	/**
 	 * Site Icon field in *Curated Link*
 	 *
@@ -185,7 +185,7 @@ interface CuratedLinkDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/image
 	 */
 	site_icon: prismic.ImageField<never>;
-
+	
 	/**
 	 * Source Language field in *Curated Link*
 	 *
@@ -223,7 +223,7 @@ interface DiscoverySourceDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	name: prismic.KeyTextField;
-
+	
 	/**
 	 * Url field in *Discovery Source*
 	 *
@@ -234,7 +234,7 @@ interface DiscoverySourceDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/link
 	 */
 	url: prismic.LinkField<string, string, unknown, prismic.FieldState, never>;
-
+	
 	/**
 	 * Icon field in *Discovery Source*
 	 *
@@ -259,11 +259,41 @@ interface DiscoverySourceDocumentData {
 export type DiscoverySourceDocument<Lang extends string = string> = prismic.PrismicDocumentWithUID<Simplify<DiscoverySourceDocumentData>, "discovery_source", Lang>;
 
 /**
- * Content for Topic documents
+ * Item in *Tags → Aliases*
+ */
+export interface TopicDocumentDataAliasesItem {
+	/**
+	 * Alias field in *Tags → Aliases*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.aliases[].alias
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	alias: prismic.KeyTextField;
+}
+
+/**
+ * Item in *Tags → Related tags*
+ */
+export interface TopicDocumentDataRelatedTagsItem {
+	/**
+	 * Tag field in *Tags → Related tags*
+	 *
+	 * - **Field Type**: Content Relationship
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.related_tags[].tag
+	 * - **Documentation**: https://prismic.io/docs/fields/content-relationship
+	 */
+	tag: prismic.ContentRelationshipField<"topic">;
+}
+
+/**
+ * Content for Tags documents
  */
 interface TopicDocumentData {
 	/**
-	 * Name field in *Topic*
+	 * Name field in *Tags*
 	 *
 	 * - **Field Type**: Text
 	 * - **Placeholder**: *None*
@@ -272,9 +302,9 @@ interface TopicDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	name: prismic.KeyTextField;
-
+	
 	/**
-	 * Description field in *Topic*
+	 * Description field in *Tags*
 	 *
 	 * - **Field Type**: Text
 	 * - **Placeholder**: *None*
@@ -283,10 +313,101 @@ interface TopicDocumentData {
 	 * - **Documentation**: https://prismic.io/docs/fields/text
 	 */
 	description: prismic.KeyTextField;
+	
+	/**
+	 * Category field in *Tags*
+	 *
+	 * - **Field Type**: Select
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.category
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/select
+	 */
+	category: prismic.SelectField<"language" | "framework-library" | "tool-application" | "platform-infrastructure" | "standard-api-format" | "concept-technique" | "practice-method" | "domain-use-case">;
+	
+	/**
+	 * Status field in *Tags*
+	 *
+	 * - **Field Type**: Select
+	 * - **Placeholder**: *None*
+	 * - **Default Value**: active
+	 * - **API ID Path**: topic.status
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/select
+	 */
+	status: prismic.SelectField<"active" | "retired", "filled">;
+	
+	/**
+	 * Highlighted field in *Tags*
+	 *
+	 * - **Field Type**: Boolean
+	 * - **Placeholder**: *None*
+	 * - **Default Value**: false
+	 * - **API ID Path**: topic.highlighted
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/boolean
+	 */
+	highlighted: prismic.BooleanField;
+	
+	/**
+	 * Preserve existing page field in *Tags*
+	 *
+	 * - **Field Type**: Boolean
+	 * - **Placeholder**: *None*
+	 * - **Default Value**: false
+	 * - **API ID Path**: topic.legacy_page
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/boolean
+	 */
+	legacy_page: prismic.BooleanField;
+	
+	/**
+	 * Aliases field in *Tags*
+	 *
+	 * - **Field Type**: Group
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.aliases[]
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/repeatable-group
+	 */
+	aliases: prismic.GroupField<Simplify<TopicDocumentDataAliasesItem>>;
+	
+	/**
+	 * Related tags field in *Tags*
+	 *
+	 * - **Field Type**: Group
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.related_tags[]
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/repeatable-group
+	 */
+	related_tags: prismic.GroupField<Simplify<TopicDocumentDataRelatedTagsItem>>;
+	
+	/**
+	 * SEO title field in *Tags*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.seo_title
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	seo_title: prismic.KeyTextField;
+	
+	/**
+	 * SEO description field in *Tags*
+	 *
+	 * - **Field Type**: Text
+	 * - **Placeholder**: *None*
+	 * - **API ID Path**: topic.seo_description
+	 * - **Tab**: Main
+	 * - **Documentation**: https://prismic.io/docs/fields/text
+	 */
+	seo_description: prismic.KeyTextField;
 }
 
 /**
- * Topic document from Prismic
+ * Tags document from Prismic
  *
  * - **API ID**: `topic`
  * - **Repeatable**: `true`
@@ -302,15 +423,15 @@ declare module "@prismicio/client" {
 	interface CreateClient {
 		(repositoryNameOrEndpoint: string, options?: prismic.ClientConfig): prismic.Client<AllDocumentTypes>;
 	}
-
+	
 	interface CreateWriteClient {
 		(repositoryNameOrEndpoint: string, options: prismic.WriteClientConfig): prismic.WriteClient<AllDocumentTypes>;
 	}
-
+	
 	interface CreateMigration {
 		(): prismic.Migration<AllDocumentTypes>;
 	}
-
+	
 	namespace Content {
 		export type {
 			CuratedLinkDocument,
@@ -320,6 +441,8 @@ declare module "@prismicio/client" {
 			DiscoverySourceDocumentData,
 			TopicDocument,
 			TopicDocumentData,
+			TopicDocumentDataAliasesItem,
+			TopicDocumentDataRelatedTagsItem,
 			AllDocumentTypes
 		}
 	}
