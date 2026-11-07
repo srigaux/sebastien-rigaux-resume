@@ -258,8 +258,9 @@ it('resumes tag resolution from saved copy without requesting editorial generati
     })
   )
   await advance(env, steps(), 'resume-copy', item, cats)
-  expect(item.state.draft?.fr).toStrictEqual(draft.fr)
-  expect(item.state.editorial).toBeUndefined()
+  const saved = await store.get(item.id)
+  expect(saved.state.draft?.fr).toStrictEqual(draft.fr)
+  expect(saved.state.editorial).toBeUndefined()
   expect(urls.some((url) => url.includes('api.openai.com'))).toBe(false)
 })
 

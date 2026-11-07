@@ -7,9 +7,58 @@ import { log } from '@/observability'
 import { type TagConcept, searchTagCandidates } from '@/tag-search'
 import {
   type TagProposal,
+  existingTagForProposal,
   tagProposalSchema,
   validateTagProposals,
 } from '@/tags'
+
+function resolutionDiagnostic(error: unknown): string {
+  const details: string[] = []
+  let current: unknown = error
+
+  for (
+    let depth = 0;
+    depth < 4 && current && typeof current === 'object';
+    depth++
+  ) {
+    const value = current as Record<string, unknown>
+
+    if (typeof value.name === 'string') {
+      details.push(value.name.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 80))
+    }
+
+    if (typeof value.finishReason === 'string') {
+      details.push(
+        `finish=${value.finishReason.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40)}`
+      )
+    }
+
+    const issues = z
+      .array(
+        z.object({
+          code: z.string(),
+          path: z.array(z.union([z.string(), z.number()])),
+        })
+      )
+      .safeParse(value.issues)
+
+    if (issues.success) {
+      details.push(
+        ...issues.data
+          .slice(0, 6)
+          .map((issue) =>
+            `${issue.path.join('.')}:${issue.code}`
+              .replace(/[^a-zA-Z0-9_.:-]/g, '')
+              .slice(0, 120)
+          )
+      )
+    }
+
+    current = value.cause
+  }
+
+  return details.join('; ') || 'sortie structurée absente'
+}
 
 export async function resolveTags(
   env: Env,
@@ -80,6 +129,19 @@ Une décision par concept, sans doublon. existingUid et newTag sont mutuellement
       })),
     }),
   })
+    .then((response) => ({ output: response.output, usage: response.usage }))
+    .catch((error: unknown) => {
+      const remote = z.object({ statusCode: z.number() }).safeParse(error)
+
+      if (remote.success) {
+        throw error
+      }
+
+      throw new BotError(
+        `Réponse de résolution des tags invalide (${resolutionDiagnostic(error)}).`,
+        'draft_invalid'
+      )
+    })
   const topics: string[] = []
   const newTags: TagProposal[] = []
   const seen = new Set<number>()
@@ -112,6 +174,16 @@ Une décision par concept, sans doublon. existingUid et newTag sont mutuellement
     }
 
     if (decision.newTag) {
+      const existing = existingTagForProposal(decision.newTag, cats.topics)
+
+      if (existing) {
+        if (!topics.includes(existing)) {
+          topics.push(existing)
+        }
+
+        continue
+      }
+
       if (
         decision.newTag.relatedUids.some((uid) => !allowedUids.includes(uid))
       ) {
@@ -129,7 +201,17 @@ Une décision par concept, sans doublon. existingUid et newTag sont mutuellement
     throw new BotError('Trop de tags proposés.', 'draft_invalid')
   }
 
-  validateTagProposals(newTags, cats.topics)
+  try {
+    validateTagProposals(newTags, cats.topics)
+  } catch (error) {
+    throw new BotError(
+      error instanceof Error
+        ? error.message
+        : 'Conflit entre tags proposés et existants.',
+      'draft_invalid'
+    )
+  }
+
   log('tags.resolved', {
     itemId: item.id,
     conceptsCount: concepts.length,

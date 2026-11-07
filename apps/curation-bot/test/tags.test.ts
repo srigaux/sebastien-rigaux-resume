@@ -7,7 +7,11 @@ import { applyAction } from '@/flow'
 import { assertUnreservedTagProposals } from '@/prismic'
 import type { Steps } from '@/retry'
 import { Store } from '@/store'
-import { normalizeTagName, validateTagProposals } from '@/tags'
+import {
+  existingTagForProposal,
+  normalizeTagName,
+  validateTagProposals,
+} from '@/tags'
 
 const copy = {
   name: 'React Server Components',
@@ -23,6 +27,30 @@ const proposal = {
   en: copy,
   relatedUids: ['react'],
 }
+
+it('reuses a proposal with an unambiguous canonical name but rejects alias-only or retired matches', () => {
+  const existing = {
+    uid: 'rsc',
+    name: 'React Server Components',
+    aliases: ['RSC'],
+  }
+  expect(existingTagForProposal(proposal, [existing])).toBe('rsc')
+  expect(
+    existingTagForProposal(proposal, [{ ...existing, status: 'retired' }])
+  ).toBeUndefined()
+  const different = {
+    ...proposal,
+    fr: { ...copy, uid: 'rendering', name: 'Rendering' },
+    en: { ...copy, uid: 'rendering', name: 'Rendering' },
+  }
+  expect(existingTagForProposal(different, [existing])).toBeUndefined()
+  expect(
+    existingTagForProposal(proposal, [
+      existing,
+      { uid: 'another', name: 'RSC' },
+    ])
+  ).toBeUndefined()
+})
 const steps: Steps = {
   do: async (_name, _config, callback) => callback(),
   sleep: async () => {},

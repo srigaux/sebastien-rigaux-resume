@@ -138,6 +138,7 @@ export async function retry<T>(
           )
           return {
             ok: false as const,
+            errorType: errorFields(e).errorType,
             message: error.message,
             retryable: error.retryable,
             reasonCode: error.reasonCode,

@@ -44,6 +44,44 @@ export function normalizeTagName(value: string): string {
     .replace(/\s+/g, ' ')
 }
 
+export function existingTagForProposal(
+  proposal: TagProposal,
+  existing: Array<{
+    uid: string
+    name: string
+    aliases?: string[]
+    status?: string
+  }>
+): string | undefined {
+  const canonical = [
+    proposal.fr.name,
+    proposal.fr.uid,
+    proposal.en.name,
+    proposal.en.uid,
+  ].map(normalizeTagName)
+  const allTerms = [
+    ...canonical,
+    ...proposal.fr.aliases.map(normalizeTagName),
+    ...proposal.en.aliases.map(normalizeTagName),
+  ]
+  const collisions = existing.filter((tag) =>
+    [tag.name, tag.uid, ...(tag.aliases ?? [])].some((term) =>
+      allTerms.includes(normalizeTagName(term))
+    )
+  )
+
+  if (collisions.length !== 1 || collisions[0].status === 'retired') {
+    return undefined
+  }
+
+  const match = collisions[0]
+  return [match.name, match.uid, ...(match.aliases ?? [])].some((term) =>
+    canonical.includes(normalizeTagName(term))
+  )
+    ? match.uid
+    : undefined
+}
+
 export function validateTagProposals(
   proposals: TagProposal[],
   existing: Array<{ uid: string; name: string; aliases?: string[] }>
