@@ -101,14 +101,62 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
   let body: Record<string, unknown> = {}
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_input: unknown, init: RequestInit) => {
-      body = JSON.parse(String(init.body))
-      const proposal = {
-        ...draft,
-        revisionNote: 'Résumés recentrés sur la lisibilité des composants.',
-        credit: 'Invented Person',
-        creditEvidence: 'unsupported',
+    vi.fn(async (input: unknown, init: RequestInit) => {
+      if (String(input).includes('.algolia.net')) {
+        if (String(input).includes('/task/')) {
+          return Response.json({ status: 'published' })
+        }
+
+        return Response.json(
+          String(input).endsWith('/batch')
+            ? { taskID: 1 }
+            : {
+                results: [
+                  { hits: [{ objectID: 'topic-react' }] },
+                  { hits: [{ objectID: 'topic-css' }] },
+                ],
+              }
+        )
       }
+
+      const request = JSON.parse(String(init.body))
+      const resolution = request.text?.format?.name === 'watch_tag_resolution'
+
+      if (!resolution) {
+        body = request
+      }
+
+      const proposal = resolution
+        ? {
+            decisions: [
+              {
+                conceptIndex: 0,
+                reason: 'React components',
+                existingUid: 'react',
+                newTag: null,
+              },
+              {
+                conceptIndex: 1,
+                reason: 'Component styles',
+                existingUid: 'css',
+                newTag: null,
+              },
+            ],
+          }
+        : {
+            ...draft,
+            tagConcepts: [
+              {
+                name: 'React',
+                searchTerms: [],
+                evidence: 'This React article explains',
+              },
+              { name: 'CSS', searchTerms: [], evidence: 'component styles' },
+            ],
+            revisionNote: 'Résumés recentrés sur la lisibilité des composants.',
+            credit: 'Invented Person',
+            creditEvidence: 'unsupported',
+          }
       return Response.json({
         id: 'resp_test',
         object: 'response',
@@ -155,6 +203,10 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
     messages.find((message) => message.role === 'user')!.content[0].text
   )
   expect(context.user.confirmedFormat).toBe('Release')
+  expect(context.catalog).toStrictEqual({ sources: cats.sources })
+  expect(context.previous).not.toHaveProperty('topics')
+  expect(context.previous).not.toHaveProperty('newTags')
+  expect(result.topics).toStrictEqual(['react', 'css'])
   expect(result.revisionNote).toBe(
     'Résumés recentrés sur la lisibilité des composants.'
   )
@@ -381,7 +433,7 @@ it('affiche la progression avant OpenAI sans envoyer d’image ni créer de cibl
               content: [
                 {
                   type: 'output_text',
-                  text: JSON.stringify(draft),
+                  text: JSON.stringify({ ...draft, tagConcepts: [] }),
                   annotations: [],
                 },
               ],

@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { Output, generateText } from 'ai'
+import { z } from 'zod'
 
 import {
   BotError,
@@ -14,6 +15,8 @@ import {
 } from '@/domain'
 import { log } from '@/observability'
 import { Store } from '@/store'
+import { resolveTags } from '@/tag-editor'
+import { supportedConcepts, tagConceptSchema } from '@/tag-search'
 
 export const EDITORIAL = `# Mission éditoriale
 
@@ -58,8 +61,7 @@ Les versions FR/EN sont naturelles et présentent les mêmes faits avec le même
 
 # Sujets et métadonnées
 
-- \`topics\` : zéro à cinq tags réellement traités, en comptant les propositions \`newTags\`. Identifie d'abord le mécanisme central et les technologies effectivement expliquées dans la source, puis rapproche ces concepts des noms, descriptions et alias du catalogue. Pour chaque tag retenu, vérifie qu'un passage concret de la source ou une consigne explicite le justifie ; rejette toute proximité lexicale sans rapport technique. Vérifie aussi la cohérence avec tes titres et résumés. Utilise uniquement les UID du catalogue actif, sans doublon. Privilégie highlighted à pertinence égale, jamais pour remplir un quota. Réutilise les alias et les noms bilingues.
-- \`newTags\` : au maximum deux nouveautés si le catalogue ne couvre pas le sujet. Pas de tag par version ou mention incidente. Noms techniques anglais acceptés en français. Alias équivalents uniquement ; tags associés existants pour la navigation, sans attribution automatique.
+- \`tagConcepts\` : identifie zéro à cinq concepts centraux réellement expliqués dans la ressource : technologies, standards, mécanismes ou pratiques techniques. N'utilise aucun identifiant de catalogue et ne tente pas de choisir des tags existants. Donne pour chacun un nom précis et naturel, jusqu'à trois termes de recherche équivalents (alias/acronymes/traductions), et un extrait exact de la source ou d'une consigne utilisateur qui justifie sa pertinence. Ne copie pas les tags du brouillon précédent. Pas de version, de titre d'article, de thème générique ni de mention incidente. Les extraits doivent décrire le concept, pas simplement contenir un mot voisin. Le bot recherchera ensuite les tags correspondants séparément.
 - \`sourceLanguage\` : langue de la page originale, \`EN\`, \`FR\` ou \`null\` si elle n'est ni l'une ni l'autre ou reste indéterminée.
 - \`publishedOn\` : date de publication fiable au format \`YYYY-MM-DD\`, sinon \`null\`. Ni date de crawl, ni date de mise à jour ou de sélection.
 - \`credit\` : nom et/ou prénom, entreprise ou pseudo explicitement identifié comme auteur ou éditeur. Texte simple, jamais une URL, un lien Markdown ou une adresse de profil. Si seul un lien est fourni sans nom attesté, renvoie \`null\`. L'auteur extrait des métadonnées est déjà fourni.
@@ -158,7 +160,16 @@ export async function generateDraft(
       name: 'editorial_draft',
       description:
         'Proposition de veille technique bilingue FR/EN, avec métadonnées et classements issus des catalogues fournis.',
-      schema: editorialSchema(cats),
+      schema: editorialSchema(cats)
+        .omit({ topics: true, newTags: true })
+        .extend({
+          tagConcepts: z
+            .array(tagConceptSchema)
+            .max(5)
+            .describe(
+              'Concepts techniques centraux extraits de la source, indépendamment de tout catalogue. Preuve textuelle exacte pour chacun ; aucun UID ni proposition de création.'
+            ),
+        }),
     }),
     instructions: EDITORIAL,
     messages: [
@@ -177,8 +188,16 @@ export async function generateDraft(
                 confirmedDiscoverySource: item.state.sourceUid,
                 lastDiscoverySource: lastDiscoverySource?.uid ?? null,
               },
-              previous: item.state.draft ?? null,
-              catalog: cats,
+              previous: item.state.draft
+                ? {
+                    fr: item.state.draft.fr,
+                    en: item.state.draft.en,
+                    format: item.state.draft.format,
+                    credit: item.state.draft.credit,
+                    publishedOn: item.state.draft.publishedOn,
+                  }
+                : null,
+              catalog: { sources: cats.sources },
               untrustedPage: { ...extraction, media: item.state.media },
             }),
           },
@@ -206,7 +225,19 @@ export async function generateDraft(
     outputTokens: usage.outputTokens,
     totalTokens: usage.totalTokens,
   })
-  const draft = assertDraft(result.output, cats)
+  const { tagConcepts, ...copy } = result.output
+  const concepts = supportedConcepts(tagConcepts, [
+    extraction.markdown,
+    item.state.note,
+    ...item.state.instructions,
+  ])
+  log('tags.concepts', {
+    itemId: item.id,
+    concepts: concepts.map((concept) => concept.name),
+    rejectedCount: tagConcepts.length - concepts.length,
+  })
+  const tags = await resolveTags(env, item, concepts, cats)
+  const draft = assertDraft({ ...copy, ...tags }, cats)
 
   if (item.state.confirmedFormat) {
     draft.format = item.state.confirmedFormat

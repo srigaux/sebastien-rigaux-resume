@@ -269,6 +269,9 @@ export type Env = {
   TELEGRAM_CHAT_ID: string
   OPENAI_API_KEY: string
   OPENAI_MODEL: string
+  ALGOLIA_APP_ID?: string
+  ALGOLIA_TAGS_INDEX_NAME?: string
+  ALGOLIA_TAGS_API_KEY?: string
   CONTEXT_DEV_API_KEY: string
   PRISMIC_REPOSITORY: string
   PRISMIC_WRITE_TOKEN: string

@@ -19,6 +19,21 @@ Les anciens brouillons sans `newTags` restent lisibles. Les nouvelles propositio
 
 Sous le verrou de publication, le bot relit le catalogue et contrôle aussi les créations déjà journalisées : une publication acceptée peut ne pas encore être visible dans la Content API. Les écritures Prismic restent journalisées ; une réponse perdue exige une réconciliation avant reprise. Le catalogue en cache est invalidé après publication.
 
+## Résolution des tags en deux appels
+
+La rédaction ne reçoit aucun catalogue de tags ni les tags du brouillon précédent. Elle extrait au maximum cinq concepts, leurs termes de recherche et un extrait justificatif. Le bot rejette les extraits qui ne figurent pas dans la source ou les consignes utilisateur.
+
+L’index Algolia privé `watchtags` contient un enregistrement par concept actif, y compris ceux qui n’ont encore aucun lien : identifiant Prismic français, UID, nom, alias bilingues, description, catégorie et highlight. Il est distinct de l’index public `watchlink`. Une clé limitée à `watchtags` avec `search`, `addObject`, `deleteObject`, `settings` et `editSettings` alimente le script et le secret Worker `ALGOLIA_TAGS_API_KEY`. Aucun secret de cet index n’est envoyé au navigateur.
+
+```sh
+pnpm --filter website-astro exec node --env-file=.env scripts/sync-watch-tag-catalog.mjs
+pnpm --filter website-astro exec node --env-file=.env scripts/sync-watch-tag-catalog.mjs --apply
+```
+
+Avant la recherche, le bot synchronise le catalogue si son empreinte a changé, puis attend son indexation. Il cherche les noms et équivalents des concepts et transmet au second appel au plus huit candidats par concept, avec leurs descriptions. Les correspondances exactes du catalogue Prismic complètent les résultats pour protéger les identités récentes ; les résultats inconnus ou retirés sont exclus. Le second appel choisit parmi les candidats du concept, écarte un concept ou prépare une création bilingue. Les contrôles de doublons portent toujours sur l’intégralité du catalogue Prismic. Une panne de recherche interrompt la génération ; elle ne doit jamais être interprétée comme une absence de tag existant.
+
+L’ancienne génération monolithique a proposé à tort Authentication pour un article sur l’hydratation React. Le changement de niveau de raisonnement seul n’a pas suffi selon le test utilisateur ; la séparation des tâches et la recherche dédiée remplacent cette approche.
+
 ## Phase 2, séparée
 
 Rapprocher le corpus et le manifeste du catalogue Prismic actualisé. Regrouper les traductions d’une ressource et proposer un diff révisable des tags, avec justification. Tooling et Releases exigent une nouvelle lecture du contenu, sans remplacement générique. Appliquer seulement les choix validés, puis réaffecter les relations et associations avant toute fusion ou suppression. Préserver ou rediriger les anciennes URLs, reconstruire le site et réindexer Algolia après cette migration.

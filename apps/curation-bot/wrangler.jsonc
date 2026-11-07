@@ -27,6 +27,8 @@
   "vars": {
     "PRISMIC_REPOSITORY": "bd7d5fa0",
     "OPENAI_MODEL": "gpt-6-luna",
+    "ALGOLIA_APP_ID": "ICOLEBOYQO",
+    "ALGOLIA_TAGS_INDEX_NAME": "watchtags",
     "PUBLISH_ENABLED": "true",
   },
   "d1_databases": [

@@ -834,7 +834,7 @@ export async function verifyPublication(
     pageSize: 2 + tagIds.length,
     fetch: ['curated_link.url'],
   })
-  return (
+  const verified =
     tagIds.every((id, index) =>
       results.some(
         (doc) =>
@@ -848,5 +848,14 @@ export async function verifyPublication(
         (doc) => doc.id === id && doc.lang === (index === 0 ? 'fr-be' : 'en-us')
       )
     )
-  )
+
+  if (verified && tagIds.length) {
+    // A new generation may have cached the old catalogue between acceptance and
+    // Content API visibility. Refresh again once the new tags are readable.
+    await env.DB.prepare('DELETE FROM cache WHERE key=?')
+      .bind(`catalog:v2:${env.PRISMIC_REPOSITORY}`)
+      .run()
+  }
+
+  return verified
 }
