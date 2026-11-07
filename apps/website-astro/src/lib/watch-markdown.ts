@@ -119,7 +119,7 @@ export function watchLinkMarkdown(link: WatchLink, site: URL): string {
         ]
       : []),
     `${fr ? 'Ressource originale' : 'Original resource'} : ${mdLink(link.title, link.url)}`,
-    `${fr ? 'Sujets' : 'Topics'} : ${link.topics.map((topic) => mdLink(topic.name, new URL(watchPath(link.locale, 1, topic.uid), site).href)).join(' · ')}`,
+    `Tags : ${link.topics.map((topic) => (topic.path === null ? escapeText(topic.name) : mdLink(topic.name, new URL(topic.path ?? watchPath(link.locale, 1, topic.uid), site).href))).join(' · ')}`,
     `${fr ? 'Versions disponibles' : 'Available versions'} : ${Object.entries(
       link.alternatePaths
     )
@@ -162,7 +162,10 @@ export function markdownResponse(content: string): Response {
 }
 
 export function watchArchiveMarkdown(props: WatchPageProps, site: URL): string {
-  const { locale, topic, links, page, totalPages } = props
+  const { locale, topic, topics, links, page, totalPages } = props
+  const related = topics.filter(
+    (tag) => tag.path && topic?.relatedIds?.includes(tag.id)
+  )
   const title = locale === 'fr' ? 'Veille technologique' : 'Tech watch'
   const path = watchPath(locale, page, topic?.uid)
   return `${[
@@ -172,6 +175,13 @@ export function watchArchiveMarkdown(props: WatchPageProps, site: URL): string {
       new URL(path, site).href
     ),
     ...(topic?.description ? [topic.description] : []),
+    ...(related.length
+      ? [
+          `${locale === 'fr' ? 'Tags associés' : 'Related tags'} : ${related
+            .map((tag) => mdLink(tag.name, new URL(tag.path!, site).href))
+            .join(' · ')}`,
+        ]
+      : []),
     ...links.map((link) => {
       const target = watchLinkTarget(link, locale)
       return `## ${mdLink(link.title, new URL(target, site).href)}\n\n${link.summary}\n\n${link.selectedOn} · ${mdLink('Markdown', new URL(pageMarkdownPath(target), site).href)} · ${mdLink(locale === 'fr' ? 'Ressource originale' : 'Original resource', link.url)}`

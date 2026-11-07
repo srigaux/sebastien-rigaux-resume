@@ -15,6 +15,7 @@ skills-lock.json
 pnpm-lock.yaml
 
 # Generated files
+apps/website-astro/stats.html
 apps/cms-prismic/prismicio-types.d.ts
 apps/n8n-curation/*.n8n.json
 

@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import type { ReasonCode } from '@/error-reasons'
 import { log } from '@/observability'
+import { tagProposalSchema, validateTagProposals } from '@/tags'
 
 export const formats = [
   'Article',
@@ -83,11 +84,11 @@ export const draftSchema = z.object({
     ),
   topics: z
     .array(z.string())
-    .min(1)
     .max(5)
     .describe(
-      "UID exacts des sujets réellement traités dans catalog.topics, sans doublon. Viser 2 à 5 sujets ; un seul suffit si aucun autre n'est pertinent."
+      'UID exacts des tags pertinents de catalog.topics, sans doublon. Zéro à cinq tags au total avec newTags ; privilégier highlighted à pertinence égale, sans quota.'
     ),
+  newTags: z.array(tagProposalSchema).max(2).optional(),
   sourceLanguage: z
     .enum(['EN', 'FR'])
     .nullable()
@@ -103,6 +104,10 @@ export const draftSchema = z.object({
   credit: z
     .string()
     .max(120)
+    .refine(
+      (value) => !/(?:https?:\/\/|www\.|\[[^\]]*\]\(|[<>\r\n])/i.test(value),
+      'Le crédit doit être un nom en texte simple, sans URL ni lien.'
+    )
     .nullable()
     .describe(
       "Nom et/ou prénom, nom d'entreprise ou pseudo explicitement identifié comme auteur ou éditeur, sinon null. Texte simple uniquement, jamais une URL, un lien Markdown ou une adresse de profil. Ne pas inventer un nom à partir d'une URL ni déduire un crédit du canal de découverte."
@@ -121,7 +126,17 @@ export type Draft = z.infer<typeof draftSchema> & {
   }>
   sourceRanking?: Array<{ uid: string; probability: number }>
 }
-export type Entry = { id: string; uid: string; name: string; url?: string }
+export type Entry = {
+  id: string
+  uid: string
+  name: string
+  url?: string
+  description?: string
+  aliases?: string[]
+  highlighted?: boolean
+  category?: string
+  status?: string
+}
 export type Catalog = { topics: Entry[]; sources: Entry[] }
 export type Extraction = {
   url: string
@@ -197,6 +212,8 @@ export type State = {
   duplicateMatches?: Array<string | { title: string; url?: string }>
   extractionKey?: string
   media?: MediaSet
+  acceptedTagProposals?: string[]
+  tagDocumentIds?: string[]
   draft?: Draft
   sourceUid?: string | null
   instructions: string[]
@@ -225,6 +242,8 @@ export type Action = {
     | 'continue'
     | 'cancel'
     | 'approve'
+    | 'tag-accept'
+    | 'tag-reject'
     | 'revise'
     | 'source'
     | 'choose'
@@ -385,11 +404,21 @@ export class AmbiguousWrite extends BotError {
   }
 }
 export function editorialSchema(catalog: Catalog) {
-  if (!catalog.topics.length || !catalog.sources.length) {
+  if (!catalog.sources.length) {
     throw new BotError('Catalogue éditorial vide.', 'catalog_empty')
   }
 
+  const activeTagUids = catalog.topics
+    .filter((entry) => entry.status !== 'retired')
+    .map((entry) => entry.uid)
+
   return draftSchema.extend({
+    newTags: z
+      .array(tagProposalSchema)
+      .max(2)
+      .describe(
+        'Nouveaux tags uniquement si aucun tag ou alias existant ne convient. Maximum deux ; noms techniques naturels, descriptions et SEO FR/EN. Associations de navigation parmi les UID existants.'
+      ),
     revisionNote: z
       .string()
       .min(1)
@@ -401,14 +430,11 @@ export function editorialSchema(catalog: Catalog) {
       ),
     topics: z
       .array(
-        z
-          .enum(catalog.topics.map((entry) => entry.uid))
-          .describe(
-            "UID exact d'un sujet du catalogue, jamais son nom, sa traduction ou son ID de document."
-          )
+        (activeTagUids.length ? z.enum(activeTagUids) : z.string()).describe(
+          "UID exact d'un sujet du catalogue, jamais son nom, sa traduction ou son ID de document."
+        )
       )
-      .min(1)
-      .max(5)
+      .max(activeTagUids.length ? 5 : 0)
       .describe(draftSchema.shape.topics.description!),
     formatRanking: z
       .array(
@@ -458,6 +484,18 @@ export function editorialSchema(catalog: Catalog) {
 export function assertDraft(draft: Draft, catalog: Catalog): Draft {
   draftSchema.parse(draft)
 
+  if (draft.topics.length + (draft.newTags?.length ?? 0) > 5) {
+    throw new BotError('Maximum cinq tags par lien.')
+  }
+
+  try {
+    validateTagProposals(draft.newTags ?? [], catalog.topics)
+  } catch (error) {
+    throw new BotError(
+      error instanceof Error ? error.message : 'Proposition de tag invalide.'
+    )
+  }
+
   if (
     draft.formatRanking &&
     (draft.formatRanking.length !== formats.length ||
@@ -492,7 +530,14 @@ export function assertDraft(draft: Draft, catalog: Catalog): Draft {
 
   if (
     new Set(draft.topics).size !== draft.topics.length ||
-    draft.topics.some((uid) => !catalog.topics.some((t) => t.uid === uid))
+    draft.topics.some(
+      (uid) =>
+        !catalog.topics.some(
+          (t) =>
+            t.uid === uid &&
+            (t.status !== 'retired' || draft.newTags === undefined)
+        )
+    )
   ) {
     log(
       'editorial.topics.invalid',

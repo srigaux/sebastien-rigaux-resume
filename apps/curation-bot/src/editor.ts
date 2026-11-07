@@ -58,7 +58,8 @@ Les versions FR/EN sont naturelles et présentent les mêmes faits avec le même
 
 # Sujets et métadonnées
 
-- \`topics\` : choisis 2–5 sujets réellement traités dans \`catalog.topics\` ; si un seul convient, conserve-le. Utilise uniquement les \`uid\` exacts, sans doublon. Aucun sujet inventé ou ajouté pour atteindre un quota.
+- \`topics\` : zéro à cinq tags réellement traités, en comptant les propositions \`newTags\`. Utilise uniquement les UID du catalogue actif, sans doublon. Privilégie highlighted à pertinence égale, jamais pour remplir un quota. Réutilise les alias et les noms bilingues.
+- \`newTags\` : au maximum deux nouveautés si le catalogue ne couvre pas le sujet. Pas de tag par version ou mention incidente. Noms techniques anglais acceptés en français. Alias équivalents uniquement ; tags associés existants pour la navigation, sans attribution automatique.
 - \`sourceLanguage\` : langue de la page originale, \`EN\`, \`FR\` ou \`null\` si elle n'est ni l'une ni l'autre ou reste indéterminée.
 - \`publishedOn\` : date de publication fiable au format \`YYYY-MM-DD\`, sinon \`null\`. Ni date de crawl, ni date de mise à jour ou de sélection.
 - \`credit\` : nom et/ou prénom, entreprise ou pseudo explicitement identifié comme auteur ou éditeur. Texte simple, jamais une URL, un lien Markdown ou une adresse de profil. Si seul un lien est fourni sans nom attesté, renvoie \`null\`. L'auteur extrait des métadonnées est déjà fourni.

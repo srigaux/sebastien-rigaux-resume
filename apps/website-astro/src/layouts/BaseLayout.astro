@@ -12,6 +12,7 @@ interface Props {
   locale: Locale
   title: string
   description: string
+  keywords?: string[]
   noindex?: boolean
   person?: Person
   canonicalPath?: string
@@ -28,6 +29,7 @@ const {
   title,
   description,
   noindex = false,
+  keywords,
   person,
   canonicalPath,
   alternatePaths,
@@ -355,6 +357,7 @@ const structuredData =
       })()
     </script>
     <meta name="description" content={description} />
+    {keywords?.length && <meta name="keywords" content={keywords.join(', ')} />}
     {person && (
       <meta name="author" content={`${person.firstName} ${person.lastName}`} />
     )}

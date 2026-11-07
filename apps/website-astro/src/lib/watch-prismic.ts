@@ -13,6 +13,7 @@ import {
   type WatchTranslationDraft,
   buildLocalizedWatchData,
   normalizeWatchImage as image,
+  localizeWatchTags,
 } from '@/lib/watch-model'
 import type { Locale } from '@/types'
 
@@ -66,7 +67,7 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
 
   const [topicDocuments, sourceDocuments, linkDocuments, englishLinkDocuments] =
     await Promise.all([
-      client.getAllByType<TopicDocument>('topic', { lang: masterLocale }),
+      client.getAllByType<TopicDocument>('topic', { lang: '*' }),
       client.getAllByType<DiscoverySourceDocument>('discovery_source', {
         lang: masterLocale,
       }),
@@ -78,14 +79,38 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
       }),
     ])
 
-  const topics: WatchTopic[] = topicDocuments.map((doc) => ({
-    id: doc.id,
+  const tagText = (doc: TopicDocument) => ({
     uid: doc.uid,
     name: doc.data.name ?? '',
-    description: doc.data.description?.length
-      ? doc.data.description
-      : undefined,
-  }))
+    description: doc.data.description ?? undefined,
+    aliases: (doc.data.aliases ?? [])
+      .map((item) => item.alias?.trim())
+      .filter((alias): alias is string => Boolean(alias)),
+    seoTitle: doc.data.seo_title ?? undefined,
+    seoDescription: doc.data.seo_description ?? undefined,
+  })
+  const topics: WatchTopic[] = topicDocuments
+    .filter((doc) => doc.lang === masterLocale)
+    .map((doc) => {
+      const englishId = doc.alternate_languages.find(
+        (item) => item.lang === englishLocale
+      )?.id
+      const english = topicDocuments.find((item) => item.id === englishId)
+      return {
+        id: doc.id,
+        ...tagText(doc),
+        highlighted: doc.data.highlighted ?? false,
+        status: doc.data.status ?? 'active',
+        legacyPage: doc.data.legacy_page === true,
+        relatedIds: (doc.data.related_tags ?? [])
+          .map((item) => relationId(item.tag))
+          .filter((id): id is string => Boolean(id)),
+        translations: {
+          fr: tagText(doc),
+          ...(english ? { en: tagText(english) } : {}),
+        },
+      }
+    })
   const sources: WatchSource[] = sourceDocuments.map((doc) => ({
     id: doc.id,
     uid: doc.uid,
@@ -130,10 +155,13 @@ async function fetchWatchData(): Promise<Record<Locale, WatchData>> {
     image: image(doc.data.image),
     siteIcon: image(doc.data.site_icon),
   })
-  return buildLocalizedWatchData(topics, sources, [
-    ...linkDocuments.map((doc) => makeDraft(doc, 'fr')),
-    ...englishLinkDocuments.map((doc) => makeDraft(doc, 'en')),
-  ])
+  return localizeWatchTags(
+    buildLocalizedWatchData(topics, sources, [
+      ...linkDocuments.map((doc) => makeDraft(doc, 'fr')),
+      ...englishLinkDocuments.map((doc) => makeDraft(doc, 'en')),
+    ]),
+    topics
+  )
 }
 
 export async function getWatchData(locale: Locale): Promise<WatchData> {

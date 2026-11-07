@@ -20,6 +20,11 @@ import {
 import { log, observe } from '@/observability'
 import { RemoteError, retryAfter } from '@/retry'
 import { Store } from '@/store'
+import {
+  type TagProposal,
+  pendingTagProposals,
+  validateTagProposals,
+} from '@/tags'
 
 // Payloads produced by the SDK and persisted in our operation journal.
 type DocumentRequest = {
@@ -37,18 +42,65 @@ export function readClient(env: Env) {
   })
 }
 
-export async function catalog(env: Env): Promise<Catalog> {
+// Publication acceptance releases the queue before the Content API necessarily
+// exposes the new documents. Keep journaled creations reserved across that gap.
+export async function assertUnreservedTagProposals(
+  env: Env,
+  item: Item,
+  cats: Catalog
+) {
+  const proposals = item.state.draft?.newTags ?? []
+
+  if (!proposals.length) {
+    return
+  }
+
+  const { results } = await env.DB.prepare(
+    `SELECT json_extract(state,'$.draft.newTags') AS proposals FROM items
+     WHERE id<>? AND status<>'cancelled'
+     AND json_extract(state,'$.publicationStarted')=1
+     AND json_array_length(state,'$.draft.newTags')>0`
+  )
+    .bind(item.id)
+    .all<{ proposals: string }>()
+  const reserved = results.flatMap(
+    (row) => JSON.parse(row.proposals) as TagProposal[]
+  )
+
+  try {
+    validateTagProposals(proposals, [
+      ...cats.topics,
+      ...reserved.map((tag) => ({
+        uid: tag.fr.uid,
+        name: tag.fr.name,
+        aliases: [
+          tag.en.uid,
+          tag.en.name,
+          ...tag.fr.aliases,
+          ...tag.en.aliases,
+        ],
+      })),
+    ])
+  } catch (error) {
+    throw new BotError(
+      `Une création de tag déjà enregistrée doit être réutilisée ou résolue avant publication : ${error instanceof Error ? error.message : 'conflit de catalogue'}`,
+      'catalog_changed'
+    )
+  }
+}
+
+export async function catalog(env: Env, fresh = false): Promise<Catalog> {
   const store = new Store(env.DB)
-  const key = `catalog:${env.PRISMIC_REPOSITORY}`
+  const key = `catalog:v2:${env.PRISMIC_REPOSITORY}`
   const cached = await store.cache<Catalog>(key)
 
-  if (cached) {
+  if (cached && !fresh) {
     return cached
   }
 
   const client = readClient(env)
   const [topics, sources] = await Promise.all([
-    client.getAllByType('topic', { lang: 'fr-be' }),
+    client.getAllByType('topic', { lang: '*' }),
     client.getAllByType('discovery_source', { lang: 'fr-be' }),
   ])
   const map = (doc: TopicDocument | DiscoverySourceDocument) => ({
@@ -59,9 +111,35 @@ export async function catalog(env: Env): Promise<Catalog> {
       ? { url: doc.data.url.url }
       : {}),
   })
-  const value = { topics: topics.map(map), sources: sources.map(map) }
+  const value = {
+    topics: topics
+      .filter((doc) => doc.lang === 'fr-be')
+      .map((doc) => {
+        const enId = doc.alternate_languages.find(
+          (item) => item.lang === 'en-us'
+        )?.id
+        const english = topics.find((item) => item.id === enId)
+        return {
+          ...map(doc),
+          description: doc.data.description ?? undefined,
+          category: doc.data.category ?? undefined,
+          highlighted: doc.data.highlighted ?? false,
+          status: doc.data.status ?? 'active',
+          aliases: [
+            ...new Set(
+              [
+                ...(doc.data.aliases ?? []).map((item) => item.alias),
+                ...(english?.data.aliases ?? []).map((item) => item.alias),
+                english?.data.name,
+              ].filter((alias): alias is string => Boolean(alias))
+            ),
+          ],
+        }
+      }),
+    sources: sources.map(map),
+  }
 
-  if (!value.topics.length || !value.sources.length) {
+  if (!value.sources.length) {
     throw new BotError(
       'Catalogue Prismic vide ou inaccessible.',
       'catalog_empty'
@@ -462,6 +540,11 @@ export function buildMigration(
   files: { image?: File; icon?: File }
 ) {
   const draft = item.state.draft!
+
+  if (pendingTagProposals(draft, item.state.acceptedTagProposals)) {
+    throw new BotError('Nouveaux tags non résolus : publication interrompue.')
+  }
+
   const migration = prismic.createMigration<prismic.PrismicDocument>()
   const assets = new Map<string, ReturnType<typeof migration.createAsset>>()
   const register = (kind: 'image' | 'icon', file: File | undefined) => {
@@ -486,16 +569,48 @@ export function buildMigration(
   const image = register('image', files.image)
   const icon = register('icon', files.icon)
   const relation = (id: string) => ({ link_type: 'Document' as const, id })
+  const createdTags = (draft.newTags ?? []).map((proposal) => {
+    const data = (lang: 'fr' | 'en') => ({
+      name: proposal[lang].name,
+      description: proposal[lang].description,
+      category: proposal.category,
+      status: 'active',
+      highlighted: false,
+      legacy_page: false,
+      aliases: proposal[lang].aliases.map((alias) => ({ alias })),
+      related_tags: proposal.relatedUids.map((uid) => ({
+        tag: relation(
+          item.state.references?.topics[uid] ??
+            cats.topics.find((tag) => tag.uid === uid)!.id
+        ),
+      })),
+      seo_title: proposal[lang].seoTitle,
+      seo_description: proposal[lang].seoDescription,
+    })
+    const fr = migration.createDocument(
+      { type: 'topic', lang: 'fr-be', uid: proposal.fr.uid, data: data('fr') },
+      proposal.fr.name
+    )
+    const en = migration.createDocument(
+      { type: 'topic', lang: 'en-us', uid: proposal.en.uid, data: data('en') },
+      proposal.en.name,
+      { masterLanguageDocument: fr }
+    )
+    return { fr, en }
+  })
   const common = {
     url: { link_type: 'Web' as const, url: item.state.url },
     selected_on: item.state.selectedOn,
     format: draft.format,
-    topics: draft.topics.map((uid) => ({
-      topic: relation(
-        item.state.references?.topics[uid] ??
-          cats.topics.find((t) => t.uid === uid)!.id
-      ),
-    })),
+    topics: [
+      ...draft.topics.map((uid) => ({
+        topic: relation(
+          item.state.references?.topics[uid] ??
+            cats.topics.find((t) => t.uid === uid)!.id
+        ),
+      })),
+      ...createdTags.map((tag) => ({ topic: tag.fr })),
+    ],
     ...(draft.sourceLanguage ? { source_language: draft.sourceLanguage } : {}),
     ...(draft.publishedOn ? { published_on: draft.publishedOn } : {}),
     ...(draft.credit ? { credit: draft.credit } : {}),
@@ -528,7 +643,7 @@ export function buildMigration(
   const english = migration.createDocument(doc('en'), draft.en.title, {
     masterLanguageDocument: french,
   })
-  return { migration, french, english, image, icon }
+  return { migration, french, english, image, icon, createdTags }
 }
 
 async function mediaFile(env: Env, media?: Media) {
@@ -628,11 +743,8 @@ export async function migrate(
     image: await mediaFile(env, item.state.media?.image),
     icon: await mediaFile(env, item.state.media?.icon),
   }
-  const { migration, french, english, image, icon } = buildMigration(
-    item,
-    cats,
-    files
-  )
+  const { migration, french, english, image, icon, createdTags } =
+    buildMigration(item, cats, files)
   await client.migrate(migration)
   const ids = [french.document.id!, english.document.id!]
 
@@ -650,7 +762,20 @@ export async function migrate(
     )
   }
 
-  return { ids, mediaIds: { image: image?.asset?.id, icon: icon?.asset?.id } }
+  const tagIds = createdTags.flatMap((tag) => [
+    tag.fr.document.id!,
+    tag.en.document.id!,
+  ])
+
+  if (tagIds.some((id) => !id) || new Set(tagIds).size !== tagIds.length) {
+    throw new BotError('Création des tags incomplète.', 'migration_incomplete')
+  }
+
+  return {
+    ids,
+    tagIds,
+    mediaIds: { image: image?.asset?.id, icon: icon?.asset?.id },
+  }
 }
 
 export async function publish(env: Env, item: Item) {
@@ -669,8 +794,11 @@ export async function publish(env: Env, item: Item) {
     }
   )
   const result = await client.publishMigrationRelease()
+  await env.DB.prepare('DELETE FROM cache WHERE key=?')
+    .bind(`catalog:v2:${env.PRISMIC_REPOSITORY}`)
+    .run()
 
-  if (result.totalItems !== 2) {
+  if (result.totalItems !== 2 + (item.state.tagDocumentIds?.length ?? 0)) {
     log(
       'publication.count.unexpected',
       { itemId: item.id, totalItems: result.totalItems },
@@ -691,14 +819,34 @@ export async function verifyPublication(
     return false
   }
 
-  const { results } = await readClient(env).getByIDs(ids, {
+  const tagIds = item.state.tagDocumentIds ?? []
+  const expectedTagCount = (item.state.draft?.newTags?.length ?? 0) * 2
+
+  if (
+    tagIds.length !== expectedTagCount ||
+    new Set(tagIds).size !== tagIds.length
+  ) {
+    return false
+  }
+
+  const { results } = await readClient(env).getByIDs([...ids, ...tagIds], {
     lang: '*',
-    pageSize: 2,
+    pageSize: 2 + tagIds.length,
     fetch: ['curated_link.url'],
   })
-  return ids.every((id, index) =>
-    results.some(
-      (doc) => doc.id === id && doc.lang === (index === 0 ? 'fr-be' : 'en-us')
+  return (
+    tagIds.every((id, index) =>
+      results.some(
+        (doc) =>
+          doc.id === id &&
+          doc.type === 'topic' &&
+          doc.lang === (index % 2 === 0 ? 'fr-be' : 'en-us')
+      )
+    ) &&
+    ids.every((id, index) =>
+      results.some(
+        (doc) => doc.id === id && doc.lang === (index === 0 ? 'fr-be' : 'en-us')
+      )
     )
   )
 }

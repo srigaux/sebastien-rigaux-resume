@@ -1,0 +1,2027 @@
+{
+  "schemaVersion": 1,
+  "repository": "bd7d5fa0",
+  "releaseId": "au8b4BIAAFFOlogC",
+  "status": "published",
+  "preparedOn": "2026-11-07",
+  "corpus": "tech-watch-tags.v1.json",
+  "tags": [
+    {
+      "key": "javascript",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznNRIAACoA7mH8",
+        "uid": "javascript"
+      },
+      "en": {
+        "id": "au8cQRIAACsAloiU",
+        "uid": "javascript"
+      }
+    },
+    {
+      "key": "typescript",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznOBIAACgA7mIG",
+        "uid": "typescript"
+      },
+      "en": {
+        "id": "au8cURIAACkAloix",
+        "uid": "typescript"
+      }
+    },
+    {
+      "key": "nodejs",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznOxIAACgA7mIO",
+        "uid": "nodejs"
+      },
+      "en": {
+        "id": "au8cWxIAACsAlojG",
+        "uid": "nodejs"
+      }
+    },
+    {
+      "key": "c-sharp",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznTBIAAC0A7mIq",
+        "uid": "c-sharp"
+      },
+      "en": {
+        "id": "au8cZhIAACgAlojc",
+        "uid": "c-sharp"
+      }
+    },
+    {
+      "key": "dotnet",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznTxIAACcA7mI0",
+        "uid": "dotnet"
+      },
+      "en": {
+        "id": "au8ccRIAAC0Alojy",
+        "uid": "dotnet"
+      }
+    },
+    {
+      "key": "nuget",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznUhIAAC0A7mI-",
+        "uid": "nuget"
+      },
+      "en": {
+        "id": "au8cexIAAC4AlokH",
+        "uid": "nuget"
+      }
+    },
+    {
+      "key": "react",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznVRIAACkA7mJG",
+        "uid": "react"
+      },
+      "en": {
+        "id": "au8chhIAACwAlokg",
+        "uid": "react"
+      }
+    },
+    {
+      "key": "astro",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznWBIAACoA7mJQ",
+        "uid": "astro"
+      },
+      "en": {
+        "id": "au8ckRIAACkAlok3",
+        "uid": "astro"
+      }
+    },
+    {
+      "key": "nextjs",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznWhIAACcA7mJX",
+        "uid": "nextjs"
+      },
+      "en": {
+        "id": "au8cmxIAAC0AlolP",
+        "uid": "nextjs"
+      }
+    },
+    {
+      "key": "css",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznXxIAACsA7mJe",
+        "uid": "css"
+      },
+      "en": {
+        "id": "au8cqRIAACcAlolp",
+        "uid": "css"
+      }
+    },
+    {
+      "key": "design-systems",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznYRIAACgA7mJl",
+        "uid": "design-systems"
+      },
+      "en": {
+        "id": "au8ctRIAACoAlomE",
+        "uid": "design-systems"
+      }
+    },
+    {
+      "key": "accessibility",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznZBIAACwA7mJs",
+        "uid": "accessibility"
+      },
+      "en": {
+        "id": "au8c-hIAACcAlont",
+        "uid": "accessibility"
+      }
+    },
+    {
+      "key": "web-performance",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznZxIAAC4A7mJ3",
+        "uid": "web-performance"
+      },
+      "en": {
+        "id": "au8dChIAACkAlooO",
+        "uid": "web-performance"
+      }
+    },
+    {
+      "key": "animation",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznahIAACsA7mKB",
+        "uid": "animation"
+      },
+      "en": {
+        "id": "au8dFhIAAC0Aloon",
+        "uid": "animation"
+      }
+    },
+    {
+      "key": "ssr",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznbhIAACwA7mKG",
+        "uid": "ssr"
+      },
+      "en": {
+        "id": "au8dIhIAACkAlopB",
+        "uid": "ssr"
+      }
+    },
+    {
+      "key": "ssg",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszncRIAACwA7mKN",
+        "uid": "ssg"
+      },
+      "en": {
+        "id": "au8dMxIAACoAlopi",
+        "uid": "ssg"
+      }
+    },
+    {
+      "key": "directus",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszndBIAACgA7mKS",
+        "uid": "directus"
+      },
+      "en": {
+        "id": "au8dPhIAAC4Alop7",
+        "uid": "directus"
+      }
+    },
+    {
+      "key": "payload-cms",
+      "legacyPage": false,
+      "fr": {
+        "id": "aszndhIAAC4A7mKa",
+        "uid": "payload-cms"
+      },
+      "en": {
+        "id": "au8dShIAACsAloqX",
+        "uid": "payload-cms"
+      }
+    },
+    {
+      "key": "medusajs",
+      "legacyPage": false,
+      "fr": {
+        "id": "asznehIAACkA7mKk",
+        "uid": "medusajs"
+      },
+      "en": {
+        "id": "au8dVRIAACoAloqv",
+        "uid": "medusajs"
+      }
+    },
+    {
+      "key": "headless-cms",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznfRIAAC0A7mKs",
+        "uid": "headless-cms"
+      },
+      "en": {
+        "id": "au8dXxIAACoAlorH",
+        "uid": "headless-cms"
+      }
+    },
+    {
+      "key": "e-commerce",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznjhIAACkA7mLA",
+        "uid": "e-commerce"
+      },
+      "en": {
+        "id": "au8daxIAACoAlorg",
+        "uid": "e-commerce"
+      }
+    },
+    {
+      "key": "vercel",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznkRIAACgA7mLK",
+        "uid": "vercel"
+      },
+      "en": {
+        "id": "au8ddRIAACsAlor9",
+        "uid": "vercel"
+      }
+    },
+    {
+      "key": "cloudflare",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznlBIAACcA7mLU",
+        "uid": "cloudflare"
+      },
+      "en": {
+        "id": "au8dgRIAACsAlosZ",
+        "uid": "cloudflare"
+      }
+    },
+    {
+      "key": "docker",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznlxIAACwA7mLd",
+        "uid": "docker"
+      },
+      "en": {
+        "id": "au8dixIAACsAlosz",
+        "uid": "docker"
+      }
+    },
+    {
+      "key": "kubernetes",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznmhIAACgA7mLo",
+        "uid": "kubernetes"
+      },
+      "en": {
+        "id": "au8dlhIAAC0AlotN",
+        "uid": "kubernetes"
+      }
+    },
+    {
+      "key": "azure",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznnRIAAC4A7mLz",
+        "uid": "azure"
+      },
+      "en": {
+        "id": "au8dohIAACoAlotp",
+        "uid": "azure"
+      }
+    },
+    {
+      "key": "aws",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznoBIAACcA7mL8",
+        "uid": "aws"
+      },
+      "en": {
+        "id": "au8drRIAACoAlouD",
+        "uid": "aws"
+      }
+    },
+    {
+      "key": "gcp",
+      "legacyPage": false,
+      "fr": {
+        "id": "asznoxIAACsA7mMH",
+        "uid": "gcp"
+      },
+      "en": {
+        "id": "au8duBIAAC0Aloue",
+        "uid": "gcp"
+      }
+    },
+    {
+      "key": "serverless",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznphIAACkA7mMT",
+        "uid": "serverless"
+      },
+      "en": {
+        "id": "au8dyBIAACoAlou_",
+        "uid": "serverless"
+      }
+    },
+    {
+      "key": "platform-engineering",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznqRIAACkA7mMc",
+        "uid": "platform-engineering"
+      },
+      "en": {
+        "id": "au8d2RIAACgAlovi",
+        "uid": "platform-engineering"
+      }
+    },
+    {
+      "key": "infrastructure-as-code",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznrBIAACsA7mMn",
+        "uid": "infrastructure-as-code"
+      },
+      "en": {
+        "id": "au8d6hIAAC4AlowF",
+        "uid": "infrastructure-as-code"
+      }
+    },
+    {
+      "key": "ci-cd",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznsRIAACoA7mM1",
+        "uid": "ci-cd"
+      },
+      "en": {
+        "id": "au8d_xIAAC4Aloww",
+        "uid": "ci-cd"
+      }
+    },
+    {
+      "key": "observability",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszntBIAACoA7mM9",
+        "uid": "observability"
+      },
+      "en": {
+        "id": "au8eCxIAACoAloxS",
+        "uid": "observability"
+      }
+    },
+    {
+      "key": "security",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszntxIAACcA7mNJ",
+        "uid": "security"
+      },
+      "en": {
+        "id": "au8eGRIAACcAlox1",
+        "uid": "security"
+      }
+    },
+    {
+      "key": "postgresql",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznuhIAACkA7mNS",
+        "uid": "postgresql"
+      },
+      "en": {
+        "id": "au8eKBIAAC4AloyX",
+        "uid": "postgresql"
+      }
+    },
+    {
+      "key": "redis",
+      "legacyPage": false,
+      "fr": {
+        "id": "asznvhIAACsA7mNd",
+        "uid": "redis"
+      },
+      "en": {
+        "id": "au8eMxIAACgAloyz",
+        "uid": "redis"
+      }
+    },
+    {
+      "key": "databases",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznwRIAACsA7mNo",
+        "uid": "databases"
+      },
+      "en": {
+        "id": "au8eQRIAAC4AlozT",
+        "uid": "databases"
+      }
+    },
+    {
+      "key": "graphql",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznwxIAACwA7mNu",
+        "uid": "graphql"
+      },
+      "en": {
+        "id": "au8eTRIAAC0Alozx",
+        "uid": "graphql"
+      }
+    },
+    {
+      "key": "rest-apis",
+      "legacyPage": true,
+      "fr": {
+        "id": "asznzRIAACcA7mN9",
+        "uid": "rest-apis"
+      },
+      "en": {
+        "id": "au8eYBIAAC0Alo0d",
+        "uid": "rest-apis"
+      }
+    },
+    {
+      "key": "api-design",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn0RIAAC4A7mOK",
+        "uid": "api-design"
+      },
+      "en": {
+        "id": "au8eahIAACoAlo05",
+        "uid": "api-design"
+      }
+    },
+    {
+      "key": "search",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn1BIAAC0A7mOV",
+        "uid": "search"
+      },
+      "en": {
+        "id": "au8eeBIAACgAlo1h",
+        "uid": "search"
+      }
+    },
+    {
+      "key": "ai",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn1xIAAC0A7mOg",
+        "uid": "ai"
+      },
+      "en": {
+        "id": "au8ehhIAAC4Alo2E",
+        "uid": "ai"
+      }
+    },
+    {
+      "key": "llms",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn2xIAACgA7mOu",
+        "uid": "llms"
+      },
+      "en": {
+        "id": "au8e3BIAACoAlo4r",
+        "uid": "llms"
+      }
+    },
+    {
+      "key": "ai-agents",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn3hIAACgA7mO6",
+        "uid": "ai-agents"
+      },
+      "en": {
+        "id": "au8e4xIAACkAlo5J",
+        "uid": "ai-agents"
+      }
+    },
+    {
+      "key": "rag",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn4hIAACcA7mPF",
+        "uid": "rag"
+      },
+      "en": {
+        "id": "au8e4BIAACcAlo44",
+        "uid": "rag"
+      }
+    },
+    {
+      "key": "mcp",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn5RIAACgA7mPO",
+        "uid": "mcp"
+      },
+      "en": {
+        "id": "au8e5hIAAC4Alo5V",
+        "uid": "mcp"
+      }
+    },
+    {
+      "key": "prompt-engineering",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn6BIAAC4A7mPX",
+        "uid": "prompt-engineering"
+      },
+      "en": {
+        "id": "au8fDBIAAC4Alo61",
+        "uid": "prompt-engineering"
+      }
+    },
+    {
+      "key": "model-evaluation",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn7BIAACsA7mPe",
+        "uid": "model-evaluation"
+      },
+      "en": {
+        "id": "au8fEhIAAC0Alo7R",
+        "uid": "model-evaluation"
+      }
+    },
+    {
+      "key": "automation",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn7xIAACgA7mPn",
+        "uid": "automation"
+      },
+      "en": {
+        "id": "au8fDxIAACcAlo7C",
+        "uid": "automation"
+      }
+    },
+    {
+      "key": "workflow-orchestration",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn8hIAACkA7mPw",
+        "uid": "workflow-orchestration"
+      },
+      "en": {
+        "id": "au8fFhIAACgAlo7f",
+        "uid": "workflow-orchestration"
+      }
+    },
+    {
+      "key": "n8n",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn9hIAACwA7mP6",
+        "uid": "n8n"
+      },
+      "en": {
+        "id": "au8fOhIAACkAlo88",
+        "uid": "n8n"
+      }
+    },
+    {
+      "key": "software-architecture",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszn_BIAAC0A7mQM",
+        "uid": "software-architecture"
+      },
+      "en": {
+        "id": "au8fPRIAACkAlo9L",
+        "uid": "software-architecture"
+      }
+    },
+    {
+      "key": "testing",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoABIAACgA7mQW",
+        "uid": "testing"
+      },
+      "en": {
+        "id": "au8fQRIAACwAlo9Z",
+        "uid": "testing"
+      }
+    },
+    {
+      "key": "developer-experience",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoBBIAACgA7mQg",
+        "uid": "developer-experience"
+      },
+      "en": {
+        "id": "au8fRBIAAC0Alo9m",
+        "uid": "developer-experience"
+      }
+    },
+    {
+      "key": "open-source",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoBxIAAC4A7mQs",
+        "uid": "open-source"
+      },
+      "en": {
+        "id": "au8fZRIAAC4Alo_B",
+        "uid": "open-source"
+      }
+    },
+    {
+      "key": "tooling",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoChIAACgA7mQ2",
+        "uid": "tooling"
+      },
+      "en": {
+        "id": "au8faRIAACgAlo_P",
+        "uid": "tooling"
+      }
+    },
+    {
+      "key": "releases",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoDhIAAC4A7mRC",
+        "uid": "releases"
+      },
+      "en": {
+        "id": "au8fbBIAACkAlo_c",
+        "uid": "releases"
+      }
+    },
+    {
+      "key": "github-actions",
+      "legacyPage": true,
+      "fr": {
+        "id": "aszoERIAACoA7mRO",
+        "uid": "github-actions"
+      },
+      "en": {
+        "id": "au8fcBIAACkAlo_r",
+        "uid": "github-actions"
+      }
+    },
+    {
+      "key": "forms",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OXhEAAC0A-4eL",
+        "uid": "forms"
+      },
+      "en": {
+        "id": "au8fnBIAACkAlpBq",
+        "uid": "forms"
+      }
+    },
+    {
+      "key": "vue",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OWxEAACgA-4eC",
+        "uid": "vue"
+      },
+      "en": {
+        "id": "au8fmBIAACwAlpBa",
+        "uid": "vue"
+      }
+    },
+    {
+      "key": "self-hosting",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OWREAACcA-4d9",
+        "uid": "self-hosting"
+      },
+      "en": {
+        "id": "au8fohIAACwAlpCG",
+        "uid": "self-hosting"
+      }
+    },
+    {
+      "key": "seo",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OVxEAACwA-4d2",
+        "uid": "seo"
+      },
+      "en": {
+        "id": "au8fnxIAACkAlpB4",
+        "uid": "seo"
+      }
+    },
+    {
+      "key": "ui-ux",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OVREAACgA-4dx",
+        "uid": "ui-ux"
+      },
+      "en": {
+        "id": "au8fxBIAAC4AlpDw",
+        "uid": "ui-ux"
+      }
+    },
+    {
+      "key": "maps",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OUxEAACsA-4dq",
+        "uid": "maps"
+      },
+      "en": {
+        "id": "au8fyBIAACoAlpD_",
+        "uid": "maps"
+      }
+    },
+    {
+      "key": "local-first",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OUREAACwA-4dl",
+        "uid": "local-first"
+      },
+      "en": {
+        "id": "au8fyxIAAC0AlpEY",
+        "uid": "local-first"
+      }
+    },
+    {
+      "key": "i18n",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OThEAACoA-4dg",
+        "uid": "i18n"
+      },
+      "en": {
+        "id": "au8fzxIAACcAlpEp",
+        "uid": "i18n"
+      }
+    },
+    {
+      "key": "tailwind-css",
+      "legacyPage": true,
+      "fr": {
+        "id": "as6OTBEAAC0A-4dZ",
+        "uid": "tailwind-css"
+      },
+      "en": {
+        "id": "au8f5RIAACoAlpGN",
+        "uid": "tailwind-css"
+      }
+    },
+    {
+      "key": "html",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f2xIAACoAlpFS",
+        "uid": "html"
+      },
+      "en": {
+        "id": "au8f6RIAACgAlpGg",
+        "uid": "html"
+      }
+    },
+    {
+      "key": "sql",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f3hIAACkAlpFp",
+        "uid": "sql"
+      },
+      "en": {
+        "id": "au8f7BIAACkAlpGv",
+        "uid": "sql"
+      }
+    },
+    {
+      "key": "python",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f4hIAACgAlpF-",
+        "uid": "python"
+      },
+      "en": {
+        "id": "au8f8BIAACoAlpG-",
+        "uid": "python"
+      }
+    },
+    {
+      "key": "go",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f9RIAACwAlpHV",
+        "uid": "go"
+      },
+      "en": {
+        "id": "au8gBBIAACcAlpIc",
+        "uid": "go"
+      }
+    },
+    {
+      "key": "rust",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f-RIAAC0AlpHn",
+        "uid": "rust"
+      },
+      "en": {
+        "id": "au8gDBIAACsAlpJC",
+        "uid": "rust"
+      }
+    },
+    {
+      "key": "zig",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f_BIAAC4AlpH4",
+        "uid": "zig"
+      },
+      "en": {
+        "id": "au8gCBIAAC0AlpIu",
+        "uid": "zig"
+      }
+    },
+    {
+      "key": "asp-net-core",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8f_xIAAC4AlpII",
+        "uid": "asp-net-core"
+      },
+      "en": {
+        "id": "au8gDxIAACoAlpJT",
+        "uid": "asp-net-core"
+      }
+    },
+    {
+      "key": "entity-framework-core",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gExIAACkAlpJj",
+        "uid": "entity-framework-core"
+      },
+      "en": {
+        "id": "au8gJBIAACsAlpKz",
+        "uid": "entity-framework-core"
+      }
+    },
+    {
+      "key": "finbuckle-multitenant",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gFxIAAC4AlpJ0",
+        "uid": "finbuckle-multitenant"
+      },
+      "en": {
+        "id": "au8gJxIAAC4AlpLC",
+        "uid": "finbuckle-multitenant"
+      }
+    },
+    {
+      "key": "tanstack-query",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gGhIAACwAlpKJ",
+        "uid": "tanstack-query"
+      },
+      "en": {
+        "id": "au8gLxIAAC0AlpLo",
+        "uid": "tanstack-query"
+      }
+    },
+    {
+      "key": "tanstack-start",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gHhIAACsAlpKe",
+        "uid": "tanstack-start"
+      },
+      "en": {
+        "id": "au8gKxIAACsAlpLT",
+        "uid": "tanstack-start"
+      }
+    },
+    {
+      "key": "tanstack-db",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gPBIAACkAlpMI",
+        "uid": "tanstack-db"
+      },
+      "en": {
+        "id": "au8gSxIAACcAlpNN",
+        "uid": "tanstack-db"
+      }
+    },
+    {
+      "key": "tanstack-ai",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gQBIAACkAlpMZ",
+        "uid": "tanstack-ai"
+      },
+      "en": {
+        "id": "au8gTxIAACgAlpNf",
+        "uid": "tanstack-ai"
+      }
+    },
+    {
+      "key": "tanstack-redact",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gQxIAACoAlpMp",
+        "uid": "tanstack-redact"
+      },
+      "en": {
+        "id": "au8gUxIAACkAlpNw",
+        "uid": "tanstack-redact"
+      }
+    },
+    {
+      "key": "vinext",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gRxIAACoAlpM7",
+        "uid": "vinext"
+      },
+      "en": {
+        "id": "au8gVxIAACcAlpOC",
+        "uid": "vinext"
+      }
+    },
+    {
+      "key": "shadcn-ui",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gXBIAACoAlpOV",
+        "uid": "shadcn-ui"
+      },
+      "en": {
+        "id": "au8gbxIAACgAlpPw",
+        "uid": "shadcn-ui"
+      }
+    },
+    {
+      "key": "react-aria",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gYxIAACcAlpO5",
+        "uid": "react-aria"
+      },
+      "en": {
+        "id": "au8gaxIAACgAlpPe",
+        "uid": "react-aria"
+      }
+    },
+    {
+      "key": "tinybase",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gYBIAACcAlpOo",
+        "uid": "tinybase"
+      },
+      "en": {
+        "id": "au8gcxIAAC4AlpQC",
+        "uid": "tinybase"
+      }
+    },
+    {
+      "key": "puck",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gZxIAACoAlpPL",
+        "uid": "puck"
+      },
+      "en": {
+        "id": "au8gdxIAACwAlpQT",
+        "uid": "puck"
+      }
+    },
+    {
+      "key": "mastra",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gexIAACcAlpQk",
+        "uid": "mastra"
+      },
+      "en": {
+        "id": "au8gkBIAACoAlpSG",
+        "uid": "mastra"
+      }
+    },
+    {
+      "key": "microsoft-agent-framework",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ghhIAAC4AlpRa",
+        "uid": "microsoft-agent-framework"
+      },
+      "en": {
+        "id": "au8gjBIAACoAlpR0",
+        "uid": "microsoft-agent-framework"
+      }
+    },
+    {
+      "key": "testcontainers",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gfhIAACcAlpQ2",
+        "uid": "testcontainers"
+      },
+      "en": {
+        "id": "au8glBIAACsAlpSY",
+        "uid": "testcontainers"
+      }
+    },
+    {
+      "key": "mock-service-worker",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gghIAACkAlpRI",
+        "uid": "mock-service-worker"
+      },
+      "en": {
+        "id": "au8gmBIAAC4AlpSq",
+        "uid": "mock-service-worker"
+      }
+    },
+    {
+      "key": "motion",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gnBIAAC0AlpTA",
+        "uid": "motion"
+      },
+      "en": {
+        "id": "au8gvhIAACkAlpU1",
+        "uid": "motion"
+      }
+    },
+    {
+      "key": "anime-js",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8goBIAACwAlpTT",
+        "uid": "anime-js"
+      },
+      "en": {
+        "id": "au8gwhIAAC4AlpVK",
+        "uid": "anime-js"
+      }
+    },
+    {
+      "key": "claude-code",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gpxIAAC0AlpT5",
+        "uid": "claude-code"
+      },
+      "en": {
+        "id": "au8guxIAACkAlpUi",
+        "uid": "claude-code"
+      }
+    },
+    {
+      "key": "openai-codex",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gpBIAACkAlpTm",
+        "uid": "openai-codex"
+      },
+      "en": {
+        "id": "au8gxhIAACwAlpVe",
+        "uid": "openai-codex"
+      }
+    },
+    {
+      "key": "storybook",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gzhIAACsAlpWF",
+        "uid": "storybook"
+      },
+      "en": {
+        "id": "au8g3hIAACsAlpXR",
+        "uid": "storybook"
+      }
+    },
+    {
+      "key": "eslint",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g0hIAACkAlpWY",
+        "uid": "eslint"
+      },
+      "en": {
+        "id": "au8g2hIAACsAlpXC",
+        "uid": "eslint"
+      }
+    },
+    {
+      "key": "stylelint",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8gyhIAACcAlpVx",
+        "uid": "stylelint"
+      },
+      "en": {
+        "id": "au8g5xIAACkAlpX1",
+        "uid": "stylelint"
+      }
+    },
+    {
+      "key": "vite",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g1hIAAC0AlpWs",
+        "uid": "vite"
+      },
+      "en": {
+        "id": "au8g4xIAACoAlpXk",
+        "uid": "vite"
+      }
+    },
+    {
+      "key": "turbopack",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g7xIAACkAlpYS",
+        "uid": "turbopack"
+      },
+      "en": {
+        "id": "au8g-hIAACcAlpZC",
+        "uid": "turbopack"
+      }
+    },
+    {
+      "key": "argo-cd",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g6xIAACsAlpYD",
+        "uid": "argo-cd"
+      },
+      "en": {
+        "id": "au8g_xIAACkAlpZV",
+        "uid": "argo-cd"
+      }
+    },
+    {
+      "key": "helm",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g8hIAAC4AlpYj",
+        "uid": "helm"
+      },
+      "en": {
+        "id": "au8hAxIAACkAlpZx",
+        "uid": "helm"
+      }
+    },
+    {
+      "key": "penpot",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8g9hIAAC4AlpYz",
+        "uid": "penpot"
+      },
+      "en": {
+        "id": "au8hBxIAACkAlpaN",
+        "uid": "penpot"
+      }
+    },
+    {
+      "key": "nocodb",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hDRIAAC4Alpav",
+        "uid": "nocodb"
+      },
+      "en": {
+        "id": "au8hIRIAAC0AlpdL",
+        "uid": "nocodb"
+      }
+    },
+    {
+      "key": "plane",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hERIAAC0AlpbR",
+        "uid": "plane"
+      },
+      "en": {
+        "id": "au8hJxIAACoAlpdi",
+        "uid": "plane"
+      }
+    },
+    {
+      "key": "documenso",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hFRIAACkAlpb4",
+        "uid": "documenso"
+      },
+      "en": {
+        "id": "au8hLxIAACsAlpeL",
+        "uid": "documenso"
+      }
+    },
+    {
+      "key": "rclone",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hGRIAACgAlpcY",
+        "uid": "rclone"
+      },
+      "en": {
+        "id": "au8hKxIAACkAlpd2",
+        "uid": "rclone"
+      }
+    },
+    {
+      "key": "restic",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hNxIAACsAlpe2",
+        "uid": "restic"
+      },
+      "en": {
+        "id": "au8hSBIAACsAlpgK",
+        "uid": "restic"
+      }
+    },
+    {
+      "key": "linux",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hMxIAACoAlpeg",
+        "uid": "linux"
+      },
+      "en": {
+        "id": "au8hRBIAAC4Alpf4",
+        "uid": "linux"
+      }
+    },
+    {
+      "key": "sql-server",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hOxIAACkAlpfN",
+        "uid": "sql-server"
+      },
+      "en": {
+        "id": "au8hTBIAACsAlpge",
+        "uid": "sql-server"
+      }
+    },
+    {
+      "key": "sqlite",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hPxIAACoAlpfi",
+        "uid": "sqlite"
+      },
+      "en": {
+        "id": "au8hUhIAACgAlpg4",
+        "uid": "sqlite"
+      }
+    },
+    {
+      "key": "supabase",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hVhIAACwAlphP",
+        "uid": "supabase"
+      },
+      "en": {
+        "id": "au8hZxIAACsAlpiy",
+        "uid": "supabase"
+      }
+    },
+    {
+      "key": "convex",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hYhIAACwAlpia",
+        "uid": "convex"
+      },
+      "en": {
+        "id": "au8hbBIAACcAlpjL",
+        "uid": "convex"
+      }
+    },
+    {
+      "key": "openapi",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hWhIAACsAlphv",
+        "uid": "openapi"
+      },
+      "en": {
+        "id": "au8hcBIAAC0Alpjp",
+        "uid": "openapi"
+      }
+    },
+    {
+      "key": "openid-connect",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hXhIAACcAlpiF",
+        "uid": "openid-connect"
+      },
+      "en": {
+        "id": "au8hdRIAACkAlpj_",
+        "uid": "openid-connect"
+      }
+    },
+    {
+      "key": "webmcp",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hfhIAACkAlpkv",
+        "uid": "webmcp"
+      },
+      "en": {
+        "id": "au8hkBIAACgAlpmW",
+        "uid": "webmcp"
+      }
+    },
+    {
+      "key": "webgl",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8heRIAAC0AlpkU",
+        "uid": "webgl"
+      },
+      "en": {
+        "id": "au8hixIAAC0Alpl_",
+        "uid": "webgl"
+      }
+    },
+    {
+      "key": "webgpu",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hhxIAACoAlplh",
+        "uid": "webgpu"
+      },
+      "en": {
+        "id": "au8hlBIAAC0Alpmr",
+        "uid": "webgpu"
+      }
+    },
+    {
+      "key": "web-workers",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hghIAAC0AlplL",
+        "uid": "web-workers"
+      },
+      "en": {
+        "id": "au8hmRIAACkAlpnF",
+        "uid": "web-workers"
+      }
+    },
+    {
+      "key": "rss",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hoBIAACcAlpnj",
+        "uid": "rss"
+      },
+      "en": {
+        "id": "au8hshIAAC4AlppM",
+        "uid": "rss"
+      }
+    },
+    {
+      "key": "svg",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hqRIAACwAlpoW",
+        "uid": "svg"
+      },
+      "en": {
+        "id": "au8hthIAACoAlppn",
+        "uid": "svg"
+      }
+    },
+    {
+      "key": "json-ld",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hpBIAAC0Alpn8",
+        "uid": "json-ld"
+      },
+      "en": {
+        "id": "au8hwBIAACgAlpqY",
+        "uid": "json-ld"
+      }
+    },
+    {
+      "key": "wcag",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hrRIAAC4Alpow",
+        "uid": "wcag"
+      },
+      "en": {
+        "id": "au8huxIAACwAlpp-",
+        "uid": "wcag"
+      }
+    },
+    {
+      "key": "ssh",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8h0hIAACcAlpri",
+        "uid": "ssh"
+      },
+      "en": {
+        "id": "au8h3xIAACgAlpst",
+        "uid": "ssh"
+      }
+    },
+    {
+      "key": "activitypub",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8h1hIAACsAlpr5",
+        "uid": "activitypub"
+      },
+      "en": {
+        "id": "au8h7RIAACwAlptx",
+        "uid": "activitypub"
+      }
+    },
+    {
+      "key": "at-protocol",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8hzRIAAC0AlprF",
+        "uid": "at-protocol"
+      },
+      "en": {
+        "id": "au8h5BIAACcAlptE",
+        "uid": "at-protocol"
+      }
+    },
+    {
+      "key": "websub",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8h2hIAACoAlpsS",
+        "uid": "websub"
+      },
+      "en": {
+        "id": "au8h6BIAACsAlpta",
+        "uid": "websub"
+      }
+    },
+    {
+      "key": "react-server-components",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8h-BIAACoAlpuQ",
+        "uid": "react-server-components"
+      },
+      "en": {
+        "id": "au8iChIAACgAlpvu",
+        "uid": "react-server-components"
+      }
+    },
+    {
+      "key": "server-actions",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8h_BIAACwAlpun",
+        "uid": "server-actions"
+      },
+      "en": {
+        "id": "au8iDxIAAC4AlpwE",
+        "uid": "server-actions"
+      }
+    },
+    {
+      "key": "cache-components",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iARIAACoAlpu_",
+        "uid": "cache-components"
+      },
+      "en": {
+        "id": "au8iExIAACwAlpwa",
+        "uid": "cache-components"
+      }
+    },
+    {
+      "key": "incremental-static-regeneration",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iBRIAACkAlpvW",
+        "uid": "incremental-static-regeneration"
+      },
+      "en": {
+        "id": "au8iFxIAACcAlpwv",
+        "uid": "incremental-static-regeneration"
+      }
+    },
+    {
+      "key": "hydration",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iIRIAAC0Alpxj",
+        "uid": "hydration"
+      },
+      "en": {
+        "id": "au8iNRIAACoAlpzK",
+        "uid": "hydration"
+      }
+    },
+    {
+      "key": "prefetching",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iHBIAACkAlpxK",
+        "uid": "prefetching"
+      },
+      "en": {
+        "id": "au8iMBIAACsAlpyy",
+        "uid": "prefetching"
+      }
+    },
+    {
+      "key": "state-management",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iJhIAACgAlpx8",
+        "uid": "state-management"
+      },
+      "en": {
+        "id": "au8iPxIAACcAlpz6",
+        "uid": "state-management"
+      }
+    },
+    {
+      "key": "signals",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iKhIAACwAlpyY",
+        "uid": "signals"
+      },
+      "en": {
+        "id": "au8iOxIAACkAlpzj",
+        "uid": "signals"
+      }
+    },
+    {
+      "key": "multi-tenancy",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iRBIAACsAlp0S",
+        "uid": "multi-tenancy"
+      },
+      "en": {
+        "id": "au8iYBIAAC4Alp2k",
+        "uid": "multi-tenancy"
+      }
+    },
+    {
+      "key": "design-tokens",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iSRIAAC4Alp0r",
+        "uid": "design-tokens"
+      },
+      "en": {
+        "id": "au8iWxIAACoAlp2M",
+        "uid": "design-tokens"
+      }
+    },
+    {
+      "key": "fluid-typography",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iTRIAAC0Alp1D",
+        "uid": "fluid-typography"
+      },
+      "en": {
+        "id": "au8iVhIAACgAlp10",
+        "uid": "fluid-typography"
+      }
+    },
+    {
+      "key": "knowledge-graphs",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iUhIAACkAlp1b",
+        "uid": "knowledge-graphs"
+      },
+      "en": {
+        "id": "au8iZBIAACwAlp26",
+        "uid": "knowledge-graphs"
+      }
+    },
+    {
+      "key": "agent-memory",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iaRIAACcAlp3S",
+        "uid": "agent-memory"
+      },
+      "en": {
+        "id": "au8ifBIAACcAlp40",
+        "uid": "agent-memory"
+      }
+    },
+    {
+      "key": "vector-search",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ibRIAAC4Alp3q",
+        "uid": "vector-search"
+      },
+      "en": {
+        "id": "au8igBIAACoAlp5M",
+        "uid": "vector-search"
+      }
+    },
+    {
+      "key": "text-to-speech",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ichIAACsAlp4D",
+        "uid": "text-to-speech"
+      },
+      "en": {
+        "id": "au8ihRIAAC4Alp5l",
+        "uid": "text-to-speech"
+      }
+    },
+    {
+      "key": "server-driven-ui",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8idxIAAC0Alp4b",
+        "uid": "server-driven-ui"
+      },
+      "en": {
+        "id": "au8iihIAACgAlp5-",
+        "uid": "server-driven-ui"
+      }
+    },
+    {
+      "key": "agent-skills",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ikxIAACwAlp6w",
+        "uid": "agent-skills"
+      },
+      "en": {
+        "id": "au8ipxIAACkAlp8X",
+        "uid": "agent-skills"
+      }
+    },
+    {
+      "key": "spec-driven-development",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ijxIAACsAlp6X",
+        "uid": "spec-driven-development"
+      },
+      "en": {
+        "id": "au8iohIAACcAlp7-",
+        "uid": "spec-driven-development"
+      }
+    },
+    {
+      "key": "code-review",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8imBIAACgAlp7K",
+        "uid": "code-review"
+      },
+      "en": {
+        "id": "au8irBIAAC4Alp8w",
+        "uid": "code-review"
+      }
+    },
+    {
+      "key": "gitops",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8inRIAACoAlp7k",
+        "uid": "gitops"
+      },
+      "en": {
+        "id": "au8isRIAACcAlp9J",
+        "uid": "gitops"
+      }
+    },
+    {
+      "key": "integration-testing",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iuBIAACcAlp9k",
+        "uid": "integration-testing"
+      },
+      "en": {
+        "id": "au8izBIAACoAlp_M",
+        "uid": "integration-testing"
+      }
+    },
+    {
+      "key": "end-to-end-testing",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ivRIAACcAlp9-",
+        "uid": "end-to-end-testing"
+      },
+      "en": {
+        "id": "au8i1RIAACkAlp_9",
+        "uid": "end-to-end-testing"
+      }
+    },
+    {
+      "key": "mutation-testing",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8iwhIAAC4Alp-Y",
+        "uid": "mutation-testing"
+      },
+      "en": {
+        "id": "au8i0BIAACsAlp_k",
+        "uid": "mutation-testing"
+      }
+    },
+    {
+      "key": "property-based-testing",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8ixxIAAC4Alp-y",
+        "uid": "property-based-testing"
+      },
+      "en": {
+        "id": "au8i2hIAACgAlqAW",
+        "uid": "property-based-testing"
+      }
+    },
+    {
+      "key": "progressive-enhancement",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8i5BIAACsAlqBK",
+        "uid": "progressive-enhancement"
+      },
+      "en": {
+        "id": "au8i8xIAAC4AlqCb",
+        "uid": "progressive-enhancement"
+      }
+    },
+    {
+      "key": "responsive-design",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8i3xIAAC4AlqAv",
+        "uid": "responsive-design"
+      },
+      "en": {
+        "id": "au8i-BIAACwAlqC1",
+        "uid": "responsive-design"
+      }
+    },
+    {
+      "key": "image-optimization",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8i6RIAACoAlqBl",
+        "uid": "image-optimization"
+      },
+      "en": {
+        "id": "au8i_hIAAC4AlqDQ",
+        "uid": "image-optimization"
+      }
+    },
+    {
+      "key": "font-optimization",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8i7hIAACoAlqCA",
+        "uid": "font-optimization"
+      },
+      "en": {
+        "id": "au8jAhIAACwAlqDp",
+        "uid": "font-optimization"
+      }
+    },
+    {
+      "key": "dependency-management",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jDBIAACsAlqEe",
+        "uid": "dependency-management"
+      },
+      "en": {
+        "id": "au8jHBIAACgAlqFw",
+        "uid": "dependency-management"
+      }
+    },
+    {
+      "key": "backup-and-restore",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jBxIAACkAlqED",
+        "uid": "backup-and-restore"
+      },
+      "en": {
+        "id": "au8jIhIAACgAlqGL",
+        "uid": "backup-and-restore"
+      }
+    },
+    {
+      "key": "penetration-testing",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jFxIAACsAlqFV",
+        "uid": "penetration-testing"
+      },
+      "en": {
+        "id": "au8jJxIAACwAlqGm",
+        "uid": "penetration-testing"
+      }
+    },
+    {
+      "key": "threat-modeling",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jERIAACkAlqE5",
+        "uid": "threat-modeling"
+      },
+      "en": {
+        "id": "au8jLBIAACkAlqHA",
+        "uid": "threat-modeling"
+      }
+    },
+    {
+      "key": "authentication",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jMRIAAC0AlqHa",
+        "uid": "authentication"
+      },
+      "en": {
+        "id": "au8jVRIAAC4AlqKY",
+        "uid": "authentication"
+      }
+    },
+    {
+      "key": "authorization",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jNhIAACgAlqH1",
+        "uid": "authorization"
+      },
+      "en": {
+        "id": "au8jRRIAACwAlqJG",
+        "uid": "authorization"
+      }
+    },
+    {
+      "key": "data-privacy",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jOxIAACwAlqIQ",
+        "uid": "data-privacy"
+      },
+      "en": {
+        "id": "au8jSxIAAC4AlqJi",
+        "uid": "data-privacy"
+      }
+    },
+    {
+      "key": "document-management",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jQBIAACoAlqIr",
+        "uid": "document-management"
+      },
+      "en": {
+        "id": "au8jUBIAAC0AlqJ9",
+        "uid": "document-management"
+      }
+    },
+    {
+      "key": "electronic-signatures",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jYhIAACgAlqLc",
+        "uid": "electronic-signatures"
+      },
+      "en": {
+        "id": "au8jdxIAACkAlqON",
+        "uid": "electronic-signatures"
+      }
+    },
+    {
+      "key": "marketing-automation",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jZxIAACoAlqMH",
+        "uid": "marketing-automation"
+      },
+      "en": {
+        "id": "au8jghIAAC0AlqPi",
+        "uid": "marketing-automation"
+      }
+    },
+    {
+      "key": "project-management",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jbBIAACcAlqMy",
+        "uid": "project-management"
+      },
+      "en": {
+        "id": "au8jhxIAACsAlqQP",
+        "uid": "project-management"
+      }
+    },
+    {
+      "key": "data-visualization",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jcRIAACgAlqNd",
+        "uid": "data-visualization"
+      },
+      "en": {
+        "id": "au8jfRIAACkAlqO4",
+        "uid": "data-visualization"
+      }
+    },
+    {
+      "key": "web-scraping",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jkRIAACsAlqRl",
+        "uid": "web-scraping"
+      },
+      "en": {
+        "id": "au8jmxIAACgAlqSh",
+        "uid": "web-scraping"
+      }
+    },
+    {
+      "key": "no-code-low-code",
+      "legacyPage": false,
+      "fr": {
+        "id": "au8jjBIAACoAlqQ6",
+        "uid": "no-code-low-code"
+      },
+      "en": {
+        "id": "au8joBIAACsAlqTM",
+        "uid": "no-code-low-code"
+      }
+    }
+  ],
+  "publishedOn": "2026-11-07"
+}

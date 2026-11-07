@@ -1,10 +1,58 @@
-import { fixture } from '@test/fixtures'
+import { fixture, cats as tagCatalog } from '@test/fixtures'
 import { env } from 'cloudflare:workers'
 import type { Update } from 'grammy/types'
 import { expect, it, vi } from 'vitest'
 
 import { Store } from '@/store'
-import { clearItemButtons, handleUpdate, publicationNotice } from '@/telegram'
+import {
+  clearItemButtons,
+  handleUpdate,
+  present as presentTagProposal,
+  publicationNotice,
+} from '@/telegram'
+import { tagProposalText } from '@/telegram-format'
+
+it('sends complete tag details once per revision and tracks replies separately', async () => {
+  const calls = receiptApi()
+  const item = fixture('u-tag-details')
+  const copy = {
+    name: 'N'.repeat(80),
+    uid: 'n'.repeat(80),
+    description: '&'.repeat(240),
+    aliases: Array.from({ length: 5 }, (_, index) => String(index).repeat(80)),
+    seoTitle: 'T'.repeat(110),
+    seoDescription: 'D'.repeat(240),
+  }
+  const tag = {
+    category: 'concept-technique' as const,
+    fr: copy,
+    en: copy,
+    relatedUids: ['react'],
+  }
+  item.state.draft!.newTags = [tag]
+  item.status = 'review'
+  const store = new Store(env.DB)
+  await store.enqueue(item.id, 9901, '1', item.state, item.created_at)
+  await presentTagProposal(env, item, tagCatalog)
+  await presentTagProposal(env, item, tagCatalog)
+  const details = calls.filter(
+    (call) => call.body.text === tagProposalText(tag)
+  )
+  expect(details).toHaveLength(1)
+  expect(details[0].body.parse_mode).toBeUndefined()
+  expect(String(details[0].body.text).length).toBeLessThan(4096)
+  const receipt = await store.operation(
+    `tag-detail:${item.id}:${item.state.revision}:0`
+  )
+  const messageId = JSON.parse(receipt!.response!).messageId
+  expect(
+    await env.DB.prepare(
+      'SELECT item_id,revision FROM messages WHERE chat_id=? AND message_id=?'
+    )
+      .bind(item.chat_id, messageId)
+      .first()
+  ).toMatchObject({ item_id: item.id, revision: item.state.revision })
+})
 
 it.each([false, true])(
   'met à jour une checklist puis la remplace par la proposition sans média : file=%s',

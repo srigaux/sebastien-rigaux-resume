@@ -6,7 +6,9 @@ Le site génère `/algolia/curated-links.json` à chaque build à partir des cur
 
 Chaque enregistrement contient les données nécessaires aux cartes de la liste : titre, résumé Markdown, URL originale, permalien (`path`), dates, format, langues, crédit, `image` et `siteIcon` (objets avec `url`, `alt`, et dimensions lorsqu’elles sont disponibles). Les médias absents valent `null`. Les URLs des médias sont celles de Prismic ; les variantes optimisées générées par Astro ne sont pas exportées.
 
-`topics` conserve les noms pour la recherche et les facettes ; `topicDetails` contient les objets complets (`id`, `uid`, `name`, `description`) pour reconstruire les liens de sujets. `discoveredVia` conserve le nom pour la recherche ; `source` contient la source complète, avec son URL et son éventuelle `icon`, utilisée en repli lorsque `siteIcon` manque. Le monogramme et le domaine se déduisent de `url`, comme dans les cartes actuelles. `alternatePaths` contient les permaliens des traductions disponibles.
+`tags` contient les noms localisés, `tagIds` les identifiants français stables et `tagAliases` les alias et noms bilingues pour la recherche (par exemple RSC). `tagDetails` contient `id`, `uid`, `name`, `description`, `aliases`, `path` et `alternatePaths`. Un `path` nul signifie que le tag n’a pas encore de page : afficher son nom sans lien. Les catégories et décisions de migration restent privées. `topics` et `topicDetails` sont conservés pour compatibilité.
+
+`discoveredVia` conserve le nom pour la recherche ; `source` contient la source complète, avec son URL et son éventuelle `icon`, utilisée en repli lorsque `siteIcon` manque. Le monogramme et le domaine se déduisent de `url`, comme dans les cartes actuelles. `alternatePaths` contient les permaliens des traductions disponibles.
 
 Après déploiement du site :
 
@@ -23,11 +25,13 @@ Configurer les paramètres de l’index :
   "searchableAttributes": [
     "title",
     "summary",
+    "tags",
+    "tagAliases",
     "topics",
     "credit",
     "discoveredVia"
   ],
-  "attributesForFaceting": ["locale", "format", "topics"],
+  "attributesForFaceting": ["locale", "format", "topics", "filterOnly(tagIds)"],
   "attributeForDistinct": "url",
   "distinct": 1,
   "attributesToSnippet": ["summary:20"]
@@ -49,6 +53,17 @@ La facette `format` est demandée avec `facetingAfterDistinct: true`, y compris 
 Références : [distinct](https://www.algolia.com/doc/api-reference/api-parameters/distinct), [attributeForDistinct](https://www.algolia.com/doc/api-reference/api-parameters/attributeForDistinct).
 
 ## Actualisation et suppressions
+
+Pour la réindexation de la phase 1, après publication du catalogue et déploiement du site :
+
+```sh
+pnpm --filter website-astro exec node --env-file=.env scripts/sync-watch-tags-algolia.mjs
+pnpm --filter website-astro exec node --env-file=.env scripts/sync-watch-tags-algolia.mjs --apply
+```
+
+La première commande vérifie l’export public et affiche les paramètres proposés sans écriture. La seconde ajoute la recherche sur les noms/alias et le filtre interne `tagIds`, puis remplace atomiquement les objets par l’export publié. Elle conserve les identifiants, réglages non concernés, règles et synonymes, et vérifie le nombre final d’enregistrements. Les anciennes entrées absentes de l’export sont ainsi retirées. Exécuter cette synchronisation hors d’un import concurrent du connecteur.
+
+L’index courant utilise `id` (l’identifiant Prismic) comme `objectID`, conformément au connecteur JSON. La commande conserve ces clés. Le champ `objectID` préfixé par langue reste présent dans l’export pour les anciens consommateurs ; il ne doit pas remplacer les identifiants actuels de l’index. La vérification de recherche utilise la clé publique du site, la clé d’écriture n’ayant pas nécessairement le droit `search`.
 
 Le flux est un instantané statique : publication Prismic → reconstruction et déploiement du site → prochaine exécution du connecteur. Algolia ne lit pas Prismic en direct. Aucun secret Algolia d’écriture n’est nécessaire dans le site pour ce fonctionnement.
 

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 
-import { watchLinkPath } from '@/lib/watch-model'
+import { publicWatchTag, watchLinkPath } from '@/lib/watch-model'
 import { getWatchData } from '@/lib/watch-prismic'
 
 // A complete snapshot of published translations, generated with the site.
@@ -31,7 +31,13 @@ export const GET: APIRoute = async () => {
           image: link.image ?? null,
           siteIcon: link.siteIcon ?? null,
           topics: link.topics.map((topic) => topic.name),
-          topicDetails: link.topics,
+          topicDetails: link.topics.map(publicWatchTag),
+          tags: link.topics.map((tag) => tag.name),
+          tagIds: link.topics.map((tag) => tag.id),
+          tagAliases: [
+            ...new Set(link.topics.flatMap((tag) => tag.aliases ?? [])),
+          ],
+          tagDetails: link.topics.map(publicWatchTag),
           discoveredVia: link.discoveredVia?.name,
           source: link.discoveredVia ?? null,
           alternatePaths: link.alternatePaths,

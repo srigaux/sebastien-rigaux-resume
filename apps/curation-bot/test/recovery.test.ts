@@ -11,7 +11,7 @@ let publishedDocs: Array<Record<string, unknown>> = []
 let readFails = false
 const target = 'POST https://migration.prismic.io/documents'
 
-async function setup(endpoint = target) {
+async function setup(endpoint = target, documentType = 'curated_link') {
   publishedDocs = []
   readFails = false
   let messageId = 100
@@ -69,6 +69,7 @@ async function setup(endpoint = target) {
   await store.save(item, 'error')
   await store.lock(env.PRISMIC_REPOSITORY, item.id)
   await store.begin('lost', item.id, endpoint, {
+    type: documentType,
     uid: 'original-slug',
     lang: 'fr-be',
   })
@@ -78,6 +79,38 @@ async function setup(endpoint = target) {
   await store.parkPublication(item)
   return { store, item }
 }
+
+it('recovers a tag creation using its type and locale without matching the article URL', async () => {
+  const { item } = await setup(target, 'topic')
+  publishedDocs = [
+    {
+      id: 'tag-fr',
+      type: 'topic',
+      uid: 'original-slug',
+      lang: 'fr-be',
+      data: {},
+    },
+    {
+      id: 'other-tag',
+      type: 'topic',
+      uid: 'other',
+      lang: 'fr-be',
+      data: { url: { url: item.state.url } },
+    },
+  ]
+  await beginRecovery(env, item.id)
+  expect(
+    (await session()).candidates.map((doc: { id: string }) => doc.id)
+  ).toStrictEqual(['tag-fr'])
+  const requests = vi.mocked(fetch).mock.calls.map(([input]) => String(input))
+  expect(
+    requests.some((url) =>
+      /at\(document\.type,\s*"topic"\)/.test(
+        new URL(url).searchParams.getAll('q').join(' ')
+      )
+    )
+  ).toBe(true)
+})
 
 async function session() {
   const row = await env.DB.prepare(

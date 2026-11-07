@@ -66,6 +66,29 @@ export type WatchTopic = {
   uid: string
   name: string
   description?: string
+  aliases?: string[]
+  highlighted?: boolean
+  status?: 'active' | 'retired'
+  legacyPage?: boolean
+  relatedIds?: string[]
+  seoTitle?: string
+  seoDescription?: string
+  translations?: Partial<
+    Record<
+      Locale,
+      {
+        uid: string
+        name: string
+        description?: string
+        aliases: string[]
+        seoTitle?: string
+        seoDescription?: string
+      }
+    >
+  >
+  path?: string | null
+  alternatePaths?: Partial<Record<Locale, string>>
+  alternatePageCounts?: Partial<Record<Locale, number>>
 }
 export type WatchSource = {
   id: string
@@ -239,10 +262,6 @@ export function buildWatchData(
       return topic
     })
 
-    if (resolvedTopics.length === 0) {
-      throw new Error(`Curated link ${draft.id} has no topics`)
-    }
-
     const discoveredVia = sourceId ? sourceById.get(sourceId) : undefined
 
     if (sourceId && !discoveredVia) {
@@ -398,5 +417,118 @@ export function buildLocalizedWatchData(
   return {
     fr: buildWatchData(topics, sources, localized.fr),
     en: buildWatchData(topics, sources, localized.en),
+  }
+}
+
+/** Localize taxonomy after links have been grouped by their translation relations. */
+export function localizeWatchTags(
+  data: Record<Locale, WatchData>,
+  masters: WatchTopic[]
+): Record<Locale, WatchData> {
+  const localized = {
+    fr: new Map<string, WatchTopic>(),
+    en: new Map<string, WatchTopic>(),
+  }
+
+  for (const locale of ['fr', 'en'] as const) {
+    for (const master of masters) {
+      const translation = master.translations?.[locale]
+      const resources = new Set(
+        data[locale].links
+          .filter((link) => link.topics.some((tag) => tag.id === master.id))
+          .map((link) => link.url)
+      )
+      const eligible =
+        master.legacyPage === true ||
+        (master.status !== 'retired' &&
+          resources.size >= 3 &&
+          Boolean(translation))
+      const tag = {
+        ...master,
+        ...translation,
+        aliases: [
+          ...new Set([
+            ...(master.aliases ?? []),
+            ...Object.values(master.translations ?? {}).flatMap((item) => [
+              item.name,
+              ...item.aliases,
+            ]),
+          ]),
+        ],
+        path: eligible
+          ? watchPath(locale, 1, translation?.uid ?? master.uid)
+          : null,
+        alternatePaths: {},
+      }
+      localized[locale].set(master.id, tag)
+    }
+  }
+
+  for (const master of masters) {
+    const alternatePaths: Partial<Record<Locale, string>> = {}
+    const alternatePageCounts: Partial<Record<Locale, number>> = {}
+
+    for (const locale of ['fr', 'en'] as const) {
+      const path = localized[locale].get(master.id)?.path
+
+      if (path) {
+        alternatePaths[locale] = path
+        alternatePageCounts[locale] = Math.max(
+          1,
+          Math.ceil(
+            data[locale].links.filter((link) =>
+              link.topics.some((tag) => tag.id === master.id)
+            ).length / WATCH_PAGE_SIZE
+          )
+        )
+      }
+    }
+
+    for (const locale of ['fr', 'en'] as const) {
+      localized[locale].get(master.id)!.alternatePaths = alternatePaths
+      localized[locale].get(master.id)!.alternatePageCounts =
+        alternatePageCounts
+    }
+  }
+
+  return Object.fromEntries(
+    (['fr', 'en'] as const).map((locale) => [
+      locale,
+      {
+        links: data[locale].links.map((link) => ({
+          ...link,
+          topics: link.topics.map((tag) => localized[locale].get(tag.id)!),
+        })),
+        topics: [...localized[locale].values()].sort((a, b) =>
+          a.name.localeCompare(b.name, locale)
+        ),
+      },
+    ])
+  ) as Record<Locale, WatchData>
+}
+
+export function watchTagPageAlternates(tag: WatchTopic, page: number) {
+  return Object.fromEntries(
+    Object.entries(tag.alternatePaths ?? {})
+      .filter(
+        ([locale]) => page <= (tag.alternatePageCounts?.[locale as Locale] ?? 1)
+      )
+      .map(([locale, path]) => [
+        locale,
+        `${path}${page > 1 ? `/page/${page}` : ''}`,
+      ])
+  ) as Partial<Record<Locale, string>>
+}
+
+/** Explicit public projection: never leak editorial taxonomy configuration. */
+export function publicWatchTag(tag: WatchTopic) {
+  return {
+    id: tag.id,
+    uid: tag.uid,
+    name: tag.name,
+    description: tag.description,
+    aliases: tag.aliases ?? [],
+    path: tag.path ?? null,
+    alternatePaths: tag.alternatePaths ?? {},
   }
 }

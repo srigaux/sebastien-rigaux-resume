@@ -16,6 +16,8 @@ export type WatchSearchHit = {
   summaryHtml: string
   path: string
   format: string
+  tags?: string[]
+  tagDetails?: WatchTopic[]
   topics?: string[]
   topicDetails?: WatchTopic[]
   selectedOn?: string
@@ -253,11 +255,17 @@ export default function WatchSearchCard({
         />
       </div>
       <div className="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
-        {hit.topicDetails?.length
-          ? hit.topicDetails.map((topic) => (
+        {(hit.tagDetails ?? hit.topicDetails)?.length
+          ? (hit.tagDetails ?? hit.topicDetails)!.map((topic) => (
               <a
                 key={topic.uid}
-                href={watchPath(locale, 1, topic.uid)}
+                href={
+                  topic.path === null
+                    ? undefined
+                    : (topic.alternatePaths?.[locale] ??
+                      topic.path ??
+                      watchPath(locale, 1, topic.uid))
+                }
                 className="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted transition-colors hover:bg-accent/10 hover:text-accent"
               >
                 {topic.name}

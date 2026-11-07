@@ -17,10 +17,17 @@ import {
 import { generateDraft } from '@/editor'
 import { collectMedia, scrape } from '@/extract'
 import { log } from '@/observability'
-import { catalog, migrate, publish, publishedDuplicates } from '@/prismic'
+import {
+  assertUnreservedTagProposals,
+  catalog,
+  migrate,
+  publish,
+  publishedDuplicates,
+} from '@/prismic'
 import { schedulePublicationCheck } from '@/publication'
 import { type Steps, retry } from '@/retry'
 import { Store } from '@/store'
+import { pendingTagProposals, tagProposalKey } from '@/tags'
 import { analysisNotice, publicationNotice } from '@/telegram'
 import type { AnalysisStage } from '@/telegram-format'
 import { typingSteps, withTyping } from '@/telegram-typing'
@@ -271,6 +278,21 @@ export async function advance(
       return
     }
 
+    if (!s.publicationStarted && !s.publishedIds) {
+      try {
+        cats = await catalog(env, true)
+        assertDraft(s.draft, cats)
+        await assertUnreservedTagProposals(env, item, cats)
+
+        if (pendingTagProposals(s.draft, s.acceptedTagProposals)) {
+          throw new BotError('Validez les nouveaux tags avant publication.')
+        }
+      } catch (error) {
+        await new Store(env.DB).unlock(env.PRISMIC_REPOSITORY, item.id)
+        throw error
+      }
+    }
+
     s.references ??= {
       topics: Object.fromEntries(cats.topics.map((t) => [t.uid, t.id])),
       sourceId: cats.sources.find((source) => source.uid === s.sourceUid)?.id,
@@ -291,6 +313,7 @@ export async function advance(
           migrate(env, item, cats, publicationProgress)
         )
         s.publishedIds = result.ids
+        s.tagDocumentIds = result.tagIds
         s.mediaIds = result.mediaIds
       } catch (error) {
         const documentWrites = await env.DB.prepare(
@@ -610,7 +633,46 @@ export async function applyAction(
     return
   }
 
+  if (
+    (action.kind === 'tag-accept' || action.kind === 'tag-reject') &&
+    s.draft &&
+    ['review', 'source'].includes(item.status)
+  ) {
+    const index = Number(action.value)
+    const proposal = Number.isInteger(index)
+      ? s.draft.newTags?.[index]
+      : undefined
+
+    if (!proposal) {
+      return 'Proposition de tag inconnue.'
+    }
+
+    if (action.kind === 'tag-accept') {
+      s.acceptedTagProposals = [
+        ...new Set([
+          ...(s.acceptedTagProposals ?? []),
+          tagProposalKey(proposal),
+        ]),
+      ]
+    } else {
+      s.draft.newTags!.splice(index, 1)
+    }
+
+    s.revision++
+    s.approvedRevision = undefined
+    s.revisionNote =
+      action.kind === 'tag-accept'
+        ? 'Nouveau tag accepté.'
+        : 'Proposition de tag retirée.'
+    item.status = 'queued'
+    return
+  }
+
   if (action.kind === 'approve') {
+    if (s.draft && pendingTagProposals(s.draft, s.acceptedTagProposals)) {
+      return 'Les nouveaux tags doivent être résolus avant publication.'
+    }
+
     if (
       !['review', 'source'].includes(item.status) ||
       !s.draft ||

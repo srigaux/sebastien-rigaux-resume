@@ -24,7 +24,7 @@ it('attend une action persistée dans un véritable Workflow Cloudflare et rejet
   await store.enqueue(item.id, 900, '1', item.state, item.created_at)
   await store.claim('1')
   await store.save(item, 'duplicate')
-  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
+  await store.putCache(`catalog:v2:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
   let messages = 0
   vi.stubGlobal(
     'fetch',
@@ -100,7 +100,7 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
   await store.enqueue(item.id, 901, '1', item.state, item.created_at)
   await store.claim('1')
   await store.save(item, 'review')
-  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
+  await store.putCache(`catalog:v2:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
   let publicationMessageId: number | undefined
   let publicationConfirmed = false
   let publicationAccepted = false
@@ -204,13 +204,29 @@ it('libère la file dès l’acceptation sans attendre le contrôle cron des deu
       if (url.includes('/documents/search')) {
         const query = new URL(url).searchParams.get('q') ?? ''
         const locale = new URL(url).searchParams.get('lang') ?? 'fr-be'
-        const results = published
-          ? [...docs.values()].filter(
-              (doc) =>
-                query.includes(String(doc.id)) &&
-                (locale === '*' || doc.lang === locale)
+        const catalogType = query.includes('"topic"')
+          ? 'topic'
+          : query.includes('"discovery_source"')
+            ? 'discovery_source'
+            : undefined
+        const results = catalogType
+          ? (catalogType === 'topic' ? cats.topics : cats.sources).map(
+              (entry) => ({
+                id: entry.id,
+                uid: entry.uid,
+                type: catalogType,
+                lang: 'fr-be',
+                alternate_languages: [],
+                data: { name: entry.name },
+              })
             )
-          : []
+          : published
+            ? [...docs.values()].filter(
+                (doc) =>
+                  query.includes(String(doc.id)) &&
+                  (locale === '*' || doc.lang === locale)
+              )
+            : []
         return Response.json({
           page: 1,
           results_per_page: 20,
@@ -296,7 +312,7 @@ it('recrée une instance après panne en reprenant la fiche persistée et ses ac
   await store.enqueue(item.id, 902, '1', item.state, item.created_at)
   await store.claim('1')
   await store.save(item, 'duplicate')
-  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
+  await store.putCache(`catalog:v2:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
   vi.stubGlobal(
     'fetch',
     vi.fn(async () =>
@@ -347,7 +363,7 @@ it('interrompt un Retry-After de 15 minutes pour annuler sans attendre ni appele
   await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction))
   await store.enqueue(item.id, 903, '1', item.state, item.created_at)
   await store.claim('1')
-  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
+  await store.putCache(`catalog:v2:${env.PRISMIC_REPOSITORY}`, cats, 3600000)
   let messageId = 0
   const sent: string[] = []
   vi.stubGlobal(
@@ -455,7 +471,7 @@ it('parks an approved publication behind an uncertain release and starts the nex
   await env.BUCKET.put(item.state.extractionKey, JSON.stringify(extraction))
   await store.enqueue(item.id, 860, '1', item.state, item.created_at)
   await store.claim('1')
-  await store.putCache(`catalog:${env.PRISMIC_REPOSITORY}`, cats, 60_000)
+  await store.putCache(`catalog:v2:${env.PRISMIC_REPOSITORY}`, cats, 60_000)
   await store.lock(env.PRISMIC_REPOSITORY, 'uncertain-older-publication')
   vi.stubGlobal(
     'fetch',

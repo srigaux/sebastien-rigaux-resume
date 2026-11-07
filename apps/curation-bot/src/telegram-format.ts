@@ -1,6 +1,7 @@
 import MarkdownIt from 'markdown-it'
 
 import type { Catalog, Draft, Item, PublicationStage } from '@/domain'
+import type { TagProposal } from '@/tags'
 
 export const analysisStages = [
   'catalog',
@@ -147,6 +148,10 @@ export function proposalHtml(item: Item, cats: Catalog): string {
     '',
     `<b>${formatLabels[draft.format]}</b>`,
     `🏷️ ${topics.join(' · ')}`,
+    ...(draft.newTags ?? []).map(
+      (tag) =>
+        `<b>➕ ${escapeHtml(tag.fr.name)} / ${escapeHtml(tag.en.name)}</b> — ${escapeHtml(tag.category)}`
+    ),
     `🔎 Source : <b>${escapeHtml(source.slice(0, 200))}</b>`,
     ...(draft.credit?.trim()
       ? [`✍️ Crédit : <b>${escapeHtml(draft.credit.trim())}</b>`]
@@ -157,6 +162,27 @@ export function proposalHtml(item: Item, cats: Catalog): string {
           '⚠️ Un média est indisponible. Réessayez ou confirmez son omission.',
         ]
       : []),
+  ].join('\n')
+}
+
+// One plain-text message per tag stays below Telegram's 4096-character limit,
+// even with both locales, all aliases and SEO. Reply tracking remains revision-bound.
+export function tagProposalText(tag: TagProposal): string {
+  return [
+    `➕ ${tag.fr.name} / ${tag.en.name}`,
+    `Catégorie : ${tag.category}`,
+    ...(['fr', 'en'] as const).flatMap((locale) => [
+      '',
+      locale === 'fr' ? '🇫🇷 Français' : '🇬🇧 English',
+      tag[locale].description,
+      `Slug : ${tag[locale].uid}`,
+      `Alias : ${tag[locale].aliases.join(' · ') || '—'}`,
+      `Titre SEO : ${tag[locale].seoTitle}`,
+      `Description SEO : ${tag[locale].seoDescription}`,
+    ]),
+    '',
+    `Tags associés : ${tag.relatedUids.join(' · ') || '—'}`,
+    'Réponds avec tes corrections pour modifier ou remplacer ce tag.',
   ].join('\n')
 }
 

@@ -277,6 +277,8 @@ export default function WatchSearchPanel({ locale }: { locale: Locale }) {
                 'format',
                 'topics',
                 'topicDetails',
+                'tags',
+                'tagDetails',
                 'selectedOn',
                 'url',
                 'image',

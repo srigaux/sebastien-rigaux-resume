@@ -21,6 +21,7 @@ export const cats: Catalog = {
   ],
 }
 export const draft: Draft = {
+  newTags: [],
   revisionNote: null,
   formatRanking: formats.map((format) => ({
     format,

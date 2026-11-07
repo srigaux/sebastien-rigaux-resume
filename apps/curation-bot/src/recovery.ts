@@ -27,6 +27,7 @@ type Session = {
 }
 type SavedResponse = { status: number; body: string }
 type DocumentRequest = {
+  type?: string
   lang: string
   uid: string
   alternate_language_id?: string
@@ -231,9 +232,19 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
 
     try {
       // Match the article URL too: a manually renamed UID is not evidence of absence.
-      const docs = await readClient(env).getAllByType('curated_link', {
+      const documentType = request.type ?? 'curated_link'
+
+      if (documentType !== 'curated_link' && documentType !== 'topic') {
+        throw new Error(
+          'Type de document inattendu dans le journal de reprise.'
+        )
+      }
+
+      const docs = await readClient(env).getAllByType(documentType, {
         lang: '*',
-        fetch: ['curated_link.url'],
+        ...(documentType === 'curated_link'
+          ? { fetch: ['curated_link.url'] }
+          : {}),
       })
       s.candidates = docs
         .filter((doc) => {
@@ -254,12 +265,15 @@ export async function beginRecovery(env: Env, id: string): Promise<boolean> {
             return true
           }
 
+          if (documentType !== 'curated_link' || !('url' in doc.data)) {
+            return false
+          }
+
+          const resourceUrl = 'url' in doc.data.url ? doc.data.url.url : ''
+
           try {
             return [item.state.url, ...(item.state.checked ?? [])].some(
-              (url) =>
-                normalizeUrl(
-                  ('url' in doc.data.url ? doc.data.url.url : '') ?? ''
-                ) === normalizeUrl(url)
+              (url) => normalizeUrl(resourceUrl ?? '') === normalizeUrl(url)
             )
           } catch {
             return false

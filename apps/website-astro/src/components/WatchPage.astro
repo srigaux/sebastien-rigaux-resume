@@ -17,6 +17,7 @@ import {
   WATCH_PAGE_SIZE,
   watchPath,
   watchLinkTarget,
+  watchTagPageAlternates,
 } from '@/lib/watch-model'
 import { pageMarkdownPath, watchRssPath } from '@/lib/urls'
 import BaseLayout from '@/layouts/BaseLayout.astro'
@@ -35,7 +36,7 @@ const t = {
     intro:
       'Une sélection personnelle de liens, outils et idées que je souhaite garder et partager avec mes équipes.',
     all: 'Tous les liens',
-    topics: 'Explorer par sujet',
+    topics: 'Explorer par tag',
     empty: 'Les premiers liens sélectionnés arrivent bientôt.',
     previous: 'Précédent',
     next: 'Suivant',
@@ -52,7 +53,7 @@ const t = {
     intro:
       'A personal selection of links, tools, and ideas I want to keep and share with my teams.',
     all: 'All links',
-    topics: 'Explore topics',
+    topics: 'Explore tags',
     empty: 'The first selected links are coming soon.',
     previous: 'Previous',
     next: 'Next',
@@ -65,15 +66,24 @@ const t = {
   },
 }[locale]
 const path = watchPath(locale, page, topic?.uid)
-const alternatePaths = {
-  fr: watchPath('fr', page, topic?.uid),
-  en: watchPath('en', page, topic?.uid),
-}
+const alternatePaths = topic
+  ? watchTagPageAlternates(topic, page)
+  : { fr: watchPath('fr', page), en: watchPath('en', page) }
+const navigationTopics = topics.filter(
+  (item) => item.path && item.highlighted && item.status !== 'retired'
+)
+const relatedTopics = topics.filter(
+  (item) => item.path && topic?.relatedIds?.includes(item.id)
+)
 const heading = topic ? `${topic.name} · ${t.title}` : t.title
-const title = page > 1 ? `${heading} · ${t.page} ${page}` : heading
-const baseDescription = topic
-  ? `${topic.name}: ${locale === 'fr' ? 'liens sélectionnés par Sébastien Rigaux' : 'links selected by Sébastien Rigaux'}.`
-  : t.intro
+const seoHeading = topic?.seoTitle || heading
+const title = page > 1 ? `${seoHeading} · ${t.page} ${page}` : seoHeading
+const baseDescription =
+  topic?.seoDescription ||
+  topic?.description ||
+  (topic
+    ? `${topic.name}: ${locale === 'fr' ? 'liens sélectionnés par Sébastien Rigaux' : 'links selected by Sébastien Rigaux'}.`
+    : t.intro)
 const description =
   page > 1
     ? `${baseDescription} ${t.page} ${page} ${t.of} ${totalPages}.`
@@ -188,7 +198,10 @@ const dateFormatter = new Intl.DateTimeFormat(
     firstName="Sébastien"
     lastName="Rigaux"
     page="watch"
-    languagePaths={alternatePaths}
+    languagePaths={{
+      fr: alternatePaths.fr ?? watchPath('fr'),
+      en: alternatePaths.en ?? watchPath('en'),
+    }}
   />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
     {page === 1 ? (
@@ -388,7 +401,7 @@ const dateFormatter = new Intl.DateTimeFormat(
                   <div class="pointer-events-none relative z-10 mt-4 flex flex-wrap items-center gap-2">
                     {link.topics.map((item) => (
                       <a
-                        href={watchPath(locale, 1, item.uid)}
+                        href={item.path ?? undefined}
                         class="pointer-events-auto relative z-10 rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted no-underline transition-colors hover:bg-accent/10 hover:text-accent"
                       >
                         {item.name}
@@ -487,7 +500,19 @@ const dateFormatter = new Intl.DateTimeFormat(
         )}
       </section>
 
-      {topics.length > 0 && (
+      {relatedTopics.length > 0 && (
+        <nav aria-label={locale === 'fr' ? 'Tags associés' : 'Related tags'}>
+          <h2>{locale === 'fr' ? 'Tags associés' : 'Related tags'}</h2>
+          <ul>
+            {relatedTopics.map((item) => (
+              <li>
+                <a href={item.path!}>{item.name}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      {navigationTopics.length > 0 && (
         <aside
           no-intersect
           class="intersect-once self-start motion-duration-500 motion-reduce:animate-none lg:pt-0 intersect:motion-preset-blur-up"
@@ -501,9 +526,9 @@ const dateFormatter = new Intl.DateTimeFormat(
             class="mt-5 mb-6 h-0.5 w-12 -rotate-12 bg-accent"
           />
           <div class="flex flex-wrap gap-2 lg:block lg:space-y-1">
-            {topics.map((item) => (
+            {navigationTopics.map((item) => (
               <a
-                href={watchPath(locale, 1, item.uid)}
+                href={item.path ?? undefined}
                 aria-current={topic?.uid === item.uid ? 'page' : undefined}
                 class:list={[
                   'inline-block border px-2 py-1.5 text-sm no-underline transition-colors lg:block lg:border-0 lg:border-l-2',

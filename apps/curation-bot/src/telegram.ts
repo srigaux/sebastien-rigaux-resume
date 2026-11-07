@@ -17,6 +17,7 @@ import { errorFields, log } from '@/observability'
 import { QUEUE_PAGE_SIZE, type QueueRow, queueHtml } from '@/queue-format'
 import { beginRecovery, recoveryCallback, recoveryReply } from '@/recovery'
 import { Store } from '@/store'
+import { tagProposalKey } from '@/tags'
 import {
   type AnalysisStage,
   analysisHtml,
@@ -25,6 +26,7 @@ import {
   formatLabels,
   proposalHtml,
   publicationChecklist,
+  tagProposalText,
 } from '@/telegram-format'
 import { withTyping } from '@/telegram-typing'
 
@@ -138,6 +140,24 @@ export function keyboard(item: Item, cats: Catalog): InlineKeyboard {
   }
 
   if (showApproval) {
+    for (const [index, proposal] of (
+      item.state.draft?.newTags ?? []
+    ).entries()) {
+      const accepted = item.state.acceptedTagProposals?.includes(
+        tagProposalKey(proposal)
+      )
+      kb.row()
+        .text(
+          `${accepted ? '✅' : '➕'} ${proposal.fr.name.slice(0, 30)}`,
+          button(item, 'tag-accept', String(index))
+        )
+        .text('Retirer', button(item, 'tag-reject', String(index)))
+    }
+
+    if (item.state.draft?.newTags?.length) {
+      kb.row()
+    }
+
     kb.text('🚀 Publier', button(item, 'approve'))
   }
 
@@ -715,6 +735,20 @@ async function sendProposal(
   html?: string,
   markup?: InlineKeyboard
 ) {
+  for (const [index, tag] of (item.state.draft?.newTags ?? []).entries()) {
+    const detailKey = `tag-detail:${item.id}:${item.state.revision}:${index}`
+    await ensureReceipt(store, detailKey, item.id, () =>
+      api.sendMessage(item.chat_id, tagProposalText(tag), {
+        link_preview_options: { is_disabled: true },
+      })
+    )
+    const detailReceipt = await readReceiptKey(store, detailKey)
+
+    if (detailReceipt) {
+      await remember(store, item, detailReceipt.messageId)
+    }
+  }
+
   const key =
     item.state.revisionReceiptKey ??
     (await processingReceiptKey(store, item.id))
@@ -1068,6 +1102,8 @@ export function createBot(env: Env) {
       'continue',
       'cancel',
       'approve',
+      'tag-accept',
+      'tag-reject',
       'source',
       'choose',
       'resume',

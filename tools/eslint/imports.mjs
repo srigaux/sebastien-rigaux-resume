@@ -31,6 +31,7 @@ export function projectImports(directory, { tooling = false } = {}) {
       files: ['**/*.{js,mjs,cjs,ts,tsx,astro}'],
       // Lint infrastructure is intentionally supplied by the workspace root.
       ignores: ['eslint.config.mjs'],
+      languageOptions: { parserOptions: { tsconfigRootDir: directory } },
       plugins: { 'import-x': importX },
       settings: {
         'import-x/resolver-next': [

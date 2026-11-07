@@ -49,7 +49,7 @@ export async function getWatchStaticPaths(locale: Locale) {
 
   append(links)
 
-  for (const topic of topics) {
+  for (const topic of topics.filter((item) => item.path)) {
     append(
       links.filter((link) => link.topics.some((item) => item.id === topic.id)),
       topic
