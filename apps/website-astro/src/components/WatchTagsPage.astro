@@ -14,7 +14,7 @@ const { locale } = Astro.props
 const { topics } = await getWatchData(locale)
 const tags = topics.filter((tag) => tag.status !== 'retired')
 const title = locale === 'fr' ? 'Tous les tags' : 'All tags'
-const paths = { fr: '/veille/tags/', en: '/en/tech-watch/tags/' }
+const paths = { fr: '/veille/tags', en: '/en/tech-watch/tags' }
 const categories = [
   ['language', 'Langages', 'Languages'],
   [
@@ -52,6 +52,34 @@ for (const tag of tags.sort((a, b) =>
 }
 
 const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
+const canonical = new URL(paths[locale], Astro.site!).href
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${canonical}#webpage`,
+      url: canonical,
+      name: title,
+      inLanguage: locale,
+      mainEntity: { '@id': `${canonical}#tags` },
+    },
+    {
+      '@type': 'ItemList',
+      '@id': `${canonical}#tags`,
+      numberOfItems: tags.length,
+      itemListElement: tags.map((tag, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'DefinedTerm',
+          name: tag.name,
+          ...(tag.path && { url: new URL(tag.path, Astro.site!).href }),
+        },
+      })),
+    },
+  ],
+}
 ---
 
 <BaseLayout
@@ -63,6 +91,7 @@ const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
       : 'Browse all tech watch tags in alphabetical order.'
   }
   canonicalPath={paths[locale]}
+  markdownPath={`${paths[locale]}.md`}
   alternatePaths={paths}
 >
   <Header
@@ -180,6 +209,10 @@ const sections = [...groups].sort(([a], [b]) => a.localeCompare(b, locale))
         </section>
       ))}
     </div>
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(schema).replace(/</g, '\\u003c')}
+    />
   </main>
   <footer class="border-t border-rule">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 text-sm text-muted sm:px-8 lg:px-12">

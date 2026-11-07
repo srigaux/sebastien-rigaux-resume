@@ -308,6 +308,39 @@ for (const [url] of sitemap) {
           `Missing intrinsic image dimensions: ${url}`
         )
       }
+    } else if (path.endsWith('/tags')) {
+      const schemas = jsonLdGraph(document)
+      const collection = schemas.find(
+        (node) => node['@type'] === 'CollectionPage'
+      )
+      const list = schemas.find((node) => node['@type'] === 'ItemList')
+      assert.equal(
+        collection?.url,
+        url,
+        `Missing tag directory CollectionPage: ${url}`
+      )
+      assert.ok(
+        list && list.numberOfItems > 0,
+        `Missing tag directory items: ${url}`
+      )
+      assert.equal(collection.mainEntity?.['@id'], list['@id'])
+      assert.equal(list.numberOfItems, list.itemListElement.length)
+
+      for (const entry of list.itemListElement) {
+        if (entry.item.url) {
+          assert.ok(
+            sitemap.has(entry.item.url),
+            `Unknown directory tag URL: ${entry.item.url}`
+          )
+          assert.ok(
+            anchors.some(
+              (node) =>
+                new URL(node.attribs.href, origin).href === entry.item.url
+            ),
+            `Missing visible directory tag: ${entry.item.url}`
+          )
+        }
+      }
     } else {
       const schemas = jsonLdGraph(document)
       const collection = schemas.find(
