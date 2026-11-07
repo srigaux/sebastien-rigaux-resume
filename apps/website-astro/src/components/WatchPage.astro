@@ -23,6 +23,7 @@ import { pageMarkdownPath, watchRssPath } from '@/lib/urls'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import ExternalLink from '@/components/ExternalLink.astro'
 import Header from '@/components/Header.astro'
+import HeroShader from '@/components/HeroShader.astro'
 import WatchSearch from '@/components/WatchSearch.astro'
 import { renderSummaryMarkdown } from '@/lib/watch-markdown'
 import type { WatchPageProps } from '@/lib/watch-pages'
@@ -209,80 +210,88 @@ const dateFormatter = new Intl.DateTimeFormat(
     }}
   />
   <main id="main" class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 lg:px-12">
-    {page === 1 ? (
-      <section
-        no-intersect
-        class="intersect-[0.2] intersect-once pt-14 motion-duration-500 motion-reduce:animate-none sm:pt-20 lg:pt-24 intersect:motion-preset-blur-up"
-      >
-        <div aria-hidden="true" class="mb-8 h-0.5 w-20 -rotate-12 bg-accent" />
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
-          <p class="text-base font-semibold tracking-tight text-accent">
-            {topic ? t.title : t.selectedLabel}
-          </p>
-          {topic && (
-            <a
-              href={watchPath(locale)}
-              class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
-            >
-              ← {t.all}
-            </a>
-          )}
-        </div>
-        <h1 class="max-w-5xl font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] wrap-break-word text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
-          {topic ? topic.name : t.title}
-        </h1>
-        <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">{intro}</p>
-        <div class="mt-5 flex items-center gap-3">
-          <a
-            href={watchRssPath(locale)}
-            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
-          >
-            <Rss size={18} aria-hidden="true" />
-            {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
-            <span class="sr-only"> RSS</span>
-          </a>
-          <span data-watch-search-trigger class="inline-flex" />
-        </div>
-      </section>
-    ) : (
-      <header
-        no-intersect
-        class="intersect-[0.2] intersect-once pt-10 motion-duration-500 motion-reduce:animate-none sm:pt-12 lg:pt-14 intersect:motion-preset-blur-up"
-      >
-        {topic && (
+    <div data-shader-hero class="relative isolate">
+      <HeroShader />
+      {page === 1 ? (
+        <section
+          no-intersect
+          class="intersect-[0.2] intersect-once pt-14 motion-duration-500 motion-reduce:animate-none sm:pt-20 lg:pt-24 intersect:motion-preset-blur-up"
+        >
+          <div
+            aria-hidden="true"
+            class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"
+          />
           <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
             <p class="text-base font-semibold tracking-tight text-accent">
-              {t.title}
+              {topic ? t.title : t.selectedLabel}
             </p>
-            <a
-              href={watchPath(locale)}
-              class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
-            >
-              ← {t.all}
-            </a>
+            {topic && (
+              <a
+                href={watchPath(locale)}
+                class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
+              >
+                ← {t.all}
+              </a>
+            )}
           </div>
-        )}
-        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-          <h1 class="font-display text-2xl font-semibold tracking-tight wrap-break-word text-ink sm:text-3xl">
-            {topic?.name || t.title}
+          <h1 class="max-w-5xl font-display text-[clamp(2.25rem,11vw,6rem)] leading-[1.04] font-bold tracking-[-0.04em] wrap-break-word text-ink sm:text-[clamp(2.75rem,7vw,6rem)]">
+            {topic ? topic.name : t.title}
           </h1>
-          <p class="shrink-0 text-sm text-muted">
-            {t.page} {page} {t.of} {totalPages}
+          <p class="mt-7 text-lg leading-[1.8] text-muted sm:text-xl">
+            {intro}
           </p>
-        </div>
-        <div class="mt-5 flex items-center gap-3">
-          <a
-            href={watchRssPath(locale)}
-            class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
-          >
-            <Rss size={18} aria-hidden="true" />
-            {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
-            <span class="sr-only"> RSS</span>
-          </a>
-          <span data-watch-search-trigger class="inline-flex" />
-        </div>
-      </header>
-    )}
+          <div class="mt-5 flex items-center gap-3">
+            <a
+              href={watchRssPath(locale)}
+              class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
+            >
+              <Rss size={18} aria-hidden="true" />
+              {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
+              <span class="sr-only"> RSS</span>
+            </a>
+            <span data-watch-search-trigger class="inline-flex" />
+          </div>
+        </section>
+      ) : (
+        <header
+          no-intersect
+          class="intersect-[0.2] intersect-once pt-10 motion-duration-500 motion-reduce:animate-none sm:pt-12 lg:pt-14 intersect:motion-preset-blur-up"
+        >
+          {topic && (
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+              <p class="text-base font-semibold tracking-tight text-accent">
+                {t.title}
+              </p>
+              <a
+                href={watchPath(locale)}
+                class="inline-flex min-h-11 items-center text-sm font-medium text-accent underline-offset-4 hover:underline"
+              >
+                ← {t.all}
+              </a>
+            </div>
+          )}
+          <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+            <h1 class="font-display text-2xl font-semibold tracking-tight wrap-break-word text-ink sm:text-3xl">
+              {topic?.name || t.title}
+            </h1>
+            <p class="shrink-0 text-sm text-muted">
+              {t.page} {page} {t.of} {totalPages}
+            </p>
+          </div>
+          <div class="mt-5 flex items-center gap-3">
+            <a
+              href={watchRssPath(locale)}
+              class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-accent"
+            >
+              <Rss size={18} aria-hidden="true" />
+              {locale === 'fr' ? 'S’abonner' : 'Subscribe'}
+              <span class="sr-only"> RSS</span>
+            </a>
+            <span data-watch-search-trigger class="inline-flex" />
+          </div>
+        </header>
+      )}
+    </div>
 
     <div>
       <WatchSearch locale={locale} />
