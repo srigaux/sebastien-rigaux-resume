@@ -1,0 +1,47 @@
+---
+import CookieSettings from '@/components/CookieSettings.astro'
+import type { Locale } from '@/types'
+interface Props {
+  locale: Locale
+  markdownPath: string
+  backHref: string
+  backLabel: string
+}
+const { locale, markdownPath, backHref, backLabel } = Astro.props
+---
+
+<footer class="border-t border-rule">
+  <div class="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 py-6 text-sm text-muted sm:px-8 lg:px-12">
+    <p>
+      <span class="hidden md:inline">Sébastien Rigaux</span>
+      <abbr class="no-underline md:hidden" title="Sébastien Rigaux">
+        SR
+      </abbr>
+    </p>
+    <div class="flex items-center justify-center gap-4 whitespace-nowrap">
+      <a
+        href={markdownPath}
+        type="text/markdown"
+        aria-label={
+          locale === 'fr'
+            ? 'Version Markdown de cette page'
+            : 'Markdown version of this page'
+        }
+        class="inline-flex min-h-11 items-center text-xs underline-offset-4 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline"
+      >
+        Markdown
+      </a>
+      <CookieSettings locale={locale} />
+    </div>
+    <a
+      href={backHref}
+      aria-label={backLabel}
+      class="inline-flex min-h-11 items-center justify-self-end text-accent underline-offset-4 hover:underline focus-visible:underline"
+    >
+      <span class="hidden md:inline">{backLabel}</span>
+      <span aria-hidden="true" class="md:hidden">
+        {backHref === '#main' ? '↑' : '←'}
+      </span>
+    </a>
+  </div>
+</footer>

@@ -1,6 +1,17 @@
 ---
+import {
+  ArrowUpRight,
+  FileText,
+  Video,
+  GitFork,
+  Rocket,
+  BookOpen,
+  Wrench,
+  Ellipsis,
+} from '@lucide/astro'
+import WatchSiteIcon from '@/components/WatchSiteIcon.astro'
 import WatchImage from '@/components/WatchImage.astro'
-import CookieSettings from '@/components/CookieSettings.astro'
+import WatchFooter from '@/components/WatchFooter.astro'
 import { pageMarkdownPath } from '@/lib/urls'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import Header from '@/components/Header.astro'
@@ -25,35 +36,44 @@ const t =
     ? {
         markdown: 'Version Markdown de cette page',
         watch: 'Veille technologique',
-        original: 'Consulter la ressource originale',
+        original: 'Consulter la ressource',
         selected: 'Sélectionné le',
         published: 'Publication de la ressource',
-        updated: 'Mise à jour de la fiche',
         credit: 'Crédit',
         discovered: 'Repéré via',
+        format: 'Format',
         topics: 'Tags',
         back: 'Retour à la veille',
         sourceLanguage: 'Langue de la source',
         navigation: 'Parcourir les liens de la veille',
-        previous: 'Lien précédent',
-        next: 'Lien suivant',
+        previous: 'Plus récent',
+        next: 'Plus ancien',
       }
     : {
         markdown: 'Markdown version of this page',
         watch: 'Tech watch',
-        original: 'Open the original resource',
+        original: 'View resource',
         selected: 'Selected on',
         published: 'Resource publication',
-        updated: 'Entry updated',
         credit: 'Credit',
         discovered: 'Found via',
+        format: 'Format',
         topics: 'Tags',
         back: 'Back to tech watch',
         sourceLanguage: 'Source language',
         navigation: 'Browse tech watch links',
-        previous: 'Previous link',
-        next: 'Next link',
+        previous: 'Newer',
+        next: 'Older',
       }
+const FormatIcon = {
+  Article: FileText,
+  Video,
+  Repository: GitFork,
+  Release: Rocket,
+  Documentation: BookOpen,
+  Tool: Wrench,
+  Other: Ellipsis,
+}[link.format]
 const path = watchLinkPath(locale, link.uid)
 const languagePaths = {
   fr: watchLinkTarget(link, 'fr'),
@@ -127,143 +147,157 @@ const schema = {
   />
   <main
     id="main"
-    class="mx-auto max-w-7xl px-5 pt-12 pb-24 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20"
+    class="mx-auto max-w-7xl px-5 pt-6 pb-20 sm:px-8 sm:pt-10 lg:px-12 lg:pt-12"
   >
     <nav
       no-intersect
       aria-label={locale === 'fr' ? 'Fil d’Ariane' : 'Breadcrumb'}
-      class="intersect-[0.2] intersect-once mb-10 text-sm text-muted motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
+      class="intersect-[0.2] intersect-once mb-6 text-sm text-muted motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
     >
       <a
         href={watchPath(locale)}
         class="inline-flex min-h-11 items-center text-accent underline-offset-4 hover:underline"
       >
-        ← {t.back}
+        ← {t.watch}
       </a>
     </nav>
-    <article class="max-w-4xl">
-      <div
-        aria-hidden="true"
-        class="mb-8 h-0.5 w-20 -rotate-12 bg-accent"
-      ></div>
-      <p
-        no-intersect
-        class="intersect-[0.2] intersect-once mb-4 text-base font-semibold text-accent motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
-      >
-        {t.watch} · {link.format}
-      </p>
+    <article>
       <h1
         no-intersect
-        class="intersect-[0.2] intersect-once font-display text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.12] font-bold tracking-[-0.035em] wrap-break-word text-ink motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once font-display text-[clamp(2rem,4.5vw,3.75rem)] leading-[1.15] font-bold tracking-[-0.035em] text-balance wrap-break-word text-ink motion-delay-80 motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
       >
         {link.title}
       </h1>
-      <div
-        no-intersect
-        class="intersect-[0.2] intersect-once mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
-      >
-        <span>
-          {t.selected}
-          <time datetime={link.selectedOn}>{date(link.selectedOn)}</time>
-        </span>
-        {link.sourceLanguage && (
-          <span>
-            {t.sourceLanguage} : {link.sourceLanguage}
-          </span>
-        )}
-      </div>
-      <div
-        no-intersect
-        class="intersect-[0.2] intersect-once mt-9 max-w-[72ch] text-lg leading-[1.8] text-muted motion-duration-500 motion-reduce:animate-none sm:text-xl intersect:motion-preset-blur-up [&_a]:wrap-break-word [&_a]:underline [&_a:hover]:text-accent [&_code]:rounded-sm [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
-        set:html={renderSummaryMarkdown(link.summary)}
-      />
-      {link.image && (
-        <WatchImage
-          image={link.image}
-          detail
-          class="h-auto max-h-128 w-full object-contain"
-        />
-      )}
-      <a
-        no-intersect
-        href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="intersect-[0.2] intersect-once mt-9 inline-flex min-h-11 items-center gap-2 border border-accent px-5 py-3 text-base font-semibold text-accent underline-offset-4 motion-duration-500 hover:bg-accent/10 hover:underline motion-reduce:animate-none intersect:motion-preset-blur-up"
-      >
-        {t.original} <span aria-hidden="true">↗</span>
-      </a>
-      <p
-        no-intersect
-        class="intersect-[0.2] intersect-once mt-3 text-sm break-all text-muted motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
-      >
-        {new URL(link.url).hostname}
-      </p>
-      <dl
-        no-intersect
-        class="intersect-[0.2] intersect-once mt-10 grid gap-4 border-t border-rule pt-8 text-sm text-muted motion-duration-500 motion-reduce:animate-none sm:grid-cols-2 intersect:motion-preset-blur-up"
-      >
-        {link.publishedOn && (
-          <div>
-            <>
-              <dt class="font-semibold text-ink">{t.published}</dt>
-              <dd class="mt-1">
-                <time datetime={link.publishedOn}>
-                  {date(link.publishedOn)}
-                </time>
-              </dd>
-            </>
-          </div>
-        )}
-        <div>
-          <dt class="font-semibold text-ink">{t.updated}</dt>
-          <dd class="mt-1">
-            <time datetime={link.updatedAt}>{date(link.updatedAt)}</time>
-          </dd>
-        </div>
-        {link.credit && (
-          <div>
-            <>
-              <dt class="font-semibold text-ink">{t.credit}</dt>
-              <dd class="mt-1">{link.credit}</dd>
-            </>
-          </div>
-        )}
-        {link.discoveredVia && (
-          <div>
-            <>
-              <dt class="font-semibold text-ink">{t.discovered}</dt>
-              <dd class="mt-1">
-                <a
-                  href={link.discoveredVia.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="underline decoration-rule hover:text-accent"
-                >
-                  {link.discoveredVia.name}
-                </a>
-              </dd>
-            </>
-          </div>
-        )}
-      </dl>
       <section
         no-intersect
-        class="intersect-[0.2] intersect-once mt-9 motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
+        class="intersect-[0.2] intersect-once mt-5 motion-delay-160 motion-duration-500 motion-reduce:animate-none intersect:motion-preset-blur-up"
         aria-label={t.topics}
       >
-        <h2 class="text-sm font-semibold text-ink">{t.topics}</h2>
-        <div class="mt-3 flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="mr-2 inline-flex items-center gap-1.5 py-1.5 text-xs text-muted"
+            aria-label={`${t.format} : ${link.format}`}
+          >
+            <FormatIcon size={14} class="shrink-0" aria-hidden="true" />
+            {link.format}
+          </span>
           {link.topics.map((topic) => (
             <a
               href={topic.path ?? undefined}
-              class="inline-flex min-h-11 items-center border border-rule px-3 py-2 text-sm text-muted hover:border-accent hover:text-accent"
+              class="rounded-md bg-ink/5 px-2.5 py-1.5 text-xs text-muted no-underline transition-colors hover:bg-accent/10 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               {topic.name}
             </a>
           ))}
         </div>
       </section>
+      <a
+        no-intersect
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${t.original} — ${new URL(link.url).hostname}${link.sourceLanguage && link.sourceLanguage.toLowerCase() !== locale ? ` — ${t.sourceLanguage} : ${link.sourceLanguage}` : ''}`}
+        class="group intersect-[0.2] intersect-once mt-7 flex flex-wrap items-center gap-x-6 gap-y-4 py-2 no-underline motion-delay-200 motion-duration-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent motion-reduce:animate-none intersect:motion-preset-blur-up"
+      >
+        <span class="inline-flex min-h-11 shrink-0 items-center gap-2 border border-accent bg-accent px-4 py-2 text-sm font-semibold text-paper no-underline transition-[background-color,transform] duration-200 group-hover:bg-ink group-focus-visible:bg-ink group-active:scale-[0.98] motion-reduce:transition-none motion-reduce:group-active:scale-100">
+          {t.original}
+          {link.sourceLanguage &&
+            link.sourceLanguage.toLowerCase() !== locale && (
+              <span
+                class="border border-current/40 px-1.5 py-0.5 text-xs font-semibold tracking-wide"
+                title={`${t.sourceLanguage} : ${link.sourceLanguage}`}
+              >
+                {link.sourceLanguage}
+              </span>
+            )}
+          <ArrowUpRight class="size-4" aria-hidden="true" />
+        </span>
+        <p class="inline-flex max-w-full min-w-0 items-center text-sm text-muted [&_img]:shrink-0 [&_picture]:shrink-0">
+          <WatchSiteIcon
+            icon={link.siteIcon}
+            fallbackIcon={link.discoveredVia?.icon}
+            monogram={new URL(link.url).hostname
+              .replace(/^www\./, '')
+              .charAt(0)
+              .toUpperCase()}
+            eager
+          />
+          <span class="min-w-0 wrap-anywhere underline-offset-4 group-hover:underline group-focus-visible:underline">
+            {new URL(link.url).hostname}
+          </span>
+        </p>
+      </a>
+      <div class="mt-9 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-16">
+        <div class="min-w-0">
+          <div
+            no-intersect
+            class="intersect-[0.2] intersect-once text-base leading-[1.8] text-ink motion-delay-240 motion-duration-500 motion-reduce:animate-none sm:text-lg intersect:motion-preset-blur-up [&_a]:wrap-break-word [&_a]:underline [&_a:hover]:text-accent [&_code]:rounded-sm [&_code]:bg-ink/5 [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_em]:italic [&_p+p]:mt-3 [&_strong]:font-semibold"
+            set:html={renderSummaryMarkdown(link.summary)}
+          />
+          {link.image && (
+            <WatchImage
+              image={link.image}
+              detail
+              class="h-auto max-h-128 w-full object-contain"
+            />
+          )}
+        </div>
+        <aside
+          aria-label={
+            locale === 'fr' ? 'À propos de la ressource' : 'About this resource'
+          }
+          class="min-w-0 lg:pt-1"
+        >
+          <dl
+            no-intersect
+            class="intersect-[0.2] intersect-once grid gap-6 text-sm text-muted motion-duration-500 motion-reduce:animate-none sm:grid-cols-3 lg:grid-cols-1 intersect:motion-preset-blur-up"
+          >
+            <div>
+              <dt class="font-semibold text-ink">{t.selected}</dt>
+              <dd class="mt-1">
+                <time datetime={link.selectedOn}>{date(link.selectedOn)}</time>
+              </dd>
+            </div>
+            {link.publishedOn && (
+              <div>
+                <>
+                  <dt class="font-semibold text-ink">{t.published}</dt>
+                  <dd class="mt-1">
+                    <time datetime={link.publishedOn}>
+                      {date(link.publishedOn)}
+                    </time>
+                  </dd>
+                </>
+              </div>
+            )}
+            {link.credit && (
+              <div>
+                <>
+                  <dt class="font-semibold text-ink">{t.credit}</dt>
+                  <dd class="mt-1">{link.credit}</dd>
+                </>
+              </div>
+            )}
+            {link.discoveredVia && (
+              <div>
+                <>
+                  <dt class="font-semibold text-ink">{t.discovered}</dt>
+                  <dd class="mt-1">
+                    <a
+                      href={link.discoveredVia.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="underline decoration-rule hover:text-accent"
+                    >
+                      {link.discoveredVia.name}
+                    </a>
+                  </dd>
+                </>
+              </div>
+            )}
+          </dl>
+        </aside>
+      </div>
       {(previousLink || nextLink) && (
         <nav
           no-intersect
@@ -308,26 +342,10 @@ const schema = {
       set:html={JSON.stringify(schema).replace(/</g, '\\u003c')}
     />
   </main>
-  <footer class="border-t border-rule">
-    <div class="mx-auto grid max-w-7xl grid-cols-2 items-center gap-x-4 gap-y-5 px-5 py-8 text-sm text-muted sm:px-8 md:grid-cols-[1fr_auto_1fr] lg:px-12">
-      <p class="col-start-1 row-start-1">Sébastien Rigaux</p>
-      <a
-        href={pageMarkdownPath(path)}
-        aria-label={t.markdown}
-        type="text/markdown"
-        class="col-span-2 row-start-2 justify-self-center text-xs text-muted underline-offset-4 hover:text-accent hover:underline focus-visible:text-accent focus-visible:underline md:col-span-1 md:col-start-2 md:row-start-1"
-      >
-        Markdown
-      </a>
-      <a
-        href={watchPath(locale)}
-        class="col-start-2 row-start-1 justify-self-end text-accent hover:underline md:col-start-3"
-      >
-        {t.back}
-      </a>
-    </div>
-    <div class="mx-auto max-w-7xl px-5 pb-6 text-center sm:px-8 lg:px-12">
-      <CookieSettings locale={locale} />
-    </div>
-  </footer>
+  <WatchFooter
+    locale={locale}
+    markdownPath={pageMarkdownPath(path)}
+    backHref={watchPath(locale)}
+    backLabel={t.back}
+  />
 </BaseLayout>
