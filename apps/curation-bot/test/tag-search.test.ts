@@ -3,7 +3,11 @@ import { env } from 'cloudflare:workers'
 import { expect, it, vi } from 'vitest'
 
 import { resolveTags } from '@/tag-editor'
-import { searchTagCandidates, supportedConcepts } from '@/tag-search'
+import {
+  searchTagCandidates,
+  supportedConcepts,
+  tagSearchRecord,
+} from '@/tag-search'
 
 const hydration = {
   name: 'Hydration',
@@ -53,6 +57,10 @@ it('retrieves bounded candidates, reuses aliases and excludes retired or unknown
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
 
+      if (url.endsWith('/query')) {
+        return Response.json({ hits: [{ objectID: 'retired-id' }], nbHits: 1 })
+      }
+
       if (url.endsWith('/batch')) {
         batches.push(JSON.parse(String(init?.body)))
         return Response.json({ taskID: 1 })
@@ -99,6 +107,32 @@ it('fails closed when Algolia is unavailable instead of inventing new tags', asy
   )
 })
 
+it('does not submit an indexing task when the remote catalogue already matches', async () => {
+  const calls: string[] = []
+  const records = catalog.topics
+    .filter((tag) => tag.status !== 'retired')
+    .map(tagSearchRecord)
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: unknown) => {
+      const url = String(input)
+      calls.push(url)
+
+      if (url.endsWith('/query')) {
+        return Response.json({ hits: records, nbHits: records.length })
+      }
+
+      return Response.json({ results: [{ hits: [] }, { hits: [] }] })
+    })
+  )
+  const matches = await searchTagCandidates(env, [hydration], catalog)
+  expect(matches[0].candidates.map((tag) => tag.uid)).toStrictEqual([
+    'hydration',
+  ])
+  expect(calls.some((url) => url.endsWith('/batch'))).toBe(false)
+  expect(calls.some((url) => url.includes('/task/'))).toBe(false)
+})
+
 it('sends only retrieved candidates to the resolver and rejects a choice from another concept', async () => {
   const concepts = [
     hydration,
@@ -113,6 +147,10 @@ it('sends only retrieved candidates to the resolver and rejects a choice from an
     'fetch',
     vi.fn(async (input: unknown, init?: RequestInit) => {
       const url = String(input)
+
+      if (url.endsWith('/query')) {
+        return Response.json({ hits: [{ objectID: 'retired-id' }], nbHits: 1 })
+      }
 
       if (url.endsWith('/batch')) {
         return Response.json({ taskID: 1 })

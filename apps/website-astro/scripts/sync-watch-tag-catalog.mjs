@@ -59,8 +59,10 @@ console.log(
 if (process.argv.includes('--apply')) {
   const client = algoliasearch(appId, key)
   let previousIds = []
+  let currentSettings = {}
 
   try {
+    currentSettings = await client.getSettings({ indexName })
     const previous = await client.searchSingleIndex({
       indexName,
       searchParams: {
@@ -82,8 +84,20 @@ if (process.argv.includes('--apply')) {
     }
   }
 
-  const task = await client.setSettings({ indexName, indexSettings })
-  await client.waitForTask({ indexName, taskID: task.taskID, maxRetries: 20 })
+  if (
+    Object.entries(indexSettings).some(
+      ([field, value]) =>
+        JSON.stringify(
+          field === 'distinct'
+            ? Boolean(currentSettings[field])
+            : currentSettings[field]
+        ) !== JSON.stringify(value)
+    )
+  ) {
+    const task = await client.setSettings({ indexName, indexSettings })
+    await client.waitForTask({ indexName, taskID: task.taskID, maxRetries: 20 })
+  }
+
   await client.saveObjects({
     indexName,
     objects: records,

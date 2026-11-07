@@ -103,6 +103,10 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
     'fetch',
     vi.fn(async (input: unknown, init: RequestInit) => {
       if (String(input).includes('.algolia.net')) {
+        if (String(input).endsWith('/query')) {
+          return Response.json({ hits: [], nbHits: 0 })
+        }
+
         if (String(input).includes('/task/')) {
           return Response.json({ status: 'published' })
         }

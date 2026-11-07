@@ -96,48 +96,86 @@ export async function searchTagCandidates(
   const cacheKey = `tag-search:${env.ALGOLIA_APP_ID}:${index}`
 
   if ((await store.cache<string>(cacheKey)) !== fingerprint) {
-    // Stable IDs make retries safe. Retired records cannot enter the candidate
-    // list even during Algolia's asynchronous indexing window.
-    const task = z.object({ taskID: z.number() }).parse(
-      await request(env, `/1/indexes/${encodeURIComponent(index)}/batch`, {
-        requests: [
-          ...records.map((body) => ({ action: 'addObject', body })),
-          ...cats.topics
-            .filter((tag) => tag.status === 'retired')
-            .map((tag) => ({
-              action: 'deleteObject',
-              body: { objectID: tag.id },
-            })),
-        ],
+    const snapshot = z
+      .object({
+        hits: z.array(z.record(z.string(), z.unknown())),
+        nbHits: z.number(),
       })
-    )
-    let indexed = false
+      .parse(
+        await request(env, `/1/indexes/${encodeURIComponent(index)}/query`, {
+          query: '',
+          hitsPerPage: 1000,
+          distinct: false,
+          attributesToRetrieve: [
+            'objectID',
+            'uid',
+            'name',
+            'aliases',
+            'description',
+            'highlighted',
+            'category',
+          ],
+          attributesToHighlight: [],
+        })
+      )
 
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const state = z
-        .object({ status: z.string() })
-        .parse(
-          await request(
-            env,
-            `/1/indexes/${encodeURIComponent(index)}/task/${task.taskID}`
-          )
-        )
-
-      if (state.status === 'published') {
-        indexed = true
-        break
-      }
-
-      await new Promise((resolve) => {
-        setTimeout(resolve, 500)
-      })
+    if (snapshot.hits.length !== snapshot.nbHits) {
+      throw new BotError('Instantané incomplet de l’index des tags.')
     }
 
-    if (!indexed) {
-      throw new RemoteError(
-        'Index des tags encore en cours de mise à jour.',
-        true
+    const previous = new Map(snapshot.hits.map((hit) => [hit.objectID, hit]))
+    const ids = new Set(records.map((record) => record.objectID))
+    const changes = records.filter((record) =>
+      Object.entries(record).some(
+        ([field, value]) =>
+          JSON.stringify(previous.get(record.objectID)?.[field]) !==
+          JSON.stringify(value)
       )
+    )
+    const removals = snapshot.hits.flatMap((hit) =>
+      typeof hit.objectID === 'string' && !ids.has(hit.objectID)
+        ? [{ action: 'deleteObject', body: { objectID: hit.objectID } }]
+        : []
+    )
+
+    // Avoid submitting a no-op task: only changed records require indexation.
+    if (changes.length || removals.length) {
+      const task = z.object({ taskID: z.number() }).parse(
+        await request(env, `/1/indexes/${encodeURIComponent(index)}/batch`, {
+          requests: [
+            ...changes.map((body) => ({ action: 'addObject', body })),
+            ...removals,
+          ],
+        })
+      )
+      let indexed = false
+
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const state = z
+          .object({ status: z.string() })
+          .parse(
+            await request(
+              env,
+              `/1/indexes/${encodeURIComponent(index)}/task/${task.taskID}`
+            )
+          )
+
+        if (state.status === 'published') {
+          indexed = true
+          break
+        }
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, 500)
+        })
+      }
+
+      if (!indexed) {
+        throw new RemoteError(
+          'Index des tags encore en cours de mise à jour.',
+          true
+        )
+      }
     }
 
     await store.putCache(cacheKey, fingerprint, 3_600_000)
