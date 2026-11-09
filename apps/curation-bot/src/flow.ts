@@ -141,7 +141,7 @@ export async function advance(
   }
 
   const progress = async (stage: AnalysisStage) => {
-    if (s.draft) {
+    if (s.draft && !s.needsRevision) {
       return
     }
 
@@ -239,6 +239,7 @@ export async function advance(
         resolveTags(env, item, editorial.concepts, cats, {
           title: editorial.draft.en.title,
           summary: editorial.draft.en.summary,
+          source: extraction.markdown,
         })
       )
     )

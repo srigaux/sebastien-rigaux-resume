@@ -90,6 +90,14 @@ it.each([false, true])(
       )
     ).toHaveLength(1)
     item.state.draft = fixture().state.draft
+    item.state.needsRevision = true
+    await analysisNotice(env, item, 'tags')
+    expect(
+      calls.some((c) =>
+        String(c.body.text).includes('⏳ Recherche et résolution des tags')
+      )
+    ).toBe(true)
+    item.state.needsRevision = false
     await present(env, item, cats)
     expect(
       calls.some((c) =>

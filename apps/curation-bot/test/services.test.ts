@@ -153,7 +153,7 @@ it('envoie le contexte complet à OpenAI et rejette un crédit sans preuve', asy
               {
                 name: 'React',
                 searchTerms: [],
-                evidence: 'This React article explains',
+                evidence: 'This **React** article explains',
               },
               { name: 'CSS', searchTerms: [], evidence: 'component styles' },
             ],

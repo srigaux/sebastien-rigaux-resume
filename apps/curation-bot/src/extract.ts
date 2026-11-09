@@ -11,6 +11,8 @@ import {
 import { log } from '@/observability'
 import { RemoteError, type Steps, retry, retryAfter } from '@/retry'
 
+export const MAX_MARKDOWN_LENGTH = 40_000
+
 const record = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
 
@@ -67,10 +69,27 @@ export function extractResult(raw: unknown): Extraction {
     )
   }
 
-  if (md.data.length > 220_000) {
-    throw new BotError(
-      'Article trop volumineux pour être transmis intégralement au modèle.'
-    )
+  let markdown = md.data
+  const truncated = markdown.length > MAX_MARKDOWN_LENGTH
+
+  if (truncated) {
+    let end = MAX_MARKDOWN_LENGTH
+    const newline = markdown.lastIndexOf('\n', end - 1)
+
+    if (newline >= end - 1000) {
+      end = newline
+    }
+
+    // Do not split a UTF-16 surrogate pair at the size boundary.
+    if (/[\uD800-\uDBFF]/u.test(markdown[end - 1])) {
+      end--
+    }
+
+    markdown = markdown.slice(0, end)
+    log('extraction.truncated', {
+      originalCharacters: md.data.length,
+      retainedCharacters: markdown.length,
+    })
   }
 
   function structuredAuthor(value: unknown, depth = 0): unknown {
@@ -101,7 +120,8 @@ export function extractResult(raw: unknown): Extraction {
   const twitter = record(metadata.twitter)
   return {
     url: webUrl(String(page.url)),
-    markdown: md.data,
+    markdown,
+    ...(truncated ? { truncated: true } : {}),
     metadata,
     partial: page.isPartial === true,
     requestId:

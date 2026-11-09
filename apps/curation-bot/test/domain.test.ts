@@ -12,7 +12,7 @@ import {
   normalizeUrl,
   webUrl,
 } from '@/domain'
-import { extractResult } from '@/extract'
+import { MAX_MARKDOWN_LENGTH, extractResult } from '@/extract'
 import { advance, applyAction, explicitSource } from '@/flow'
 import { RemoteError, type Steps, retry, retryAfter } from '@/retry'
 import { Store } from '@/store'
@@ -157,6 +157,48 @@ describe('URL, éditorial et attributions', () => {
     expect(result.requestId).toBe('req1')
     expect(result.partial).toBe(true)
     expect(result).not.toHaveProperty('imageCredits')
+  })
+  it.each([MAX_MARKDOWN_LENGTH - 1, MAX_MARKDOWN_LENGTH])(
+    'conserve intégralement un contenu de %i caractères',
+    (length) => {
+      const markdown = 'a'.repeat(length)
+      const result = extractResult({
+        url: 'https://example.com/article',
+        markdown: { success: true, data: markdown },
+      })
+      expect(result.markdown).toBe(markdown)
+      expect(result.truncated).toBeUndefined()
+    }
+  )
+  it('tronque un article long à la dernière ligne proche sans perdre ses métadonnées', () => {
+    const prefix = 'a'.repeat(MAX_MARKDOWN_LENGTH - 100)
+    const result = extractResult({
+      url: 'https://example.com/article',
+      markdown: { success: true, data: `${prefix}\n${'b'.repeat(1000)}` },
+      metadata: {
+        author: 'Jane Doe',
+        image: 'https://example.com/image.png',
+        favicon: 'https://example.com/icon.png',
+      },
+      request_id: 'long-page',
+      isPartial: false,
+    })
+    expect(result.markdown).toBe(prefix)
+    expect(result.truncated).toBe(true)
+    expect(result.partial).toBe(false)
+    expect(result.author?.name).toBe('Jane Doe')
+    expect(result.imageUrls).toStrictEqual(['https://example.com/image.png'])
+    expect(result.iconUrl).toBe('https://example.com/icon.png')
+    expect(result.requestId).toBe('long-page')
+  })
+  it('borne aussi un contenu sans saut de ligne et ne coupe pas un emoji', () => {
+    const prefix = 'a'.repeat(MAX_MARKDOWN_LENGTH - 1)
+    const result = extractResult({
+      url: 'https://example.com/article',
+      markdown: { success: true, data: `${prefix}🚀suite` },
+    })
+    expect(result.markdown).toBe(prefix)
+    expect(result.truncated).toBe(true)
   })
   it('contrôle les erreurs de sortie même après HTTP 200', () => {
     expect(() =>

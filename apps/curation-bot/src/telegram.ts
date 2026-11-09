@@ -671,7 +671,10 @@ export async function analysisNotice(
   item: Item,
   stage: AnalysisStage | 'paused' | 'cancelled'
 ) {
-  if (item.state.draft || item.state.publicationStarted) {
+  if (
+    (item.state.draft && !item.state.needsRevision) ||
+    item.state.publicationStarted
+  ) {
     return
   }
 
@@ -735,7 +738,10 @@ async function sendProposal(
   html?: string,
   markup?: InlineKeyboard
 ) {
-  for (const [index, tag] of (item.state.draft?.newTags ?? []).entries()) {
+  for (const [index, tag] of (html
+    ? []
+    : (item.state.draft?.newTags ?? [])
+  ).entries()) {
     const detailKey = `tag-detail:${item.id}:${item.state.revision}:${index}`
     await ensureReceipt(store, detailKey, item.id, () =>
       api.sendMessage(item.chat_id, tagProposalText(tag), {

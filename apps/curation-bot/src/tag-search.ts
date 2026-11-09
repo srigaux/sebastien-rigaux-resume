@@ -211,7 +211,7 @@ export async function searchTagCandidates(
           params: new URLSearchParams({
             query,
             hitsPerPage: '5',
-            removeWordsIfNoResults: 'none',
+            removeWordsIfNoResults: 'lastWords',
           }).toString(),
         })),
       })

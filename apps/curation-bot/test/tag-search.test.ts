@@ -206,6 +206,12 @@ it('sends only retrieved candidates to the resolver and rejects a choice from an
                       existingUid: 'css',
                       newTag: null,
                     },
+                    {
+                      conceptIndex: 1,
+                      reason: 'Not selected',
+                      existingUid: null,
+                      newTag: null,
+                    },
                   ],
                 }),
               },

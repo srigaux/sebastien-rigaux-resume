@@ -146,6 +146,7 @@ export type Extraction = {
   metadata: Record<string, unknown>
   requestId?: string
   partial: boolean
+  truncated?: boolean
   author?: { name: string; evidence: string }
   imageUrls: string[]
   iconUrl?: string
