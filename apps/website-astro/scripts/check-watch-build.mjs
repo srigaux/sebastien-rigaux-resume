@@ -223,16 +223,21 @@ for (const [url] of sitemap) {
       await checkMediaAsset(attrs.src)
 
       if (!attrs['data-watch-media'].startsWith('original')) {
-        assert.equal(image.parent?.name, 'picture', `Missing picture: ${url}`)
-        const sources = htmlElements(image.parent, 'source')
+        const isIcon = attrs['data-watch-media'] === 'icon'
+        const sources = isIcon ? [] : htmlElements(image.parent, 'source')
         const types = sources.map((source) => source.attribs.type)
-        assert.ok(types.includes('image/webp'), `Missing WebP: ${url}`)
 
         if (attrs['data-watch-media'] === 'image') {
-          assert.ok(types.includes('image/avif'), `Missing AVIF: ${url}`)
+          assert.equal(image.parent?.name, 'picture', `Missing picture: ${url}`)
+          assert.deepEqual(
+            types,
+            ['image/avif'],
+            `Unexpected picture formats: ${url}`
+          )
         }
 
-        assert.ok(attrs.src.endsWith('.png'), `Missing PNG fallback: ${url}`)
+        assert.ok(attrs.src.endsWith('.webp'), `Missing WebP fallback: ${url}`)
+        const maxVariants = isIcon ? 1 : 3
 
         for (const node of [image, ...sources]) {
           assert.ok(
@@ -240,11 +245,16 @@ for (const [url] of sitemap) {
             `Missing responsive media: ${url}`
           )
 
+          assert.ok(
+            node.attribs.srcset.split(',').length <= maxVariants,
+            `Too many image variants: ${url}`
+          )
+
           for (const entry of node.attribs.srcset.split(',')) {
             const [src, descriptor] = entry.trim().split(/\s+/)
             await checkMediaAsset(src)
             const expected =
-              node === image ? 'png' : node.attribs.type.split('/')[1]
+              node === image ? 'webp' : node.attribs.type.split('/')[1]
             assert.ok(
               src.endsWith(`.${expected}`),
               `Incorrect variant format: ${src}`
@@ -500,7 +510,7 @@ for (const base of ['veille', 'en/tech-watch']) {
   }
 }
 
-for (const name of ['fr.md', 'en.md', 'llms-full.txt']) {
+for (const name of ['index.md', 'en.md', 'llms-full.txt']) {
   const text = await readFile(new URL(name, dist), 'utf8')
   assert.ok(
     text.length > 500 && !text.includes('<SYSTEM>'),

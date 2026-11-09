@@ -92,7 +92,7 @@ export default defineConfig({
         {
           title: 'CV en français',
           description: 'Version Markdown de la page française du CV.',
-          url: '/fr.md',
+          url: '/index.md',
           include: ['/'],
           mainSelector: 'main',
         },
@@ -156,7 +156,7 @@ export default defineConfig({
     defaultLocale: 'fr',
     routing: {
       prefixDefaultLocale: false,
-      // The French CV lives at /; /fr/ has its own immediate static redirect page.
+      // The French CV lives at /; Cloudflare Pages redirects /fr and /fr/.
       redirectToDefaultLocale: false,
     },
   },
@@ -218,7 +218,7 @@ function astroLlmsTxtForFileBuild(options) {
         pages: [{ pathname: '/' }, { pathname: 'en/' }],
       })
 
-      for (const name of ['llms.txt', 'fr.md', 'en.md', 'llms-full.txt']) {
+      for (const name of ['llms.txt', 'index.md', 'en.md', 'llms-full.txt']) {
         await copyFile(new URL(name, temporaryDir), new URL(name, context.dir))
       }
     } finally {
@@ -230,7 +230,7 @@ function astroLlmsTxtForFileBuild(options) {
     // with a direct link back to its canonical HTML page.
     const exports = [
       [
-        'fr.md',
+        'index.md',
         'Source canonique : [CV en français](https://sebastien.rigaux.be/)',
       ],
       [

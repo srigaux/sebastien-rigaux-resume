@@ -59,7 +59,8 @@
     "@types/markdown-it": "^14.2.0",
     "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss-motion": "^1.1.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "4.155.0"
   },
   "private": true
 }

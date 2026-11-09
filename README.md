@@ -23,7 +23,7 @@ Le build statique est généré dans `apps/website-astro/dist/`. Les fontes IBM 
 
 `astro-pdf` génère aussi les deux CV dans `apps/website-astro/dist/pdf/` à partir des pages imprimables. Après `pnpm build`, utiliser `pnpm astro preview` pour tester les téléchargements en local. Les PDF sont régénérés à chaque publication et par le workflow annuel du 1er février pour actualiser les années d’expérience.
 
-Le build génère également `llms.txt`, `fr.md`, `en.md` et `llms-full.txt` à partir du HTML public. Le contrôle de build échoue si un export Markdown est vide. Les choix SEO et GEO sont documentés dans [`SEO_AUDIT.md`](SEO_AUDIT.md).
+Le build génère également `llms.txt`, `index.md`, `en.md` et `llms-full.txt` à partir du HTML public. Le contrôle de build échoue si un export Markdown est vide. Les choix SEO et GEO sont documentés dans [`SEO_AUDIT.md`](SEO_AUDIT.md).
 
 ## Formatage
 
@@ -195,7 +195,7 @@ Le workflow **🔎 Check website updates** (`.github/workflows/check-website-upd
 
 Si nécessaire, le contrôleur déclenche **🚀 Publish Astro website** (`.github/workflows/deploy.yml`) via `workflow_dispatch`, avec un titre daté en heure de Bruxelles. Il utilise le `GITHUB_TOKEN` avec `actions: write`, sans secret supplémentaire. Les pushs concernés et les lancements manuels du workflow de publication forcent toujours le build, ainsi que le contrôle annuel du 1er février. L’empreinte est relue avant le build et incluse dans l’artefact publié : un échec de build ou de déploiement laisse la précédente en place et le prochain contrôle retente la publication. Une erreur API fait échouer le contrôle ; une empreinte absente déclenche le premier build. Pour consulter uniquement les publications dans GitHub Actions, sélectionner le workflow **🚀 Publish Astro website** ; « All workflows » inclut aussi les contrôles.
 
-Le workflow `.github/workflows/deploy.yml` publie `master` sur GitHub Pages. Dans les paramètres du dépôt, sélectionner **GitHub Actions** comme source Pages. `apps/website-astro/public/CNAME` configure le domaine `sebastien.rigaux.be` ; le DNS doit pointer vers GitHub Pages. Lors de la bascule, retirer ce domaine personnalisé de l'ancien dépôt Pages avant de l'activer sur ce dépôt. Vérifier ensuite `/`, `/en`, le certificat HTTPS et le sitemap. L'ancienne URL `/fr/` redirige immédiatement vers `/` au moyen d'une page HTML statique ; GitHub Pages ne fournit pas de redirection HTTP 301 pour ce cas. La checklist de mise en ligne et de suivi SEO se trouve dans [`SEO_CHECKLIST.md`](SEO_CHECKLIST.md).
+Le workflow `.github/workflows/deploy.yml` construit le site dans GitHub Actions puis publie `master` sur Cloudflare Pages via Direct Upload. Les prérequis, les règles limitées à `sebastien.rigaux.be`, la bascule DNS et le retour arrière sont décrits dans [`docs/cloudflare-pages.md`](docs/cloudflare-pages.md). `/fr` et `/fr/` redirigent en HTTP 301 vers `/` ; `/fr.md` redirige vers `/index.md`.
 
 Le site est statique : l'âge et les années d'expérience sont calculés au build et rafraîchis au chargement par un petit script. Le CV reste lisible sans JavaScript.
 
@@ -209,7 +209,7 @@ Le vocabulaire proposé est dans [`docs/tech-watch-seed.json`](docs/tech-watch-s
 
 Le skill [`curate-prismic-link`](.agents/skills/curate-prismic-link/SKILL.md) traite une URL et une note facultative avec Context.dev, rédige les deux versions et les envoie en brouillons liés dans une migration release Prismic. Définir `CONTEXT_DEV_API_KEY` et `PRISMIC_WRITE_TOKEN` dans l'environnement ou dans `.env.local` (ignoré par Git). Le script d'envoi propose un aperçu sans écriture par défaut ; `--write` crée les brouillons, sans les publier.
 
-Le workflow GitHub Pages reconstruit le site toutes les quatre heures et reste déclenchable manuellement. Si Prismic ne répond pas, le build échoue et aucun nouveau déploiement ne remplace la version en ligne. Les PDF concernent le CV ; la veille expose aussi des exports Markdown, accessibles en ajoutant `.md` aux URL HTML sans slash final. Voir [`docs/tech-watch-permalinks.md`](docs/tech-watch-permalinks.md) pour les routes et vérifications.
+Le contrôle de contenu peut déclencher une publication Cloudflare Pages deux fois par heure ; le workflow reste déclenchable manuellement. Si Prismic ne répond pas, le build échoue et aucun nouveau déploiement ne remplace la version en ligne. Les PDF concernent le CV ; la veille expose aussi des exports Markdown, accessibles en ajoutant `.md` aux URL HTML sans slash final. Voir [`docs/tech-watch-permalinks.md`](docs/tech-watch-permalinks.md) pour les routes et vérifications.
 
 ## Workspace pnpm
 

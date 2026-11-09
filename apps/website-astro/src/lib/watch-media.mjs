@@ -8,16 +8,12 @@ import sharp from 'sharp'
 
 export const thumbnailSizes = '(min-width: 640px) 230px, 166px'
 export const detailSizes =
-  '(min-width: 960px) 896px, (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)'
+  '(min-width: 1280px) 880px, (min-width: 1024px) calc(100vw - 400px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)'
 
 /** Never advertise a width larger than the source, including tiny favicons. */
 /** @param {number} width */
 export function mediaWidths(width, icon = false, detail = false) {
-  const candidates = icon
-    ? [24, 48, 72]
-    : detail
-      ? [320, 640, 896, 1280, 1792]
-      : [166, 230, 332, 460, 690]
+  const candidates = icon ? [48] : detail ? [480, 960, 1920] : [240, 480]
   return [...new Set(candidates.map((value) => Math.min(value, width)))]
 }
 

@@ -1,0 +1,30 @@
+# Pages revalidates mutable documents by default; only hashed assets are immutable.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/deployment-state.json
+  Cache-Control: no-store
+
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+
+/
+  Vary: Accept
+/en
+  Vary: Accept
+/veille
+  Vary: Accept
+/veille/*
+  Vary: Accept
+/en/tech-watch
+  Vary: Accept
+/en/tech-watch/*
+  Vary: Accept
+/index.md
+  Vary: Accept
+/en.md
+  Vary: Accept
+/veille.md
+  Vary: Accept
+/en/tech-watch.md
+  Vary: Accept

@@ -6,9 +6,9 @@ import sharp from 'sharp'
 import { inspectMedia, mediaUrl, mediaWidths } from '#watch-media'
 
 test('responsive candidates never upscale small images or icons', () => {
-  assert.deepEqual(mediaWidths(40, true), [24, 40])
+  assert.deepEqual(mediaWidths(40, true), [40])
   assert.deepEqual(mediaWidths(100), [100])
-  assert.deepEqual(mediaWidths(1200, false, true), [320, 640, 896, 1200])
+  assert.deepEqual(mediaWidths(1200, false, true), [480, 960, 1200])
 })
 
 test('only approved original Prismic assets are downloaded', () => {
@@ -144,4 +144,49 @@ test('valid ICO keeps its container and rejects truncated payloads', async () =>
     preserve: true,
   })
   await assert.rejects(inspectMedia(header), /Invalid ICO payload/)
+})
+
+test('reduced variants cover 2x layouts and share the 480px asset', () => {
+  const icon = mediaWidths(4096, true)
+  const thumbnail = mediaWidths(4096)
+  const detail = mediaWidths(4096, false, true)
+  assert.equal(icon.length, 1)
+  assert.ok(icon.at(-1) >= 24 * 2)
+  assert.equal(thumbnail.length, 2)
+  assert.ok(thumbnail.at(-1) >= 230 * 2)
+  assert.equal(detail.length, 3)
+  // Before the 1024px sidebar breakpoint: 1024 - 64px horizontal padding.
+  assert.ok(detail.at(-1) >= (1024 - 64) * 2)
+  assert.deepEqual(
+    thumbnail.filter((width) => detail.includes(width)),
+    [480]
+  )
+  assert.equal(new Set([...thumbnail, ...detail]).size, 4)
+})
+
+test('shared widths use the original ratio instead of rounded fallback dimensions', async () => {
+  const { default: service } = await import('../src/lib/watch-image-service.ts')
+  const common = {
+    src: 'https://images.prismic.io/bd7d5fa0/example.png',
+    format: 'webp',
+    'data-source-aspect-ratio': 4000 / 1954,
+  }
+  const thumbnail = await service.getSrcSet(
+    { ...common, width: 480, height: 234, widths: [240, 480] },
+    {}
+  )
+  const detail = await service.getSrcSet(
+    { ...common, width: 1920, height: 938, widths: [480, 960, 1920] },
+    {}
+  )
+  assert.deepEqual(
+    service.propertiesToHash.map((key) => thumbnail.at(-1).transform[key]),
+    service.propertiesToHash.map((key) => detail[0].transform[key])
+  )
+  assert.equal(detail[0].transform.height, 234)
+  const attrs = await service.getHTMLAttributes(
+    { ...common, width: 480, height: 234 },
+    {}
+  )
+  assert.ok(!('data-source-aspect-ratio' in attrs))
 })

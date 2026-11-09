@@ -142,7 +142,7 @@ test('every watch URL has a direct .md counterpart, including archives and pagin
 test('Markdown URLs append .md, with the existing French root export', () => {
   assert.equal(localeHomePath('fr'), '/')
   assert.equal(localeHomePath('en'), '/en')
-  assert.equal(pageMarkdownPath('/'), '/fr.md')
+  assert.equal(pageMarkdownPath('/'), '/index.md')
   assert.equal(pageMarkdownPath('/en'), '/en.md')
   assert.equal(
     pageMarkdownPath('/veille/liens/mon-lien'),

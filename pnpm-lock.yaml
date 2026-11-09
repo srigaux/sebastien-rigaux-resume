@@ -452,6 +452,9 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      wrangler:
+        specifier: 4.155.0
+        version: 4.155.0(@cloudflare/workers-types@5.20261018.1)(@types/node@24.19.2)
 
 packages:
 

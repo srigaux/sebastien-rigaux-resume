@@ -1,0 +1,39 @@
+{
+  "name": "Sebastien legacy URLs",
+  "kind": "zone",
+  "phase": "http_request_dynamic_redirect",
+  "rules": [
+    {
+      "ref": "sebastien_legacy_fr",
+      "description": "sebastien_legacy_fr",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path in {\"/fr\" \"/fr/\" \"/fr.html\" \"/fr/index.html\"})",
+      "action": "redirect",
+      "action_parameters": {
+        "from_value": {
+          "status_code": 301,
+          "target_url": {
+            "value": "https://sebastien.rigaux.be/"
+          },
+          "preserve_query_string": true
+        }
+      },
+      "enabled": true
+    },
+    {
+      "ref": "sebastien_legacy_markdown",
+      "description": "sebastien_legacy_markdown",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path in {\"/fr.md\"})",
+      "action": "redirect",
+      "action_parameters": {
+        "from_value": {
+          "status_code": 301,
+          "target_url": {
+            "value": "https://sebastien.rigaux.be/index.md"
+          },
+          "preserve_query_string": true
+        }
+      },
+      "enabled": true
+    }
+  ]
+}

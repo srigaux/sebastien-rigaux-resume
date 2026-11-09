@@ -1,0 +1,6 @@
+# Legacy French URLs. Keep these outside Markdown negotiation.
+/fr / 301
+/fr/ / 301
+/fr.html / 301
+/fr/index.html / 301
+/fr.md /index.md 301

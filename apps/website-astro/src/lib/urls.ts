@@ -6,7 +6,7 @@ export function localeHomePath(locale: Locale): string {
 
 export function pageMarkdownPath(path: string): string {
   const clean = path.replace(/\/+$/, '') || '/'
-  return clean === '/' ? '/fr.md' : `${clean}.md`
+  return clean === '/' ? '/index.md' : `${clean}.md`
 }
 
 export function watchRssPath(locale: Locale): string {

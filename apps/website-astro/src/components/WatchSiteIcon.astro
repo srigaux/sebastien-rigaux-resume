@@ -1,5 +1,5 @@
 ---
-import { getImage, Picture } from 'astro:assets'
+import { getImage, Image } from 'astro:assets'
 import type { WatchImage } from '@/lib/watch-model'
 import { prepareMedia, mediaWidths } from '@/lib/watch-media.mjs'
 interface Props {
@@ -21,7 +21,7 @@ const original =
     format: media.format,
     preserveOriginal: true,
   }))
-const width = media && Math.min(media.width, 72)
+const width = media && Math.min(media.width, 48)
 const height = media && Math.round((width! * media.height) / media.width)
 const className =
   'pointer-events-none relative -top-0.5 mr-2 inline-block size-6 object-contain align-middle'
@@ -40,14 +40,13 @@ const className =
       data-watch-media="original-icon"
     />
   ) : (
-    <Picture
+    <Image
       src={media.src}
       width={width!}
       height={height!}
       widths={mediaWidths(media.width, true)}
       sizes="24px"
-      formats={['webp']}
-      fallbackFormat="png"
+      format="webp"
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"

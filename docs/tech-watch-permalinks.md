@@ -17,15 +17,15 @@ Les index `/veille.md` et `/en/tech-watch.md` recensent toutes les sélections e
 - `pnpm run check` puis `pnpm run build` : types et génération statique, y compris les PDF du CV.
 - `pnpm run check:watch-build` après le build : vérifie chaque fiche et export, les traductions réciproques, leur présence dans le sitemap, les index LLM et les exports existants du CV.
 
-Ces vérifications sont intégrées au workflow de déploiement GitHub Pages. La présence dans le sitemap facilite la découverte sans garantir l’indexation par les moteurs.
+Ces vérifications sont intégrées au workflow GitHub Actions de déploiement Cloudflare Pages. La présence dans le sitemap facilite la découverte sans garantir l’indexation par les moteurs.
 
 ## URL sans slash final
 
-Le site utilise `trailingSlash: "never"` et `build.format: "file"` : `/veille/liens/mon-lien` est servi depuis `veille/liens/mon-lien.html`, avec `veille/liens/mon-lien.md` à côté. Les index, archives et pages de pagination disposent également de leur URL suivie de `.md`. La racine française `/` garde `/fr.md` ; `/en` correspond à `/en.md`.
+Le site utilise `trailingSlash: "never"` et `build.format: "file"` : `/veille/liens/mon-lien` est servi depuis `veille/liens/mon-lien.html`, avec `veille/liens/mon-lien.md` à côté. Les index, archives et pages de pagination disposent également de leur URL suivie de `.md`. La racine française `/` garde `/index.md` ; `/en` correspond à `/en.md`.
 
 L’intégration LLM existante attend un format `directory`. Le hook prépare donc les deux entrées du CV dans un dossier temporaire, génère les exports, les recopie dans le build public, puis supprime ce dossier. Aucun `index.html` de compatibilité ne vient masquer les nouvelles URL sans slash.
 
-Au déploiement, configurer sur Cloudflare une redirection permanente des anciennes URL HTML avec slash final vers leur variante sans slash (en particulier `/en/` → `/en`), en conservant la racine `/`, les paramètres de requête et les URL de fichiers. Astro ne peut pas imposer ces redirections HTTP au serveur GitHub Pages. Les canonicals, liens internes et sitemaps du build utilisent exclusivement les nouvelles URL.
+Cloudflare Pages normalise les URL des fichiers HTML ; vérifier notamment `/en/` → `/en` et `/veille.html` → `/veille` après la migration, avec conservation des paramètres. Les canonicals, liens internes et sitemaps du build utilisent exclusivement les URL sans slash final. Les redirections héritées explicites sont fournies dans `_redirects` et dans les règles de zone limitées au sous-domaine.
 
 ## Données structurées et images
 
@@ -67,14 +67,14 @@ Pour améliorer le classement au-delà de ces réglages techniques, enrichir pro
 
 Le fichier [cloudflare-markdown-canonicals.json](cloudflare-markdown-canonicals.json) contient trois règles de modification des en-têtes de réponse : CV français, CV anglais et veille. Elles ajoutent `Link: <URL HTML>; rel="canonical"` sans écraser les autres relations `Link`. Elles ne modifient ni les URL ni le corps des exports. Les paramètres de requête sont ignorés dans la canonical, et `llms-full.txt` reste hors de ces règles car il rassemble plusieurs pages.
 
-Ce fichier est une configuration prête à appliquer, **pas une configuration automatiquement déployée** par GitHub Pages. Dans Cloudflare, ouvrir la zone du domaine puis **Rules → Transform Rules → Modify Response Header** et ajouter les trois règles avec leurs expressions et leurs valeurs statiques/dynamiques. Le domaine doit être proxifié par Cloudflare. Avec l'API, utiliser la phase `http_response_headers_transform` et ajouter ces règles au ruleset existant ; ne pas remplacer ses autres règles par celles de ce fichier. S'il n'existe aucun ruleset dans cette phase, ce fichier peut servir de corps à sa création.
+Ce fichier est une configuration prête à appliquer, **pas une configuration automatiquement déployée** par Cloudflare Pages. Dans Cloudflare, ouvrir la zone du domaine puis **Rules → Transform Rules → Modify Response Header** et ajouter les trois règles avec leurs expressions et leurs valeurs statiques/dynamiques. Le domaine doit être proxifié par Cloudflare. Avec l'API, utiliser la phase `http_response_headers_transform` et ajouter ces règles au ruleset existant ; ne pas remplacer ses autres règles par celles de ce fichier. S'il n'existe aucun ruleset dans cette phase, ce fichier peut servir de corps à sa création.
 
 Références : [création via API](https://developers.cloudflare.com/rules/transform/response-header-modification/create-api/), [fonction substring](https://developers.cloudflare.com/ruleset-engine/rules-language/functions/#substring). L'expression dynamique retire uniquement le suffixe `.md` : `/veille/liens/exemple.md` désigne `/veille/liens/exemple`. Les règles s'appliquent aussi aux chemins inconnus correspondant au motif ; leur statut 404 doit rester inchangé et empêche leur indexation.
 
 Après déploiement du site et activation des règles, vérifier les réponses publiques :
 
 ```sh
-curl -I https://sebastien.rigaux.be/fr.md
+curl -I https://sebastien.rigaux.be/index.md
 curl -I https://sebastien.rigaux.be/en.md
 curl -I https://sebastien.rigaux.be/veille.md
 curl -I https://sebastien.rigaux.be/en/tech-watch.md
@@ -86,8 +86,11 @@ Vérifier aussi une fiche et une archive paginée dans chaque langue : statut `2
 
 Listing thumbnails and permalink images use `WatchImage`; title icons use
 `WatchSiteIcon`. Source URLs in Prismic, Markdown, RSS and social metadata remain
-unchanged. HTML pages serve hashed local Astro assets, with AVIF/WebP/PNG image
-variants and WebP/PNG icons. SVG, ICO and animated media pass through the Astro image
+unchanged. HTML pages serve hashed local Astro assets, with AVIF images and WebP fallbacks, plus one WebP per raster icon.
+Thumbnails use 240/480px; details use 480/960/1920px, sharing the 480px asset.
+Icons use 48px for their 24px display size. These limits cover 2x screens when
+the source resolution allows it; 3x is not guaranteed. The detail `sizes` tracks
+the actual container padding and the sidebar breakpoint. SVG, ICO and animated media pass through the Astro image
 service without re-encoding. Only this repository's two Prismic CDN origins are
 allowed; CDN format negotiation is removed when reading original media bytes.
 
@@ -97,6 +100,14 @@ and icons have no preview. No client-side decoder is needed. Responsive widths
 are capped at the source resolution. The first listing item loads eagerly without high priority; subsequent media
 load lazily. The permalink image also stays lazy because it follows the summary; `priority` is available for a verified LCP
 image, not automatically applied to every page.
+
+Measured on 9 November 2026: image assets under `dist/_astro` dropped from
+10,583 files / 414.5 MiB to 3,090 files / 39.7 MiB. Chromium checks at 2x DPR
+covered 390, 640, 959, 1023, 1280 and 1440px viewports for a listing and a
+permalink with a sufficiently large source. The 480px variants are shared
+without duplicate dimensions from rounding. This optimized build replaced the earlier Cloudflare preview on 9 November
+2026 at https://migration-preview.sebastien-rigaux.pages.dev. Encoding quality
+settings remain unchanged.
 
 A missing or invalid optional image is omitted without an empty frame. Invalid
 icons fall back to the discovery-source icon, then the monogram. Build warnings
@@ -110,3 +121,5 @@ compression integration excludes generated image assets to avoid re-encoding
 them. `pnpm test:watch`, `pnpm build`, and `pnpm check:watch-build` cover the media
 policy and generated responsive references; browser checks are still needed for
 loading priority and actual viewport selection.
+
+La négociation Markdown par Rewrite Rules et les redirections sont décrites dans [cloudflare-pages.md](cloudflare-pages.md). `/fr.md` est un ancien alias redirigé en 301 vers `/index.md`.

@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-pages-content-check
+  group: cloudflare-pages-content-check
   cancel-in-progress: false
 
 jobs:

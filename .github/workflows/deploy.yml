@@ -21,8 +21,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   # Capture a fresh fingerprint before building. Every publication run is forced;
@@ -53,7 +51,7 @@ jobs:
       run:
         working-directory: apps/website-astro
     concurrency:
-      group: github-pages-build
+      group: cloudflare-pages-build
       # A newer build replaces an obsolete one without interrupting deployment.
       cancel-in-progress: true
     steps:
@@ -90,23 +88,57 @@ jobs:
         env:
           CONTENT_FINGERPRINT: ${{ needs.check-content.outputs.fingerprint }}
         run: node scripts/check-published-content.mjs write
-      - name: 📤 Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5.0.0
+      - name: ✅ Validate Cloudflare Pages artifact
+        run: node scripts/check-pages-build.mjs
+      - name: 📤 Upload Cloudflare Pages artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: cloudflare-pages
           path: apps/website-astro/dist
+          include-hidden-files: true
+          retention-days: 7
 
   deploy:
-    name: 🚀 Publish website to GitHub Pages
-    needs: build
+    name: 🚀 Publish website to Cloudflare Pages
+    needs: [build, check-content]
     runs-on: ubuntu-latest
     concurrency:
-      group: github-pages-deploy
-      # Let the active deployment finish; retain only the latest pending one.
+      group: cloudflare-pages-deploy
       cancel-in-progress: false
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: cloudflare-pages
+      url: https://sebastien.rigaux.be
     steps:
-      - name: 🚀 Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: 📥 Check out repository
+        uses: actions/checkout@v7
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+      - name: 📥 Download validated website
+        uses: actions/download-artifact@v4
+        with:
+          name: cloudflare-pages
+          path: apps/website-astro/dist
+      - name: 📦 Set up pnpm
+        uses: pnpm/setup@v3
+        with:
+          install: false
+      - name: 🔗 Install locked deployment tooling
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+        run: pnpm install --frozen-lockfile
+      - name: 🚀 Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm --filter website-astro exec wrangler pages deploy dist --project-name=sebastien-rigaux --branch=master
+      - name: ✅ Verify Pages deployment before domain checks
+        env:
+          EXPECTED_FINGERPRINT: ${{ needs.check-content.outputs.fingerprint }}
+        run: node apps/website-astro/scripts/check-pages-live.mjs https://sebastien-rigaux.pages.dev
+      - name: ✅ Verify production domain and negotiated representations
+        if: vars.CLOUDFLARE_DOMAIN_ACTIVE == 'true'
+        env:
+          EXPECTED_FINGERPRINT: ${{ needs.check-content.outputs.fingerprint }}
+        run: node apps/website-astro/scripts/check-pages-live.mjs https://sebastien.rigaux.be

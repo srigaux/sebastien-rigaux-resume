@@ -6,7 +6,7 @@
     {
       "ref": "markdown_cv_fr",
       "description": "markdown_cv_fr",
-      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path eq \"/fr.md\")",
+      "expression": "(http.host eq \"sebastien.rigaux.be\" and http.request.uri.path eq \"/index.md\")",
       "action": "rewrite",
       "action_parameters": {
         "headers": {
