@@ -4,7 +4,9 @@ Site statique bilingue construit avec Astro 7, React et Tailwind CSS 4. Le conte
 
 ## Développement
 
-Node.js ^24.22.1 et pnpm sont nécessaires.
+Node.js ^26.13.1 et pnpm 12.18.0 sont nécessaires. La CI lit ces versions depuis `package.json` (`engines.node` et `packageManager`).
+
+Le runtime Node 26.13.1 est également déclaré dans `devEngines.runtime` : pnpm le télécharge si nécessaire et l'utilise pour les scripts du projet, sans changer le runtime global des autres projets.
 
 ```sh
 pnpm install

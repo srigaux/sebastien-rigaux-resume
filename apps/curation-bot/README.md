@@ -4,7 +4,7 @@ Application autonome TypeScript pour Cloudflare Workers : Telegram → vérifica
 
 ## Installation locale
 
-Depuis ce dossier, avec Node.js ^24.22.1 et pnpm :
+Depuis ce dossier, avec Node.js ^26.13.1 et pnpm 12.18.0 :
 
 ```sh
 pnpm --workspace-root install --frozen-lockfile

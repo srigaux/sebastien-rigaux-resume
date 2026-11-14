@@ -2,6 +2,14 @@ packages:
   - apps/*
 overrides:
   '@playform/inline>beasties': ^0.4.3
+  # astro2tsx uses emnapi core 1.x; the auto-resolved runtime 2 beta is incompatible.
+  '@emnapi/runtime': 1.11.3
+  '@playform/compress>sharp': ^0.35.5
+  '@playform/compress>svgo': ^4.1.0
+  # Fix recursive-graph exhaustion in Playform's merge helper.
+  'deepmerge-ts@>=7 <8': 8.0.2
+  # Fix glob amplification while preserving the unrelated minimatch 3 API.
+  'minimatch@>=7 <11.0.1': 11.0.5
 allowBuilds:
   lefthook: true
   esbuild: true
@@ -12,3 +20,4 @@ minimumReleaseAgeExclude:
   - astro@7.3.7
   - '@cloudflare/workers-types@5.20261018.1'
   - context.dev@3.10.0
+  - '@stylistic/eslint-plugin@6.0.0'

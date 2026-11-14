@@ -2,9 +2,9 @@
   "name": "sebastien-rigaux-monorepo",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@12.15.0",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
-    "node": "^24.22.1"
+    "node": "^26.13.1"
   },
   "imports": {
     "#curate-scrape": "./.agents/skills/curate-prismic-link/scripts/scrape.mjs",
@@ -34,31 +34,38 @@
     "lint:root": "eslint ."
   },
   "dependencies": {
-    "@prismicio/client": "^7.22.3"
+    "@prismicio/client": "^7.23.1"
   },
   "devDependencies": {
     "@eslint/compat": "2.1.1",
     "@eslint/js": "10.0.1",
-    "@stylistic/eslint-plugin": "5.10.0",
+    "@stylistic/eslint-plugin": "6.0.0",
     "@trivago/prettier-plugin-sort-imports": "6.0.2",
-    "@typescript-eslint/parser": "8.72.1",
+    "@typescript-eslint/parser": "8.72.2",
     "@vitest/eslint-plugin": "1.6.28",
     "astro-eslint-parser": "3.2.0",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-astro": "3.2.1",
-    "eslint-plugin-better-tailwindcss": "4.10.0",
-    "eslint-plugin-import-x": "4.17.1",
+    "eslint-plugin-better-tailwindcss": "4.11.0",
+    "eslint-plugin-import-x": "4.18.1",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-unused-imports": "4.4.1",
     "globals": "17.14.0",
     "lefthook": "2.2.2",
     "lint-staged": "17.6.0",
-    "prettier": "3.9.10",
+    "prettier": "3.10.1",
     "prettier-plugin-astro": "1.1.2",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.1"
+    "typescript-eslint": "8.72.2"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "26.13.1",
+      "onFail": "download"
+    }
   }
 }
