@@ -39,7 +39,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "algoliasearch": "^5.61.0",
-    "astro": "^7.3.7",
+    "astro": "^7.4.7",
     "astro-pdf": "^1.10.1",
     "cms-prismic": "workspace:*",
     "htmlparser2": "^10.1.0",
